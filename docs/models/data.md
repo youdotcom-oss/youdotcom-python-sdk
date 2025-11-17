@@ -1,0 +1,10 @@
+# Data
+
+
+## Fields
+
+| Field                                                                | Type                                                                 | Required                                                             | Description                                                          | Example                                                              |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `seq_id`                                                             | *Optional[int]*                                                      | :heavy_minus_sign:                                                   | Sequence number of the SSE event, starts from 0. Same as `id` field. | 0                                                                    |
+| `type`                                                               | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | The type of the SSE event. Same as `event` field.                    | response.output_item.added                                           |
+| `response`                                                           | [Optional[models.Response]](../models/response.md)                   | :heavy_minus_sign:                                                   | N/A                                                                  |                                                                      |

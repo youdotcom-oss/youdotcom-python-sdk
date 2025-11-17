@@ -1,0 +1,377 @@
+lockVersion: 2.0.0
+id: be54037b-7bca-4974-bc8b-d99723174d31
+management:
+  docChecksum: 0d130012412e8f3596b44d67104b6005
+  docVersion: 0.0.1
+  speakeasyVersion: 1.658.2
+  generationVersion: 2.755.9
+  releaseVersion: 0.3.6
+  configChecksum: 233fb1a796a58a614cf189b627433d02
+features:
+  python:
+    acceptHeaders: 3.0.0
+    additionalDependencies: 1.0.0
+    additionalProperties: 1.0.1
+    constsAndDefaults: 1.0.5
+    core: 5.23.9
+    defaultEnabledRetries: 0.2.0
+    devContainers: 3.0.0
+    enumUnions: 0.1.0
+    enums: 3.2.0
+    envVarSecurityUsage: 0.3.2
+    flatRequests: 1.0.1
+    flattening: 3.1.1
+    globalSecurity: 3.0.4
+    globalSecurityCallbacks: 1.0.0
+    globalSecurityFlattening: 1.0.0
+    globalServerURLs: 3.2.0
+    groups: 3.0.1
+    methodArguments: 1.0.2
+    methodServerURLs: 3.1.1
+    mockServer: 0.1.1
+    nameOverrides: 3.0.1
+    nullables: 1.0.1
+    responseFormat: 1.0.1
+    retries: 3.0.2
+    sdkHooks: 1.1.0
+    serverEvents: 1.0.11
+    tests: 1.19.6
+    unions: 3.1.0
+generatedFiles:
+  - .devcontainer/README.md
+  - .devcontainer/devcontainer.json
+  - .devcontainer/setup.sh
+  - .gitattributes
+  - .vscode/settings.json
+  - USAGE.md
+  - docs/errors/badrequesterror.md
+  - docs/errors/getv1searchforbiddenerror.md
+  - docs/errors/getv1searchinternalservererror.md
+  - docs/errors/getv1searchunauthorizederror.md
+  - docs/errors/postv1agentsrunsforbiddenerror.md
+  - docs/errors/postv1agentsrunsunauthorizederror.md
+  - docs/errors/postv1contentsforbiddenerror.md
+  - docs/errors/postv1contentsinternalservererror.md
+  - docs/errors/postv1contentsunauthorizederror.md
+  - docs/models/agent.md
+  - docs/models/agenttype.md
+  - docs/models/badrequesterror.md
+  - docs/models/chatanswerfull.md
+  - docs/models/chatanswerfullsource.md
+  - docs/models/computeresultsfull.md
+  - docs/models/computetool.md
+  - docs/models/content.md
+  - docs/models/contentunion1.md
+  - docs/models/contentunion2.md
+  - docs/models/country.md
+  - docs/models/data.md
+  - docs/models/forbiddenerror.md
+  - docs/models/format_.md
+  - docs/models/formatenum1.md
+  - docs/models/formatenum2.md
+  - docs/models/freshness.md
+  - docs/models/fullresponse.md
+  - docs/models/genericfull.md
+  - docs/models/getv1searchcountry.md
+  - docs/models/getv1searchfreshness.md
+  - docs/models/getv1searchlivecrawl.md
+  - docs/models/getv1searchlivecrawlformats.md
+  - docs/models/getv1searchrequest.md
+  - docs/models/getv1searchresponse.md
+  - docs/models/getv1searchsafesearch.md
+  - docs/models/livecrawl.md
+  - docs/models/livecrawlformats.md
+  - docs/models/livecrawlresultsfull.md
+  - docs/models/metadata.md
+  - docs/models/news.md
+  - docs/models/output.md
+  - docs/models/postv1agentsrunseventstreamresponsebody.md
+  - docs/models/postv1agentsrunsrequest.md
+  - docs/models/postv1agentsrunsresponse.md
+  - docs/models/postv1agentsrunsresponsebody.md
+  - docs/models/postv1contentsrequest.md
+  - docs/models/postv1contentsresponse.md
+  - docs/models/reportverbosity.md
+  - docs/models/researchresultsfull.md
+  - docs/models/researchresultsfullsource.md
+  - docs/models/researchtool.md
+  - docs/models/response.md
+  - docs/models/result.md
+  - docs/models/results.md
+  - docs/models/safesearch.md
+  - docs/models/searcheffort.md
+  - docs/models/searcheffortenum.md
+  - docs/models/security.md
+  - docs/models/tool.md
+  - docs/models/trigger.md
+  - docs/models/unauthorizederror.md
+  - docs/models/utils/retryconfig.md
+  - docs/models/verbosity.md
+  - docs/models/web.md
+  - docs/models/websearchresultsfull.md
+  - docs/models/websearchtool.md
+  - docs/models/workflowconfig.md
+  - docs/sdks/contents/README.md
+  - docs/sdks/runs/README.md
+  - docs/sdks/search/README.md
+  - py.typed
+  - pylintrc
+  - pyproject.toml
+  - scripts/publish.sh
+  - src/youdotcom/__init__.py
+  - src/youdotcom/_hooks/__init__.py
+  - src/youdotcom/_hooks/sdkhooks.py
+  - src/youdotcom/_hooks/types.py
+  - src/youdotcom/_version.py
+  - src/youdotcom/agents.py
+  - src/youdotcom/basesdk.py
+  - src/youdotcom/contents.py
+  - src/youdotcom/errors/__init__.py
+  - src/youdotcom/errors/get_v1_searchop.py
+  - src/youdotcom/errors/no_response_error.py
+  - src/youdotcom/errors/post_v1_agents_runsop.py
+  - src/youdotcom/errors/post_v1_contentsop.py
+  - src/youdotcom/errors/responsevalidationerror.py
+  - src/youdotcom/errors/youdefaulterror.py
+  - src/youdotcom/errors/youerror.py
+  - src/youdotcom/httpclient.py
+  - src/youdotcom/models/__init__.py
+  - src/youdotcom/models/agenttype.py
+  - src/youdotcom/models/chatanswerfull.py
+  - src/youdotcom/models/computeresultsfull.py
+  - src/youdotcom/models/computetool.py
+  - src/youdotcom/models/country.py
+  - src/youdotcom/models/freshness.py
+  - src/youdotcom/models/fullresponse.py
+  - src/youdotcom/models/genericfull.py
+  - src/youdotcom/models/get_v1_searchop.py
+  - src/youdotcom/models/livecrawl.py
+  - src/youdotcom/models/livecrawlformats.py
+  - src/youdotcom/models/livecrawlresultsfull.py
+  - src/youdotcom/models/post_v1_agents_runsop.py
+  - src/youdotcom/models/post_v1_contentsop.py
+  - src/youdotcom/models/researchresultsfull.py
+  - src/youdotcom/models/researchtool.py
+  - src/youdotcom/models/safesearch.py
+  - src/youdotcom/models/searcheffort_enum.py
+  - src/youdotcom/models/security.py
+  - src/youdotcom/models/tool.py
+  - src/youdotcom/models/trigger.py
+  - src/youdotcom/models/verbosity.py
+  - src/youdotcom/models/websearchresultsfull.py
+  - src/youdotcom/models/websearchtool.py
+  - src/youdotcom/py.typed
+  - src/youdotcom/runs.py
+  - src/youdotcom/sdk.py
+  - src/youdotcom/sdkconfiguration.py
+  - src/youdotcom/search.py
+  - src/youdotcom/types/__init__.py
+  - src/youdotcom/types/basemodel.py
+  - src/youdotcom/utils/__init__.py
+  - src/youdotcom/utils/annotations.py
+  - src/youdotcom/utils/datetimes.py
+  - src/youdotcom/utils/enums.py
+  - src/youdotcom/utils/eventstreaming.py
+  - src/youdotcom/utils/forms.py
+  - src/youdotcom/utils/headers.py
+  - src/youdotcom/utils/logger.py
+  - src/youdotcom/utils/metadata.py
+  - src/youdotcom/utils/queryparams.py
+  - src/youdotcom/utils/requestbodies.py
+  - src/youdotcom/utils/retries.py
+  - src/youdotcom/utils/security.py
+  - src/youdotcom/utils/serializers.py
+  - src/youdotcom/utils/unmarshal_json_response.py
+  - src/youdotcom/utils/url.py
+  - src/youdotcom/utils/values.py
+  - tests/__init__.py
+  - tests/mockserver/.gitignore
+  - tests/mockserver/Dockerfile
+  - tests/mockserver/Makefile
+  - tests/mockserver/README.md
+  - tests/mockserver/go.mod
+  - tests/mockserver/go.sum
+  - tests/mockserver/internal/handler/assert/contenttype.go
+  - tests/mockserver/internal/handler/assert/header.go
+  - tests/mockserver/internal/handler/assert/parameter.go
+  - tests/mockserver/internal/handler/assert/pointer.go
+  - tests/mockserver/internal/handler/assert/security.go
+  - tests/mockserver/internal/handler/doc.go
+  - tests/mockserver/internal/handler/generated_handler.go
+  - tests/mockserver/internal/handler/generated_handlers.go
+  - tests/mockserver/internal/handler/pathgetv1search.go
+  - tests/mockserver/internal/handler/pathpostv1agentsruns.go
+  - tests/mockserver/internal/handler/pathpostv1contents.go
+  - tests/mockserver/internal/handler/values/files.go
+  - tests/mockserver/internal/logging/doc.go
+  - tests/mockserver/internal/logging/formats.go
+  - tests/mockserver/internal/logging/http_file.go
+  - tests/mockserver/internal/logging/http_logger.go
+  - tests/mockserver/internal/logging/levels.go
+  - tests/mockserver/internal/logging/logger.go
+  - tests/mockserver/internal/logging/oas_operation.go
+  - tests/mockserver/internal/logging/oas_operation_call.go
+  - tests/mockserver/internal/sdk/models/components/agenttype.go
+  - tests/mockserver/internal/sdk/models/components/chatanswerfull.go
+  - tests/mockserver/internal/sdk/models/components/computeresultsfull.go
+  - tests/mockserver/internal/sdk/models/components/computetool.go
+  - tests/mockserver/internal/sdk/models/components/country.go
+  - tests/mockserver/internal/sdk/models/components/freshness.go
+  - tests/mockserver/internal/sdk/models/components/fullresponse.go
+  - tests/mockserver/internal/sdk/models/components/genericfull.go
+  - tests/mockserver/internal/sdk/models/components/httpmetadata.go
+  - tests/mockserver/internal/sdk/models/components/livecrawl.go
+  - tests/mockserver/internal/sdk/models/components/livecrawlformats.go
+  - tests/mockserver/internal/sdk/models/components/livecrawlresultsfull.go
+  - tests/mockserver/internal/sdk/models/components/researchresultsfull.go
+  - tests/mockserver/internal/sdk/models/components/researchtool.go
+  - tests/mockserver/internal/sdk/models/components/safesearch.go
+  - tests/mockserver/internal/sdk/models/components/searcheffortenum.go
+  - tests/mockserver/internal/sdk/models/components/security.go
+  - tests/mockserver/internal/sdk/models/components/tool.go
+  - tests/mockserver/internal/sdk/models/components/trigger.go
+  - tests/mockserver/internal/sdk/models/components/verbosity.go
+  - tests/mockserver/internal/sdk/models/components/websearchresultsfull.go
+  - tests/mockserver/internal/sdk/models/components/websearchtool.go
+  - tests/mockserver/internal/sdk/models/operations/getv1search.go
+  - tests/mockserver/internal/sdk/models/operations/postv1agentsruns.go
+  - tests/mockserver/internal/sdk/models/operations/postv1contents.go
+  - tests/mockserver/internal/sdk/models/sdkerrors/getv1search.go
+  - tests/mockserver/internal/sdk/models/sdkerrors/postv1agentsruns.go
+  - tests/mockserver/internal/sdk/models/sdkerrors/postv1contents.go
+  - tests/mockserver/internal/sdk/types/bigint.go
+  - tests/mockserver/internal/sdk/types/date.go
+  - tests/mockserver/internal/sdk/types/datetime.go
+  - tests/mockserver/internal/sdk/types/decimal.go
+  - tests/mockserver/internal/sdk/types/jsonl/jsonl.go
+  - tests/mockserver/internal/sdk/types/pointers.go
+  - tests/mockserver/internal/sdk/types/stream/stream.go
+  - tests/mockserver/internal/sdk/utils/json.go
+  - tests/mockserver/internal/sdk/utils/reflect.go
+  - tests/mockserver/internal/sdk/utils/sort.go
+  - tests/mockserver/internal/server/doc.go
+  - tests/mockserver/internal/server/generated_handlers.go
+  - tests/mockserver/internal/server/internal_handlers.go
+  - tests/mockserver/internal/server/server.go
+  - tests/mockserver/internal/server/server_option.go
+  - tests/mockserver/internal/server/templates/log/index.html.tmpl
+  - tests/mockserver/internal/server/templates/log/operation.html.tmpl
+  - tests/mockserver/internal/server/templates/log/style.css.tmpl
+  - tests/mockserver/internal/tracking/requesttracker.go
+  - tests/mockserver/main.go
+  - tests/test_client.py
+  - tests/test_contents.py
+  - tests/test_runs.py
+  - tests/test_search.py
+examples:
+  post_/v1/agents/runs:
+    speakeasy-default-post-/v1-/agents/runs:
+      requestBody:
+        application/json: {"agent": "<value>", "input": "<value>", "stream": false}
+      responses:
+        "200":
+          application/json: {"output": [{"type": "web_search.results, message.answer", "text": "The capital of France is Paris.", "content": ["<value 1>", "<value 2>", "<value 3>"], "agent": "express"}]}
+        "400":
+          application/json: {"errors": []}
+        "401":
+          application/json: {"errors": []}
+        "403":
+          application/json: {"errors": [{"status": "403", "code": "tool_not_allowed", "title": "Tool not allowed", "detail": "You are not allowed to use the requested tool for this agent or tenant."}]}
+  post_/v1/contents:
+    missingApiKey:
+      requestBody:
+        application/json: {"urls": ["https://www.you.com"], "format": "html"}
+      responses:
+        "401":
+          application/json: {"detail": "API key is required"}
+    invalidOrExpired:
+      requestBody:
+        application/json: {"urls": ["https://www.you.com"], "format": "html"}
+      responses:
+        "401":
+          application/json: {"detail": "Invalid or expired API key"}
+    otherAuthParsing:
+      requestBody:
+        application/json: {"urls": ["https://www.you.com"], "format": "html"}
+      responses:
+        "401":
+          application/json: {"detail": "<error message>"}
+    missingScopes:
+      requestBody:
+        application/json: {"urls": ["https://www.you.com"], "format": "html"}
+      responses:
+        "403":
+          application/json: {"detail": "Missing required scopes"}
+    authFailure:
+      requestBody:
+        application/json: {"urls": ["https://www.you.com"], "format": "html"}
+      responses:
+        "500":
+          application/json: {"detail": "Internal authentication error"}
+    authorizationFailure:
+      requestBody:
+        application/json: {"urls": ["https://www.you.com"], "format": "html"}
+      responses:
+        "500":
+          application/json: {"detail": "Internal authorization error"}
+  get_/v1/search:
+    speakeasy-default-get-/v1-/search:
+      parameters:
+        query:
+          query: "Your query"
+      responses:
+        "200":
+          application/json: {"results": {"web": [{"url": "https://you.com", "title": "The World's Greatest Search Engine!", "description": "Search on YDC", "snippets": ["I'm an AI assistant that helps you get more done. What can I help you with?"], "thumbnail_url": "https://www.somethumbnailsite.com/thumbnail.jpg", "page_age": "2025-06-25T11:41:00", "authors": ["John Doe"], "favicon_url": "https://someurl.com/favicon"}], "news": [{"title": "Exclusive | You.com becomes the backbone of the EU's AI strategy", "description": "As the EU's AI strategy is being debated, You.com becomes the backbone of the EU's AI strategy.", "page_age": "2025-06-25T11:41:00", "thumbnail_url": "https://www.somethumbnailsite.com/thumbnail.jpg", "url": "https://www.you.com/news/eu-ai-strategy-youcom"}]}, "metadata": {"request_uuid": "942ccbdd-7705-4d9c-9d37-4ef386658e90", "query": "Your query", "latency": 0.123}}
+        "401":
+          application/json: {}
+        "403":
+          application/json: {}
+        "500":
+          application/json: {}
+    missingApiKey:
+      parameters:
+        query:
+          query: "Your query"
+      responses:
+        "401":
+          application/json: {"detail": "API key is required"}
+    invalidOrExpired:
+      parameters:
+        query:
+          query: "Your query"
+      responses:
+        "401":
+          application/json: {"detail": "Invalid or expired API key"}
+    otherAuthParsing:
+      parameters:
+        query:
+          query: "Your query"
+      responses:
+        "401":
+          application/json: {"detail": "<error message>"}
+    missingScopes:
+      parameters:
+        query:
+          query: "Your query"
+      responses:
+        "403":
+          application/json: {"detail": "Missing required scopes"}
+    authFailure:
+      parameters:
+        query:
+          query: "Your query"
+      responses:
+        "500":
+          application/json: {"detail": "Internal authentication error"}
+    authorizationFailure:
+      parameters:
+        query:
+          query: "Your query"
+      responses:
+        "500":
+          application/json: {"detail": "Internal authorization error"}
+examplesVersion: 1.0.2
+generatedTests:
+  post_/v1/agents/runs: "2025-11-17T13:54:01-08:00"
+  post_/v1/contents: "2025-11-17T13:54:01-08:00"
+  get_/v1/search: "2025-11-17T13:54:01-08:00"

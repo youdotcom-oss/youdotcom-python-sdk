@@ -1,0 +1,11 @@
+# ForbiddenError
+
+
+## Fields
+
+| Field                                                                   | Type                                                                    | Required                                                                | Description                                                             | Example                                                                 |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `status`                                                                | *str*                                                                   | :heavy_check_mark:                                                      | N/A                                                                     | 403                                                                     |
+| `code`                                                                  | *str*                                                                   | :heavy_check_mark:                                                      | N/A                                                                     | tool_not_allowed                                                        |
+| `title`                                                                 | *str*                                                                   | :heavy_check_mark:                                                      | N/A                                                                     | Tool not allowed                                                        |
+| `detail`                                                                | *str*                                                                   | :heavy_check_mark:                                                      | N/A                                                                     | You are not allowed to use the requested tool for this agent or tenant. |

@@ -1,0 +1,45 @@
+# Country
+
+The country code that determines the geographical focus of the web results.
+
+
+## Values
+
+| Name  | Value |
+| ----- | ----- |
+| `AR`  | AR    |
+| `AU`  | AU    |
+| `AT`  | AT    |
+| `BE`  | BE    |
+| `BR`  | BR    |
+| `CA`  | CA    |
+| `CL`  | CL    |
+| `DK`  | DK    |
+| `FI`  | FI    |
+| `FR`  | FR    |
+| `DE`  | DE    |
+| `HK`  | HK    |
+| `IN`  | IN    |
+| `ID`  | ID    |
+| `IT`  | IT    |
+| `JP`  | JP    |
+| `KR`  | KR    |
+| `MY`  | MY    |
+| `MX`  | MX    |
+| `NL`  | NL    |
+| `NZ`  | NZ    |
+| `NO`  | NO    |
+| `CN`  | CN    |
+| `PL`  | PL    |
+| `PT`  | PT    |
+| `PH`  | PH    |
+| `RU`  | RU    |
+| `SA`  | SA    |
+| `ZA`  | ZA    |
+| `ES`  | ES    |
+| `SE`  | SE    |
+| `CH`  | CH    |
+| `TW`  | TW    |
+| `TR`  | TR    |
+| `GB`  | GB    |
+| `US`  | US    |
