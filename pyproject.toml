@@ -1,6 +1,6 @@
 [project]
 name = "youdotcom"
-version = "0.0.1"
+version = "0.0.2"
 description = "The official You.com Python SDK"
 authors = [{ name = "You.com" },]
 readme = "README.md"
