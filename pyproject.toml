@@ -1,7 +1,7 @@
 [project]
 name = "youdotcom"
-version = "0.0.2"
-description = "The official You.com Python SDK"
+version = "1.0.0"
+description = "The official You.com Python SDK."
 authors = [{ name = "You.com" },]
 readme = "README.md"
 requires-python = ">=3.9.2"
@@ -16,10 +16,9 @@ license = { text = "Apache-2.0" }
 dev = [
     "mypy ==1.15.0",
     "pylint ==3.2.3",
+    "pytest >=8.0.0,<9.0.0",
+    "pytest-asyncio >=0.23.0,<0.25.0",
     "pyright ==1.1.398",
-    "pytest (>=8.4.1,<9.0.0)",
-    "pytest-asyncio ==1.2.0",
-    "pytest-xdist (>=3.8.0,<4.0.0)",
 ]
 
 [tool.setuptools.packages.find]

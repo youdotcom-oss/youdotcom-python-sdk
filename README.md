@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="600" height="315" alt="image" src="https://github.com/user-attachments/assets/149ddec2-8bd7-49f3-93fa-833714ad201f" />
+  <img width="600" height="315" alt="image" src="https://raw.githubusercontent.com/youdotcom-oss/youdotcom-python-sdk/refs/heads/main/images/logo.png" />
 </div>
 <div align="center">
 The official developer-friendly & type-safe Python SDK specifically designed to leverage the You.com API.
@@ -685,6 +685,33 @@ You can also enable a default debug logger by setting an environment variable `Y
 This SDK is in beta, and there may be breaking changes between versions without a major version update. Therefore, we recommend pinning usage
 to a specific package version. This way, you can install the same version each time without breaking changes unless you are intentionally
 looking for the latest version.
+
+## Testing
+
+The SDK includes a comprehensive test suite that covers all API endpoints with success and error scenarios. Tests are written using pytest and run against a mock server.
+
+To run the test suite:
+
+```bash
+./scripts/run_tests.sh
+```
+
+This script automatically:
+- Starts the mock server (requires Go or Docker)
+- Sets up a Python virtual environment
+- Installs dependencies
+- Runs all tests
+- Cleans up the mock server
+
+By default, the virtual environment is kept for faster subsequent test runs. To remove it after tests complete:
+
+```bash
+./scripts/run_tests.sh --cleanup
+# or
+./scripts/run_tests.sh -c
+```
+
+For more details on testing, see the [tests README](tests/README.md).
 
 ## Contributions
 

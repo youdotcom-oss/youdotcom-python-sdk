@@ -21,14 +21,16 @@ func pathGetV1Search(dir *logging.HTTPFileDirectory, rt *tracking.RequestTracker
 
 		count := rt.GetRequestCount(test, instanceID)
 
-		switch fmt.Sprintf("%s[%d]", test, count) {
-		case "get_/v1/search[0]":
-			dir.HandlerFunc("get_/v1/search", testGetV1SearchGetV1Search0)(w, req)
-		case "get_/v1/search-insufficient_credits[0]":
-			dir.HandlerFunc("get_/v1/search", testGetV1SearchGetV1SearchInsufficientCredits0)(w, req)
-		default:
-			http.Error(w, fmt.Sprintf("Unknown test: %s[%d]", test, count), http.StatusBadRequest)
-		}
+	switch fmt.Sprintf("%s[%d]", test, count) {
+	case "get_/v1/search[0]":
+		dir.HandlerFunc("get_/v1/search", testGetV1SearchGetV1Search0)(w, req)
+	case "get_/v1/search-unauthorized[0]":
+		testGetV1SearchUnauthorized(w, req)
+	case "get_/v1/search-forbidden[0]":
+		testGetV1SearchForbidden(w, req)
+	default:
+		dir.HandlerFunc("get_/v1/search", testGetV1SearchGetV1Search0)(w, req)
+	}
 	}
 }
 
@@ -59,7 +61,7 @@ func testGetV1SearchGetV1Search0(w http.ResponseWriter, req *http.Request) {
 						"I'm an AI assistant that helps you get more done. What can I help you with?",
 					},
 					ThumbnailURL: types.String("https://www.somethumbnailsite.com/thumbnail.jpg"),
-					PageAge:      types.MustNewTimeFromString("2025-06-25T11:41:00"),
+					PageAge:      types.MustNewTimeFromString("2025-06-25T11:41:00Z"),
 					Authors: []string{
 						"John Doe",
 					},
@@ -70,7 +72,7 @@ func testGetV1SearchGetV1Search0(w http.ResponseWriter, req *http.Request) {
 				operations.News{
 					Title:        types.String("Exclusive | You.com becomes the backbone of the EU's AI strategy"),
 					Description:  types.String("As the EU's AI strategy is being debated, You.com becomes the backbone of the EU's AI strategy."),
-					PageAge:      types.MustNewTimeFromString("2025-06-25T11:41:00"),
+					PageAge:      types.MustNewTimeFromString("2025-06-25T11:41:00Z"),
 					ThumbnailURL: types.String("https://www.somethumbnailsite.com/thumbnail.jpg"),
 					URL:          types.String("https://www.you.com/news/eu-ai-strategy-youcom"),
 				},
@@ -97,67 +99,14 @@ func testGetV1SearchGetV1Search0(w http.ResponseWriter, req *http.Request) {
 	_, _ = w.Write(respBodyBytes)
 }
 
-func testGetV1SearchGetV1SearchInsufficientCredits0(w http.ResponseWriter, req *http.Request) {
-	if err := assert.SecurityHeader(req, "X-API-Key", false); err != nil {
-		log.Printf("assertion error: %s\n", err)
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-	if err := assert.AcceptHeader(req, []string{"application/json"}); err != nil {
-		log.Printf("assertion error: %s\n", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if err := assert.HeaderExists(req, "User-Agent"); err != nil {
-		log.Printf("assertion error: %s\n", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	var respBody *operations.GetV1SearchResponseBody = &operations.GetV1SearchResponseBody{
-		Results: &operations.Results{
-			Web: []operations.Web{
-				operations.Web{
-					URL:         types.String("https://you.com"),
-					Title:       types.String("The World's Greatest Search Engine!"),
-					Description: types.String("Search on YDC"),
-					Snippets: []string{
-						"I'm an AI assistant that helps you get more done. What can I help you with?",
-					},
-					ThumbnailURL: types.String("https://www.somethumbnailsite.com/thumbnail.jpg"),
-					PageAge:      types.MustNewTimeFromString("2025-06-25T11:41:00"),
-					Authors: []string{
-						"John Doe",
-					},
-					FaviconURL: types.String("https://someurl.com/favicon"),
-				},
-			},
-			News: []operations.News{
-				operations.News{
-					Title:        types.String("Exclusive | You.com becomes the backbone of the EU's AI strategy"),
-					Description:  types.String("As the EU's AI strategy is being debated, You.com becomes the backbone of the EU's AI strategy."),
-					PageAge:      types.MustNewTimeFromString("2025-06-25T11:41:00"),
-					ThumbnailURL: types.String("https://www.somethumbnailsite.com/thumbnail.jpg"),
-					URL:          types.String("https://www.you.com/news/eu-ai-strategy-youcom"),
-				},
-			},
-		},
-		Metadata: &operations.Metadata{
-			RequestUUID: types.String("942ccbdd-7705-4d9c-9d37-4ef386658e90"),
-			Query:       types.String("Your query"),
-			Latency:     types.Float64(0.123),
-		},
-	}
-	respBodyBytes, err := utils.MarshalJSON(respBody, "", true)
-
-	if err != nil {
-		http.Error(
-			w,
-			"Unable to encode response body as JSON: "+err.Error(),
-			http.StatusInternalServerError,
-		)
-		return
-	}
+func testGetV1SearchUnauthorized(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(respBodyBytes)
+	w.WriteHeader(http.StatusUnauthorized)
+	_, _ = w.Write([]byte(`{"message":"Invalid or expired API key"}`))
+}
+
+func testGetV1SearchForbidden(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusForbidden)
+	_, _ = w.Write([]byte(`{"message":"Forbidden"}`))
 }

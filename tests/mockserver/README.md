@@ -1,10 +1,20 @@
 # Mock Server
 
-A generated HTTP mock server based on your OpenAPI Specification (OAS). Use this mock server for integration and contract testing.
+A generated HTTP mock server based on your OpenAPI Specification (OAS). This server contains a mixture of auto-generated code from Speakeasy and custom handlers for testing various scenarios including error responses.
 
-## Usage
+## Running Tests
 
-The server can be built and started via the [Go programming language toolchain](https://go.dev/) or [Docker](https://www.docker.com/).
+Tests should be run using the automated test script from the project root:
+
+```shell
+./scripts/run_tests.sh
+```
+
+This script handles starting the mock server, setting up the Python environment, installing dependencies, running the test suite, and cleaning up the mock server.
+
+## Manual Usage
+
+The server can be built and started manually via the [Go programming language toolchain](https://go.dev/) or [Docker](https://www.docker.com/).
 
 If you have Go installed, start the server directly via:
 
@@ -50,3 +60,8 @@ go run . -log-level=DEBUG
 # via `docker run`
 docker run -i -p 18080:18080 -t --rm mockserver -log-level=DEBUG
 ```
+
+## Code Structure
+
+- **Auto-generated**: Core mock server framework, routing, and SDK models (`internal/sdk/`, `internal/server/`, `internal/logging/`, `internal/tracking/`)
+- **Custom**: Test-specific handlers with success and error scenarios for comprehensive testing (`internal/handler/pathgetv1search.go`, `internal/handler/pathpostv1contents.go`, `internal/handler/pathpostv1agentsruns.go`)

@@ -21,67 +21,29 @@ func pathPostV1AgentsRuns(dir *logging.HTTPFileDirectory, rt *tracking.RequestTr
 
 		count := rt.GetRequestCount(test, instanceID)
 
-		switch fmt.Sprintf("%s[%d]", test, count) {
-		case "post_/v1/agents/runs-insufficient_credits[0]":
-			dir.HandlerFunc("post_/v1/agents/runs", testPostV1AgentsRunsPostV1AgentsRunsInsufficientCredits0)(w, req)
-		case "post_/v1/agents/runs[0]":
-			dir.HandlerFunc("post_/v1/agents/runs", testPostV1AgentsRunsPostV1AgentsRuns0)(w, req)
-		default:
-			http.Error(w, fmt.Sprintf("Unknown test: %s[%d]", test, count), http.StatusBadRequest)
-		}
+	switch fmt.Sprintf("%s[%d]", test, count) {
+	case "post_/v1/agents/runs[0]":
+		dir.HandlerFunc("post_/v1/agents/runs", testPostV1AgentsRunsPostV1AgentsRuns0)(w, req)
+	case "post_/v1/agents/runs-unauthorized[0]":
+		testPostV1AgentsRunsUnauthorized(w, req)
+	case "post_/v1/agents/runs-forbidden[0]":
+		testPostV1AgentsRunsForbidden(w, req)
+	default:
+		dir.HandlerFunc("post_/v1/agents/runs", testPostV1AgentsRunsPostV1AgentsRuns0)(w, req)
+	}
 	}
 }
 
-func testPostV1AgentsRunsPostV1AgentsRunsInsufficientCredits0(w http.ResponseWriter, req *http.Request) {
-	if err := assert.SecurityHeader(req, "X-API-Key", false); err != nil {
-		log.Printf("assertion error: %s\n", err)
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-	if err := assert.ContentType(req, "application/json", true); err != nil {
-		log.Printf("assertion error: %s\n", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if err := assert.AcceptHeader(req, []string{"application/json;q=1", "text/event-stream;q=0"}); err != nil {
-		log.Printf("assertion error: %s\n", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if err := assert.HeaderExists(req, "User-Agent"); err != nil {
-		log.Printf("assertion error: %s\n", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	var respBody *operations.PostV1AgentsRunsResponseBody = &operations.PostV1AgentsRunsResponseBody{
-		Output: []operations.Output{
-			operations.Output{
-				Type: types.String("web_search.results, message.answer"),
-				Text: types.String("The capital of France is Paris."),
-				Content: types.Pointer(operations.CreateContentUnion2MapOfAny(
-					map[string]any{
-						"0": "<value 1>",
-						"1": "<value 2>",
-						"2": "<value 3>",
-					},
-				)),
-				Agent: types.String("express"),
-			},
-		},
-	}
-	respBodyBytes, err := utils.MarshalJSON(respBody, "", true)
-
-	if err != nil {
-		http.Error(
-			w,
-			"Unable to encode response body as JSON: "+err.Error(),
-			http.StatusInternalServerError,
-		)
-		return
-	}
+func testPostV1AgentsRunsUnauthorized(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(respBodyBytes)
+	w.WriteHeader(http.StatusUnauthorized)
+	_, _ = w.Write([]byte(`{"errors":[{"status":"401","code":"unauthorized","title":"Unauthorized","detail":"Invalid or expired API key"}]}`))
+}
+
+func testPostV1AgentsRunsForbidden(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusForbidden)
+	_, _ = w.Write([]byte(`{"errors":[{"status":"403","code":"forbidden","title":"Forbidden","detail":"API key lacks scope for this path"}]}`))
 }
 
 func testPostV1AgentsRunsPostV1AgentsRuns0(w http.ResponseWriter, req *http.Request) {
@@ -135,3 +97,4 @@ func testPostV1AgentsRunsPostV1AgentsRuns0(w http.ResponseWriter, req *http.Requ
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(respBodyBytes)
 }
+

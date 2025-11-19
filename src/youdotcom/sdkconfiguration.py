@@ -17,7 +17,7 @@ from youdotcom.types import OptionalNullable, UNSET
 
 SERVERS = [
     "https://ydc-index.io",
-    # Production - Search and Contents API
+    # Production - Search API
     "https://api.you.com",
     # Production - Agents API
 ]

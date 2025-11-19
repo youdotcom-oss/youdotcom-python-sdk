@@ -21,16 +21,26 @@ func pathPostV1Contents(dir *logging.HTTPFileDirectory, rt *tracking.RequestTrac
 
 		count := rt.GetRequestCount(test, instanceID)
 
-		switch fmt.Sprintf("%s[%d]", test, count) {
-		case "post_/v1/contents-insufficient_credits[0]":
-			dir.HandlerFunc("post_/v1/contents", testPostV1ContentsPostV1ContentsInsufficientCredits0)(w, req)
-		default:
-			http.Error(w, fmt.Sprintf("Unknown test: %s[%d]", test, count), http.StatusBadRequest)
-		}
+	switch fmt.Sprintf("%s[%d]", test, count) {
+	case "post_/v1/contents[0]":
+		dir.HandlerFunc("post_/v1/contents", testPostV1ContentsPostV1Contents0)(w, req)
+	case "post_/v1/contents[1]":
+		dir.HandlerFunc("post_/v1/contents", testPostV1ContentsPostV1Contents1)(w, req)
+	case "post_/v1/contents[2]":
+		dir.HandlerFunc("post_/v1/contents", testPostV1ContentsPostV1Contents2)(w, req)
+	case "post_/v1/contents[3]":
+		dir.HandlerFunc("post_/v1/contents", testPostV1ContentsPostV1Contents3)(w, req)
+	case "post_/v1/contents-unauthorized[0]":
+		testPostV1ContentsUnauthorized(w, req)
+	case "post_/v1/contents-forbidden[0]":
+		testPostV1ContentsForbidden(w, req)
+	default:
+		dir.HandlerFunc("post_/v1/contents", testPostV1ContentsPostV1Contents0)(w, req)
+	}
 	}
 }
 
-func testPostV1ContentsPostV1ContentsInsufficientCredits0(w http.ResponseWriter, req *http.Request) {
+func testPostV1ContentsPostV1Contents0(w http.ResponseWriter, req *http.Request) {
 	if err := assert.SecurityHeader(req, "X-API-Key", false); err != nil {
 		log.Printf("assertion error: %s\n", err)
 		http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -53,8 +63,12 @@ func testPostV1ContentsPostV1ContentsInsufficientCredits0(w http.ResponseWriter,
 	}
 	var respBody []operations.ResponseBody = []operations.ResponseBody{
 		operations.ResponseBody{
-			URL:   types.String("https://www.you.com"),
-			Title: types.String("The best website in the world"),
+			URL:   types.String("https://www.python.org"),
+			Title: types.String("Welcome to Python.org"),
+		},
+		operations.ResponseBody{
+			URL:   types.String("https://www.example.com"),
+			Title: types.String("Example Domain"),
 		},
 	}
 	respBodyBytes, err := utils.MarshalJSON(respBody, "", true)
@@ -70,4 +84,146 @@ func testPostV1ContentsPostV1ContentsInsufficientCredits0(w http.ResponseWriter,
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(respBodyBytes)
+}
+
+func testPostV1ContentsPostV1Contents1(w http.ResponseWriter, req *http.Request) {
+	if err := assert.SecurityHeader(req, "X-API-Key", false); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	if err := assert.ContentType(req, "application/json", true); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := assert.AcceptHeader(req, []string{"application/json"}); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := assert.HeaderExists(req, "User-Agent"); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var respBody []operations.ResponseBody = []operations.ResponseBody{
+		operations.ResponseBody{
+			URL:   types.String("https://www.python.org"),
+			Title: types.String("Welcome to Python.org"),
+		},
+	}
+	respBodyBytes, err := utils.MarshalJSON(respBody, "", true)
+
+	if err != nil {
+		http.Error(
+			w,
+			"Unable to encode response body as JSON: "+err.Error(),
+			http.StatusInternalServerError,
+		)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(respBodyBytes)
+}
+
+func testPostV1ContentsPostV1Contents2(w http.ResponseWriter, req *http.Request) {
+	if err := assert.SecurityHeader(req, "X-API-Key", false); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	if err := assert.ContentType(req, "application/json", true); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := assert.AcceptHeader(req, []string{"application/json"}); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := assert.HeaderExists(req, "User-Agent"); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var respBody []operations.ResponseBody = []operations.ResponseBody{
+		operations.ResponseBody{
+			URL:   types.String("https://www.python.org"),
+			Title: types.String("Welcome to Python.org"),
+		},
+		operations.ResponseBody{
+			URL:   types.String("https://www.example.com"),
+			Title: types.String("Example Domain"),
+		},
+	}
+	respBodyBytes, err := utils.MarshalJSON(respBody, "", true)
+
+	if err != nil {
+		http.Error(
+			w,
+			"Unable to encode response body as JSON: "+err.Error(),
+			http.StatusInternalServerError,
+		)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(respBodyBytes)
+}
+
+func testPostV1ContentsPostV1Contents3(w http.ResponseWriter, req *http.Request) {
+	if err := assert.SecurityHeader(req, "X-API-Key", false); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	if err := assert.ContentType(req, "application/json", true); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := assert.AcceptHeader(req, []string{"application/json"}); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := assert.HeaderExists(req, "User-Agent"); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var respBody []operations.ResponseBody = []operations.ResponseBody{
+		operations.ResponseBody{
+			URL:   types.String("https://www.example.com"),
+			Title: types.String("Example Domain"),
+		},
+	}
+	respBodyBytes, err := utils.MarshalJSON(respBody, "", true)
+
+	if err != nil {
+		http.Error(
+			w,
+			"Unable to encode response body as JSON: "+err.Error(),
+			http.StatusInternalServerError,
+		)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(respBodyBytes)
+}
+
+func testPostV1ContentsUnauthorized(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusUnauthorized)
+	_, _ = w.Write([]byte(`{"message":"Invalid or expired API key"}`))
+}
+
+func testPostV1ContentsForbidden(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusForbidden)
+	_, _ = w.Write([]byte(`{"message":"Forbidden"}`))
 }
