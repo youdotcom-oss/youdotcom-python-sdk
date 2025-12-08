@@ -3,6 +3,7 @@
 from __future__ import annotations
 from .country import Country
 from .freshness import Freshness
+from .language import Language
 from .livecrawl import LiveCrawl
 from .livecrawlformats import LiveCrawlFormats
 from .safesearch import SafeSearch
@@ -76,6 +77,8 @@ class GetV1SearchRequestTypedDict(TypedDict):
     r"""Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`."""
     country: NotRequired[GetV1SearchCountryTypedDict]
     r"""The country code that determines the geographical focus of the web results."""
+    language: NotRequired[Language]
+    r"""The language of the web results that will be returned (BCP 47 format)."""
     safesearch: NotRequired[GetV1SearchSafesearchTypedDict]
     r"""Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."""
     livecrawl: NotRequired[GetV1SearchLivecrawlTypedDict]
@@ -113,6 +116,12 @@ class GetV1SearchRequest(BaseModel):
         FieldMetadata(query=QueryParamMetadata(style="form", explode=True)),
     ] = None
     r"""The country code that determines the geographical focus of the web results."""
+
+    language: Annotated[
+        Optional[Language],
+        FieldMetadata(query=QueryParamMetadata(style="form", explode=True)),
+    ] = "EN"
+    r"""The language of the web results that will be returned (BCP 47 format)."""
 
     safesearch: Annotated[
         Optional[GetV1SearchSafesearch],
@@ -219,14 +228,14 @@ class Results(BaseModel):
     news: Optional[List[News]] = None
 
 
-class MetadataTypedDict(TypedDict):
+class GetV1SearchMetadataTypedDict(TypedDict):
     request_uuid: NotRequired[str]
     query: NotRequired[str]
     r"""Returns the search query used to retrieve the results."""
     latency: NotRequired[float]
 
 
-class Metadata(BaseModel):
+class GetV1SearchMetadata(BaseModel):
     request_uuid: Optional[str] = None
 
     query: Optional[str] = None
@@ -239,7 +248,7 @@ class GetV1SearchResponseTypedDict(TypedDict):
     r"""A JSON object containing unified search results from web and news sources"""
 
     results: NotRequired[ResultsTypedDict]
-    metadata: NotRequired[MetadataTypedDict]
+    metadata: NotRequired[GetV1SearchMetadataTypedDict]
 
 
 class GetV1SearchResponse(BaseModel):
@@ -247,4 +256,4 @@ class GetV1SearchResponse(BaseModel):
 
     results: Optional[Results] = None
 
-    metadata: Optional[Metadata] = None
+    metadata: Optional[GetV1SearchMetadata] = None

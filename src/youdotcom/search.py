@@ -22,6 +22,7 @@ class Search(BaseSDK):
         country: Optional[
             Union[models.GetV1SearchCountry, models.GetV1SearchCountryTypedDict]
         ] = None,
+        language: Optional[models.Language] = "EN",
         safesearch: Optional[
             Union[models.GetV1SearchSafesearch, models.GetV1SearchSafesearchTypedDict]
         ] = None,
@@ -46,6 +47,7 @@ class Search(BaseSDK):
         :param freshness: Specifies the freshness of the results to return.
         :param offset: Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`.
         :param country: The country code that determines the geographical focus of the web results.
+        :param language: The language of the web results that will be returned (BCP 47 format).
         :param safesearch: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
         :param livecrawl: Indicates which section(s) of search results to livecrawl and return full page content.
         :param livecrawl_formats: Indicates the format of the livecrawled content.
@@ -70,6 +72,7 @@ class Search(BaseSDK):
             freshness=freshness,
             offset=offset,
             country=country,
+            language=language,
             safesearch=safesearch,
             livecrawl=livecrawl,
             livecrawl_formats=livecrawl_formats,
@@ -153,6 +156,7 @@ class Search(BaseSDK):
         country: Optional[
             Union[models.GetV1SearchCountry, models.GetV1SearchCountryTypedDict]
         ] = None,
+        language: Optional[models.Language] = "EN",
         safesearch: Optional[
             Union[models.GetV1SearchSafesearch, models.GetV1SearchSafesearchTypedDict]
         ] = None,
@@ -177,6 +181,7 @@ class Search(BaseSDK):
         :param freshness: Specifies the freshness of the results to return.
         :param offset: Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`.
         :param country: The country code that determines the geographical focus of the web results.
+        :param language: The language of the web results that will be returned (BCP 47 format).
         :param safesearch: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
         :param livecrawl: Indicates which section(s) of search results to livecrawl and return full page content.
         :param livecrawl_formats: Indicates the format of the livecrawled content.
@@ -201,6 +206,7 @@ class Search(BaseSDK):
             freshness=freshness,
             offset=offset,
             country=country,
+            language=language,
             safesearch=safesearch,
             livecrawl=livecrawl,
             livecrawl_formats=livecrawl_formats,
