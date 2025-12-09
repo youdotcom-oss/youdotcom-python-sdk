@@ -1,0 +1,58 @@
+# Language
+
+
+## Values
+
+| Name      | Value     |
+| --------- | --------- |
+| `AR`      | AR        |
+| `EU`      | EU        |
+| `BN`      | BN        |
+| `BG`      | BG        |
+| `CA`      | CA        |
+| `ZH_HANS` | ZH-HANS   |
+| `ZH_HANT` | ZH-HANT   |
+| `HR`      | HR        |
+| `CS`      | CS        |
+| `DA`      | DA        |
+| `NL`      | NL        |
+| `EN`      | EN        |
+| `EN_GB`   | EN-GB     |
+| `ET`      | ET        |
+| `FI`      | FI        |
+| `FR`      | FR        |
+| `GL`      | GL        |
+| `DE`      | DE        |
+| `EL`      | EL        |
+| `GU`      | GU        |
+| `HE`      | HE        |
+| `HI`      | HI        |
+| `HU`      | HU        |
+| `IS`      | IS        |
+| `IT`      | IT        |
+| `JP`      | JP        |
+| `KN`      | KN        |
+| `KO`      | KO        |
+| `LV`      | LV        |
+| `LT`      | LT        |
+| `MS`      | MS        |
+| `ML`      | ML        |
+| `MR`      | MR        |
+| `NB`      | NB        |
+| `PL`      | PL        |
+| `PT_BR`   | PT-BR     |
+| `PT_PT`   | PT-PT     |
+| `PA`      | PA        |
+| `RO`      | RO        |
+| `RU`      | RU        |
+| `SR`      | SR        |
+| `SK`      | SK        |
+| `SL`      | SL        |
+| `ES`      | ES        |
+| `SV`      | SV        |
+| `TA`      | TA        |
+| `TE`      | TE        |
+| `TH`      | TH        |
+| `TR`      | TR        |
+| `UK`      | UK        |
+| `VI`      | VI        |

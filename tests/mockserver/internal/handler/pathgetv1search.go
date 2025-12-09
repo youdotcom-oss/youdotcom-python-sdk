@@ -79,7 +79,7 @@ func testGetV1SearchGetV1Search0(w http.ResponseWriter, req *http.Request) {
 			},
 		},
 		Metadata: &operations.Metadata{
-			RequestUUID: types.String("942ccbdd-7705-4d9c-9d37-4ef386658e90"),
+			SearchUUID: types.String("942ccbdd-7705-4d9c-9d37-4ef386658e90"),
 			Query:       types.String("Your query"),
 			Latency:     types.Float64(0.123),
 		},

@@ -8,6 +8,7 @@ from youdotcom.types.typesafe_models import (
     LiveCrawl,
     LiveCrawlFormats,
     SafeSearch,
+    Language,
 )
 
 def basic_search(you: You):
@@ -53,6 +54,16 @@ def search_with_livecrawl(you: You):
     print_search(res)
 
 
+def search_with_language(you: You):
+    """Perform a search for results in a specific language"""
+    
+    res = you.search.unified(
+        query="best places to visit in Paris",
+        language=Language.FR,
+    )
+    print_search(res)
+
+
 def main() -> None:
     """Main entry point for the script."""
     if len(sys.argv) < 2:
@@ -73,6 +84,9 @@ def main() -> None:
         
         # Search with livecrawl
         # search_with_livecrawl(you)
+
+        # Search with language
+        # search_with_language(you)
 
 
 if __name__ == "__main__":

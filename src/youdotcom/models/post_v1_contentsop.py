@@ -49,6 +49,21 @@ class PostV1ContentsRequest(BaseModel):
     r"""The format of the content to be returned."""
 
 
+class PostV1ContentsMetadataTypedDict(TypedDict):
+    site_name: NotRequired[str]
+    r"""The OpenGraph site name of the web page."""
+    favicon_url: NotRequired[str]
+    r"""The URL of the favicon of the web page's domain."""
+
+
+class PostV1ContentsMetadata(BaseModel):
+    site_name: Optional[str] = None
+    r"""The OpenGraph site name of the web page."""
+
+    favicon_url: Optional[str] = None
+    r"""The URL of the favicon of the web page's domain."""
+
+
 class PostV1ContentsResponseTypedDict(TypedDict):
     url: NotRequired[str]
     r"""The webpage URL whose content has been fetched."""
@@ -58,6 +73,7 @@ class PostV1ContentsResponseTypedDict(TypedDict):
     r"""The retrieved HTML content of the web page."""
     markdown: NotRequired[Nullable[str]]
     r"""The retrieved Markdown content of the web page."""
+    metadata: NotRequired[PostV1ContentsMetadataTypedDict]
 
 
 class PostV1ContentsResponse(BaseModel):
@@ -73,9 +89,11 @@ class PostV1ContentsResponse(BaseModel):
     markdown: OptionalNullable[str] = UNSET
     r"""The retrieved Markdown content of the web page."""
 
+    metadata: Optional[PostV1ContentsMetadata] = None
+
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
-        optional_fields = ["url", "title", "html", "markdown"]
+        optional_fields = ["url", "title", "html", "markdown", "metadata"]
         nullable_fields = ["html", "markdown"]
         null_default_fields = []
 
