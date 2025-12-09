@@ -55,7 +55,7 @@ def search_with_livecrawl(you: You):
 
 
 def search_with_language(you: You):
-    """Perform a search with a specific language."""
+    """Perform a search for results in a specific language"""
     
     res = you.search.unified(
         query="best places to visit in Paris",
