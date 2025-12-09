@@ -229,14 +229,14 @@ class Results(BaseModel):
 
 
 class GetV1SearchMetadataTypedDict(TypedDict):
-    request_uuid: NotRequired[str]
+    search_uuid: NotRequired[str]
     query: NotRequired[str]
     r"""Returns the search query used to retrieve the results."""
     latency: NotRequired[float]
 
 
 class GetV1SearchMetadata(BaseModel):
-    request_uuid: Optional[str] = None
+    search_uuid: Optional[str] = None
 
     query: Optional[str] = None
     r"""Returns the search query used to retrieve the results."""

@@ -581,17 +581,17 @@ func (o *Results) GetNews() []News {
 }
 
 type Metadata struct {
-	RequestUUID *string `json:"request_uuid,omitempty"`
+	SearchUUID *string `json:"search_uuid,omitempty"`
 	// Returns the search query used to retrieve the results.
 	Query   *string  `json:"query,omitempty"`
 	Latency *float64 `json:"latency,omitempty"`
 }
 
-func (o *Metadata) GetRequestUUID() *string {
+func (o *Metadata) GetSearchUUID() *string {
 	if o == nil {
 		return nil
 	}
-	return o.RequestUUID
+	return o.SearchUUID
 }
 
 func (o *Metadata) GetQuery() *string {
