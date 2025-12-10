@@ -142,6 +142,25 @@ class GetV1SearchRequest(BaseModel):
     r"""Indicates the format of the livecrawled content."""
 
 
+class GetV1SearchContentsTypedDict(TypedDict):
+    r"""Contents of the page if livecrawl was enabled."""
+
+    html: NotRequired[str]
+    r"""The HTML content of the page."""
+    markdown: NotRequired[str]
+    r"""The Markdown content of the page."""
+
+
+class GetV1SearchContents(BaseModel):
+    r"""Contents of the page if livecrawl was enabled."""
+
+    html: Optional[str] = None
+    r"""The HTML content of the page."""
+
+    markdown: Optional[str] = None
+    r"""The Markdown content of the page."""
+
+
 class WebTypedDict(TypedDict):
     url: NotRequired[str]
     r"""The URL of the specific search result."""
@@ -159,6 +178,8 @@ class WebTypedDict(TypedDict):
     r"""An array of authors of the search result."""
     favicon_url: NotRequired[str]
     r"""The URL of the favicon of the search result's domain."""
+    contents: NotRequired[GetV1SearchContentsTypedDict]
+    r"""Contents of the page if livecrawl was enabled."""
 
 
 class Web(BaseModel):
@@ -185,6 +206,9 @@ class Web(BaseModel):
 
     favicon_url: Optional[str] = None
     r"""The URL of the favicon of the search result's domain."""
+
+    contents: Optional[GetV1SearchContents] = None
+    r"""Contents of the page if livecrawl was enabled."""
 
 
 class NewsTypedDict(TypedDict):

@@ -9,7 +9,7 @@ from youdotcom.utils import get_security_from_env
 from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
 
 
-class Contents(BaseSDK):
+class ContentsSDK(BaseSDK):
     def generate(
         self,
         *,

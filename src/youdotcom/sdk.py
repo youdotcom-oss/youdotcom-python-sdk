@@ -16,7 +16,7 @@ from youdotcom.types import OptionalNullable, UNSET
 
 if TYPE_CHECKING:
     from youdotcom.agents import Agents
-    from youdotcom.contents import Contents
+    from youdotcom.contents_sdk import ContentsSDK
     from youdotcom.search import Search
 
 
@@ -24,11 +24,11 @@ class You(BaseSDK):
     r"""You.com API: Enterprise AI Solutions, driving limitless innovation"""
 
     agents: "Agents"
-    contents: "Contents"
+    contents: "ContentsSDK"
     search: "Search"
     _sub_sdk_map = {
         "agents": ("youdotcom.agents", "Agents"),
-        "contents": ("youdotcom.contents", "Contents"),
+        "contents": ("youdotcom.contents_sdk", "ContentsSDK"),
         "search": ("youdotcom.search", "Search"),
     }
 

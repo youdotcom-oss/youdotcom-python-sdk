@@ -479,6 +479,13 @@ def print_search(search_response: Any) -> None:
             if hasattr(web_result, 'snippets') and web_result.snippets:
                 for snippet in web_result.snippets[:2]:  # Show first 2 snippets
                     print(f"   - {snippet}")
+            
+            if hasattr(web_result, 'contents') and web_result.contents:
+                if hasattr(web_result.contents, 'html') and web_result.contents.html:
+                    print(f"   HTML Content: {web_result.contents.html[:100]}...")
+                if hasattr(web_result.contents, 'markdown') and web_result.contents.markdown:
+                    print(f"   Markdown Content: {web_result.contents.markdown[:100]}...")
+            
             print()
     
     # Print news results

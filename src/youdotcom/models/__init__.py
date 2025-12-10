@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     from .fullresponse import FullResponse, FullResponseTypedDict
     from .genericfull import GenericFull, GenericFullTypedDict
     from .get_v1_searchop import (
+        GetV1SearchContents,
+        GetV1SearchContentsTypedDict,
         GetV1SearchCountry,
         GetV1SearchCountryTypedDict,
         GetV1SearchFreshness,
@@ -158,6 +160,8 @@ __all__ = [
     "FullResponseTypedDict",
     "GenericFull",
     "GenericFullTypedDict",
+    "GetV1SearchContents",
+    "GetV1SearchContentsTypedDict",
     "GetV1SearchCountry",
     "GetV1SearchCountryTypedDict",
     "GetV1SearchFreshness",
@@ -251,6 +255,8 @@ _dynamic_imports: dict[str, str] = {
     "FullResponseTypedDict": ".fullresponse",
     "GenericFull": ".genericfull",
     "GenericFullTypedDict": ".genericfull",
+    "GetV1SearchContents": ".get_v1_searchop",
+    "GetV1SearchContentsTypedDict": ".get_v1_searchop",
     "GetV1SearchCountry": ".get_v1_searchop",
     "GetV1SearchCountryTypedDict": ".get_v1_searchop",
     "GetV1SearchFreshness": ".get_v1_searchop",
