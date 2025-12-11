@@ -80,6 +80,11 @@ class TestSearchFilters:
             )
             
             assert res.results is not None
+            
+            if res.results.web:
+                for result in res.results.web:
+                    if hasattr(result, "contents") and result.contents:
+                        assert result.contents.markdown is not None
 
     def test_search_all_parameters(self, server_url, api_key):
         client = create_test_http_client("get_/v1/search")
@@ -98,6 +103,11 @@ class TestSearchFilters:
             
             assert res.results is not None
             assert res.metadata is not None
+            
+            if res.results.web:
+                for result in res.results.web:
+                    if hasattr(result, "contents") and result.contents:
+                        assert result.contents.html is not None
 
 
 class TestSearchErrors:

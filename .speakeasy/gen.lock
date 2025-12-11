@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
-id: 93b3c4c3-5e08-46f0-809f-105070e9f7a0
+id: c1651d80-fc31-474f-b74b-64723666cc6b
 management:
-  docChecksum: f2f2c0d1fc19944c00d2be27d444cb66
+  docChecksum: 3a028596f2ba1bfaf99dd578fc0e9c48
   docVersion: 0.0.1
   speakeasyVersion: 1.658.2
   generationVersion: 2.755.9
-  releaseVersion: 1.4.0
-  configChecksum: b2e315f558f5d4f9b0a2853cbbfd04bb
+  releaseVersion: 1.4.1
+  configChecksum: 416a21c29febc14dbe98ca9af403ba3a
 features:
   python:
     acceptHeaders: 3.0.0
@@ -70,6 +70,7 @@ generatedFiles:
   - docs/models/freshness.md
   - docs/models/fullresponse.md
   - docs/models/genericfull.md
+  - docs/models/getv1searchcontents.md
   - docs/models/getv1searchcountry.md
   - docs/models/getv1searchfreshness.md
   - docs/models/getv1searchlivecrawl.md
@@ -111,7 +112,7 @@ generatedFiles:
   - docs/models/websearchresultsfull.md
   - docs/models/websearchtool.md
   - docs/models/workflowconfig.md
-  - docs/sdks/contents/README.md
+  - docs/sdks/contentssdk/README.md
   - docs/sdks/runs/README.md
   - docs/sdks/search/README.md
   - py.typed
@@ -125,7 +126,7 @@ generatedFiles:
   - src/youdotcom/_version.py
   - src/youdotcom/agents.py
   - src/youdotcom/basesdk.py
-  - src/youdotcom/contents.py
+  - src/youdotcom/contents_sdk.py
   - src/youdotcom/errors/__init__.py
   - src/youdotcom/errors/get_v1_searchop.py
   - src/youdotcom/errors/no_response_error.py

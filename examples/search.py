@@ -51,11 +51,11 @@ def search_with_livecrawl(you: You):
         livecrawl=LiveCrawl.WEB,
         livecrawl_formats=LiveCrawlFormats.MARKDOWN,
     )
-    print_search(res)
+    print(res)
 
 
 def search_with_language(you: You):
-    """Perform a search for results in a specific language"""
+    """Perform a search for results in a specific language."""
     
     res = you.search.unified(
         query="best places to visit in Paris",
@@ -74,7 +74,7 @@ def main() -> None:
 
     with You(api_key_auth=api_key) as you:
         # Basic search
-        basic_search(you)
+        # basic_search(you)
         
         # Search with filters
         # search_with_filters(you)
@@ -83,7 +83,7 @@ def main() -> None:
         # search_with_pagination(you)
         
         # Search with livecrawl
-        # search_with_livecrawl(you)
+        search_with_livecrawl(you)
 
         # Search with language
         # search_with_language(you)
