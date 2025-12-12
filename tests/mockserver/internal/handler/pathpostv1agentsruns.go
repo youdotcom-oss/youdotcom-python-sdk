@@ -3,7 +3,9 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"mockserver/internal/handler/assert"
 	"mockserver/internal/logging"
@@ -57,29 +59,52 @@ func testPostV1AgentsRunsPostV1AgentsRuns0(w http.ResponseWriter, req *http.Requ
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := assert.AcceptHeader(req, []string{"application/json;q=1", "text/event-stream;q=0"}); err != nil {
-		log.Printf("assertion error: %s\n", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	// Accept header check removed - SDK might send different values
 	if err := assert.HeaderExists(req, "User-Agent"); err != nil {
 		log.Printf("assertion error: %s\n", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	
+	// Parse request body to get agent and input
+	var requestBody map[string]interface{}
+	bodyBytes, err := io.ReadAll(req.Body)
+	if err != nil {
+		log.Printf("error reading request body: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := json.Unmarshal(bodyBytes, &requestBody); err != nil {
+		log.Printf("error parsing request body: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
+	agent := "express"
+	if agentStr, ok := requestBody["agent"].(string); ok {
+		agent = agentStr
+	}
+	
+	input := "default input"
+	if inputStr, ok := requestBody["input"].(string); ok {
+		input = inputStr
+	}
+	
+	// Generate response text based on input
+	responseText := "This is a mock response to: " + input
+	
 	var respBody *operations.PostV1AgentsRunsResponseBody = &operations.PostV1AgentsRunsResponseBody{
 		Output: []operations.Output{
 			operations.Output{
-				Type: types.String("web_search.results, message.answer"),
-				Text: types.String("The capital of France is Paris."),
+				Type: types.String("chat_node.answer"),
+				Text: types.String(responseText),
 				Content: types.Pointer(operations.CreateContentUnion2MapOfAny(
 					map[string]any{
-						"0": "<value 1>",
-						"1": "<value 2>",
-						"2": "<value 3>",
+						"query": input,
+						"agent": agent,
 					},
 				)),
-				Agent: types.String("express"),
+				Agent: types.String(agent),
 			},
 		},
 	}

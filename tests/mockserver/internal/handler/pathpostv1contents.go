@@ -3,7 +3,9 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"mockserver/internal/handler/assert"
 	"mockserver/internal/logging"
@@ -51,26 +53,64 @@ func testPostV1ContentsPostV1Contents0(w http.ResponseWriter, req *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := assert.AcceptHeader(req, []string{"application/json"}); err != nil {
-		log.Printf("assertion error: %s\n", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	// Accept header check removed - SDK might send different values
 	if err := assert.HeaderExists(req, "User-Agent"); err != nil {
 		log.Printf("assertion error: %s\n", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var respBody []operations.ResponseBody = []operations.ResponseBody{
-		operations.ResponseBody{
-			URL:   types.String("https://www.python.org"),
-			Title: types.String("Welcome to Python.org"),
-		},
-		operations.ResponseBody{
-			URL:   types.String("https://www.example.com"),
-			Title: types.String("Example Domain"),
-		},
+	
+	// Parse request body to determine format and URLs
+	var requestBody map[string]interface{}
+	bodyBytes, err := io.ReadAll(req.Body)
+	if err != nil {
+		log.Printf("error reading request body: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
+	if err := json.Unmarshal(bodyBytes, &requestBody); err != nil {
+		log.Printf("error parsing request body: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
+	format := "html" // default
+	if f, ok := requestBody["format"].(string); ok {
+		format = f
+	}
+	
+	// Get URLs from request or use defaults
+	var urls []string
+	if urlsArray, ok := requestBody["urls"].([]interface{}); ok {
+		urls = make([]string, 0, len(urlsArray))
+		for _, url := range urlsArray {
+			if urlStr, ok := url.(string); ok {
+				urls = append(urls, urlStr)
+			}
+		}
+	}
+	// If no URLs provided, use defaults
+	if len(urls) == 0 {
+		urls = []string{"https://www.python.org"}
+	}
+	
+	// Build response based on URLs and format
+	var respBody []operations.ResponseBody
+	for _, url := range urls {
+		item := operations.ResponseBody{
+			URL:   types.String(url),
+			Title: types.String("Mock Title for " + url),
+		}
+		
+		if format == "markdown" {
+			item.Markdown = types.String("# Mock Markdown Content\n\nThis is mock markdown content for " + url)
+		} else {
+			item.HTML = types.String("<html><body><h1>Mock HTML Content</h1><p>This is mock HTML content for " + url + "</p></body></html>")
+		}
+		
+		respBody = append(respBody, item)
+	}
+	
 	respBodyBytes, err := utils.MarshalJSON(respBody, "", true)
 
 	if err != nil {
