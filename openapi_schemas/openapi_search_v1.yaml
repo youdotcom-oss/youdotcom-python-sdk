@@ -1,0 +1,328 @@
+openapi: 3.1.0
+info:
+  title: You.com Search API
+  description: Get the best search results from web and news sources
+  version: 0.0.1
+servers:
+  - url: https://ydc-index.io
+
+
+paths:
+  /v1/search:
+    get:
+      operationId: search
+      security:
+        - ApiKeyAuth: []
+
+      summary: Returns a list of unified search results from web and news sources
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: The search query used to retrieve relevant results from the web. You can also include [search operators](#search-operators) to refine your search.
+          example: "Your query"
+          schema:
+            type: string
+            default: "Your query"
+        - name: count
+          in: query
+          required: false
+          description: Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - name: freshness
+          in: query
+          required: false
+          description: Specifies the freshness of the results to return.
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Freshness'
+              - type: string
+        - name: offset
+          in: query
+          required: false
+          description: Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`.
+          schema:
+            type: integer
+        - name: country
+          in: query
+          required: false
+          description: The country code that determines the geographical focus of the web results.
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Country'
+              - type: string
+        - name: language
+          in: query
+          required: false
+          description: The language of the web results that will be returned (BCP 47 format).
+          schema:
+            $ref: "#/components/schemas/Language"
+        - name: safesearch
+          in: query
+          required: false
+          description: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/SafeSearch'
+              - type: string
+        - name: livecrawl
+          in: query
+          required: false
+          description: Indicates which section(s) of search results to livecrawl and return full page content.
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/LiveCrawl'
+              - type: string
+        - name: livecrawl_formats
+          in: query
+          required: false
+          description: Indicates the format of the livecrawled content.
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/LiveCrawlFormats'
+              - type: string
+      responses:
+        "200": # status code
+          description: A JSON object containing unified search results from web and news sources
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: object
+                    properties:
+                      web:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type: string
+                              description: The URL of the specific search result.
+                              example: "https://you.com"
+                            title:
+                              type: string
+                              description: The title or name of the search result.
+                              example: "The World's Greatest Search Engine!"
+                            description:
+                              type: string
+                              description: A brief description of the content of the search result.
+                              example: "Search on YDC"
+                            snippets:
+                              type: array
+                              description: An array of text snippets from the search result, providing a preview of the content.
+                              items:
+                                type: string
+                                example: "I'm an AI assistant that helps you get more done. What can I help you with?"
+                            thumbnail_url:
+                              type: string
+                              description: URL of the thumbnail.
+                              example: "https://www.somethumbnailsite.com/thumbnail.jpg"
+                            page_age:
+                              type: string
+                              format: date-time
+                              description: The age of the search result.
+                              example: "2025-06-25T11:41:00"
+                            authors:
+                              type: array
+                              description: An array of authors of the search result.
+                              items:
+                                type: string
+                                example: "John Doe"
+                            favicon_url:
+                              type: string
+                              description: The URL of the favicon of the search result's domain.
+                              example: "https://someurl.com/favicon"
+
+                      news:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            title:
+                              type: string
+                              description: The title of the news result.
+                              example: "Exclusive | You.com becomes the backbone of the EU's AI strategy"
+                            description:
+                              type: string
+                              description: A brief description of the content of the news result.
+                              example: "As the EU's AI strategy is being debated, You.com becomes the backbone of the EU's AI strategy."
+                            page_age:
+                              type: string
+                              format: date-time
+                              description: UTC timestamp of the article's publication date.
+                              example: "2025-06-25T11:41:00"
+                            thumbnail_url:
+                              type: string
+                              description: URL of the thumbnail.
+                              example: "https://www.somethumbnailsite.com/thumbnail.jpg"
+                            url:
+                              type: string
+                              description: The URL of the news result.
+                              example: "https://www.you.com/news/eu-ai-strategy-youcom"
+
+                  metadata:
+                    type: object
+                    properties:
+                      search_uuid:
+                        type: string
+                        format: uuid
+                        example: "942ccbdd-7705-4d9c-9d37-4ef386658e90"
+                      query:
+                        description: Returns the search query used to retrieve the results.
+                        type: string
+                        example: "Your query"
+                      latency:
+                        type: number
+                        example: 0.123
+        "401":
+          description: Unauthorized. Problems with API key.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error detail message.
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    detail: "API key is required"
+                invalidOrExpired:
+                  summary: Invalid/expired API key
+                  value:
+                    detail: "Invalid or expired API key"
+                otherAuthParsing:
+                  summary: Other auth parsing errors
+                  value:
+                    detail: "<error message>"
+        "403":
+          description: Forbidden. API key lacks scope for this path.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                missingScopes:
+                  summary: Missing required scopes
+                  value:
+                    detail: "Missing required scopes"
+        "500":
+          description: Internal Server Error during authentication/authorization middleware.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                authFailure:
+                  summary: Authentication failure
+                  value:
+                    detail: "Internal authentication error"
+                authorizationFailure:
+                  summary: Authorization failure
+                  value:
+                    detail: "Internal authorization error"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: "The unique API Key required to authorize API access. Learn how to get yours in the [“Get your API key” section of the documentation](https://documentation.you.com/docs/quickstart#get-your-api-key)."
+  schemas:
+    # Enum types
+    Freshness:
+      type: string
+      enum: [day, week, month, year]
+      description: "Specifies the freshness of the results to return."
+      x-speakeasy-enums:
+        - DAY
+        - WEEK
+        - MONTH
+        - YEAR
+
+    Country:
+      type: string
+      enum: ['AR', 'AU', 'AT', 'BE', 'BR', 'CA', 'CL', 'DK', 'FI', 'FR', 'DE', 'HK', 'IN', 'ID', 'IT', 'JP', 'KR', 'MY', 'MX', 'NL', 'NZ', 'NO', 'CN', 'PL', 'PT', 'PH', 'RU', 'SA', 'ZA', 'ES', 'SE', 'CH', 'TW', 'TR', 'GB', 'US']
+      description: "The country code that determines the geographical focus of the web results."
+      x-speakeasy-enums:
+        - AR
+        - AU
+        - AT
+        - BE
+        - BR
+        - CA
+        - CL
+        - DK
+        - FI
+        - FR
+        - DE
+        - HK
+        - IN
+        - ID
+        - IT
+        - JP
+        - KR
+        - MY
+        - MX
+        - NL
+        - NZ
+        - NO
+        - CN
+        - PL
+        - PT
+        - PH
+        - RU
+        - SA
+        - ZA
+        - ES
+        - SE
+        - CH
+        - TW
+        - TR
+        - GB
+        - US
+
+    Language:
+      type: string
+      default: 'EN'
+      enum: ['AR', 'EU', 'BN', 'BG', 'CA', 'ZH-HANS', 'ZH-HANT', 'HR', 'CS', 'DA', 'NL', 'EN', 'EN-GB', 'ET', 'FI', 'FR', 'GL', 'DE', 'EL', 'GU', 'HE', 'HI', 'HU', 'IS', 'IT', 'JP', 'KN', 'KO', 'LV', 'LT', 'MS', 'ML', 'MR', 'NB', 'PL', 'PT-BR', 'PT-PT', 'PA', 'RO', 'RU', 'SR', 'SK', 'SL', 'ES', 'SV', 'TA', 'TE', 'TH', 'TR', 'UK', 'VI']
+
+    SafeSearch:
+      type: string
+      enum: [ off, moderate, strict]
+      description: "Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."
+      x-speakeasy-enums:
+        - OFF
+        - MODERATE
+        - STRICT
+
+    LiveCrawl:
+      type: string
+      enum: [web, news, all]
+      description: "Indicates which section(s) of search results to livecrawl and return full page content."
+      x-speakeasy-enums:
+        - WEB
+        - NEWS
+        - ALL
+
+    LiveCrawlFormats:
+      type: string
+      enum: [html, markdown]
+      description: "Indicates the format of the livecrawled content."
+      x-speakeasy-enums:
+        - HTML
+        - MARKDOWN

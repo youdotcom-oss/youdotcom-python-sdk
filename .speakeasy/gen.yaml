@@ -1,0 +1,78 @@
+configVersion: 2.0.0
+generation:
+  sdkClassName: You
+  maintainOpenAPIOrder: true
+  usageSnippets:
+    optionalPropertyRendering: withExample
+    sdkInitStyle: constructor
+  useClassNamesForArrayFields: true
+  fixes:
+    nameResolutionDec2023: true
+    nameResolutionFeb2025: true
+    parameterOrderingFeb2024: true
+    requestResponseComponentNamesFeb2024: true
+    securityFeb2025: true
+    sharedErrorComponentsApr2025: true
+  auth:
+    oAuth2ClientCredentialsEnabled: true
+    oAuth2PasswordEnabled: true
+    hoistGlobalSecurity: true
+  inferSSEOverload: true
+  sdkHooksConfigAccess: true
+  schemas:
+    allOfMergeStrategy: shallowMerge
+  requestBodyFieldName: body
+  persistentEdits: {}
+  docs:
+    examples:
+      - usage.md
+python:
+  version: 1.5.0
+  additionalDependencies:
+    dev: {}
+    main: {}
+  allowedRedefinedBuiltins:
+    - id
+    - object
+    - input
+  asyncMode: both
+  authors:
+    - You.com
+  baseErrorName: YouError
+  clientServerStatusCodesAsErrors: true
+  constFieldCasing: upper
+  defaultErrorName: YouDefaultError
+  description: The official You.com Python SDK.
+  enableCustomCodeRegions: false
+  enumFormat: enum
+  envVarPrefix: YOU
+  fixFlags:
+    asyncPaginationSep2025: true
+    responseRequiredSep2024: true
+  flattenGlobalSecurity: true
+  flattenRequests: true
+  flatteningOrder: parameters-first
+  imports:
+    option: openapi
+    paths:
+      callbacks: ""
+      errors: errors
+      operations: ""
+      shared: ""
+      webhooks: ""
+  inferUnionDiscriminators: true
+  inputModelSuffix: input
+  license: Apache-2.0
+  maxMethodParams: 999
+  methodArguments: infer-optional-args
+  moduleName: ""
+  multipartArrayFormat: standard
+  outputModelSuffix: output
+  packageManager: uv
+  packageName: youdotcom
+  preApplyUnionDiscriminators: true
+  pytestFilterWarnings: []
+  pytestTimeout: 0
+  responseFormat: flat
+  sseFlatResponse: false
+  templateVersion: v2

@@ -1,0 +1,44 @@
+speakeasyVersion: 1.676.1
+sources:
+    You.com API:
+        sourceNamespace: you-com-search-api
+        sourceRevisionDigest: sha256:ba46d0f3f1c4c364cf0bc03dcc51ab09a80972574ad02a8874e626dafc1fe911
+        sourceBlobDigest: sha256:69bdacd9e44600238d6d69753322f8a13451e64774c92e9fa5939e3c8b30f7b9
+        tags:
+            - latest
+            - 0.0.1
+targets:
+    you:
+        source: You.com API
+        sourceNamespace: you-com-search-api
+        sourceRevisionDigest: sha256:ba46d0f3f1c4c364cf0bc03dcc51ab09a80972574ad02a8874e626dafc1fe911
+        sourceBlobDigest: sha256:69bdacd9e44600238d6d69753322f8a13451e64774c92e9fa5939e3c8b30f7b9
+        codeSamplesNamespace: you-com-search-api-code-samples
+        codeSamplesRevisionDigest: sha256:57bba0cb76ece1bca538e559f73b5c8033ce7aeb1badbab654ed6294b7bf1148
+workflow:
+    workflowVersion: 1.0.0
+    speakeasyVersion: latest
+    sources:
+        You.com API:
+            inputs:
+                - location: ./openapi_schemas/openapi_unified_agents.yaml
+                - location: ./openapi_schemas/openapi_search_v1.yaml
+                - location: ./openapi_schemas/openapi_contents.yaml
+            output: .speakeasy/out.openapi.yaml
+            registry:
+                location: registry.speakeasyapi.dev/youcom/python-sdk/you-com-search-api
+    targets:
+        you:
+            target: python
+            source: You.com API
+            publish:
+                pypi:
+                    token: $pypi_token
+            codeSamples:
+                registry:
+                    location: registry.speakeasyapi.dev/youcom/python-sdk/you-com-search-api-code-samples
+                labelOverride:
+                    fixedValue: Python (SDK)
+                blocking: false
+            testing:
+                enabled: false

@@ -1,0 +1,26 @@
+workflowVersion: 1.0.0
+speakeasyVersion: latest
+sources:
+    You.com API:
+        inputs:
+            - location: ./openapi_schemas/openapi_unified_agents.yaml
+            - location: ./openapi_schemas/openapi_search_v1.yaml
+            - location: ./openapi_schemas/openapi_contents.yaml
+        output: .speakeasy/out.openapi.yaml
+        registry:
+            location: registry.speakeasyapi.dev/youcom/python-sdk/you-com-search-api
+targets:
+    you:
+        target: python
+        source: You.com API
+        publish:
+            pypi:
+                token: $pypi_token
+        codeSamples:
+            registry:
+                location: registry.speakeasyapi.dev/youcom/python-sdk/you-com-search-api-code-samples
+            labelOverride:
+                fixedValue: Python (SDK)
+            blocking: false
+        testing:
+            enabled: false

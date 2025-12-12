@@ -1,17 +1,11 @@
 # ReportVerbosity
 
+Select whether to receive a medium or high length model response.
 
-## Supported Types
 
-### `models.Verbosity`
+## Values
 
-```python
-value: models.Verbosity = /* values here */
-```
-
-### `str`
-
-```python
-value: str = /* values here */
-```
-
+| Name     | Value    |
+| -------- | -------- |
+| `MEDIUM` | medium   |
+| `HIGH`   | high     |

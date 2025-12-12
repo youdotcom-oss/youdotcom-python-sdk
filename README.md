@@ -12,6 +12,12 @@ The official developer-friendly & type-safe Python SDK specifically designed to 
     </a>
 </div>
 
+<!-- Start Summary [summary] -->
+## Summary
+
+You.com Contents API: Get the best search results from web and news sources
+<!-- End Summary [summary] -->
+
 <!-- Start Table of Contents [toc] -->
 ## Table of Contents
 <!-- $toc-max-depth=2 -->
@@ -29,6 +35,7 @@ The official developer-friendly & type-safe Python SDK specifically designed to 
   * [Debugging](#debugging)
 * [Development](#development)
   * [Maturity](#maturity)
+  * [Testing](#testing)
   * [Contributions](#contributions)
 
 <!-- End Table of Contents [toc] -->
@@ -112,130 +119,59 @@ Generally, the SDK will work well with most IDEs out of the box. However, when u
 <!-- Start SDK Example Usage [usage] -->
 ## SDK Example Usage
 
-> Tip: Additional examples can be found in the [examples](examples/) folder
-
-
-### Example with Express agent
+### Example
 
 ```python
-# Synchronous Example with Express agent
+# Synchronous Example
+import os
 from youdotcom import You
-from youdotcom.types.typesafe_models import (
-    AgentType,
-    stream_text_tokens
-)
+
 
 with You(
-    api_key_auth="Your You.com API Key",
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
-    res = you.agents.runs.create(
-        agent=AgentType.EXPRESS,
-        input="Teach me how to make an omelet",
-        stream=True,
-    )
-    stream_text_tokens(res)
 
+    res = you.agents_runs(request={
+        "agent": "express",
+        "input": "What is the capital of France?",
+        "stream": False,
+    })
+
+    with res as event_stream:
+        for event in event_stream:
+            # handle event
+            print(event, flush=True)
 ```
+
+</br>
 
 The same SDK client can also be used to make asynchronous requests by importing asyncio.
 
 ```python
 # Asynchronous Example
 import asyncio
+import os
 from youdotcom import You
-from youdotcom.types.typesafe_models import AgentType
 
 async def main():
-    async with You(
-        api_key_auth="Your You.com API Key",
-    ) as you:
-        res = await you.agents.runs.create_async(
-            agent=AgentType.EXPRESS,
-            input="What is a Rain Frog?",
-            stream=False,
-        )
 
-        async for event in res:
-            # handle event
-            print(event, flush=True)
+    async with You(
+        api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    ) as you:
+
+        res = await you.agents_runs_async(request={
+            "agent": "express",
+            "input": "What is the capital of France?",
+            "stream": False,
+        })
+
+        async with res as event_stream:
+            async for event in event_stream:
+                # handle event
+                print(event, flush=True)
 
 asyncio.run(main())
-
 ```
-
-### Example with Advanced agent and tools
-
-```python
-# Synchronous Example with Express agent
-from youdotcom import You
-from youdotcom.models import ComputeTool, ResearchTool
-from youdotcom.types.typesafe_models import (
-    AgentType,
-    SearchEffort,
-    Verbosity,
-    get_text_tokens,
-)
-
-with You(
-    api_key_auth="Your You.com API Key",
-) as you:
-    res = you.agents.runs.create(
-            agent=AgentType.ADVANCED,
-            input="Research and calculate the latest trends and the square root of 169. Show your work.",
-            stream=False,
-            tools=[
-                ComputeTool(),
-                ResearchTool(
-                    search_effort=SearchEffort.AUTO,
-                    report_verbosity=Verbosity.HIGH,
-                ),
-            ]
-    ) 
-    get_text_tokens(res)
-
-```
-
-### Example with Contents
-
-```python
-# Synchronous Example with the Contents API
-from youdotcom import You
-from youdotcom.types.typesafe_models import (
-    Format,
-    print_contents
-)
-
-with You(
-    api_key_auth="Your You.com API Key",
-) as you:
-    res = you.contents.generate(
-        urls=[
-            "https://www.python.org",
-            "https://www.example.com",
-        ],
-        format_=Format.HTML,
-    )
-    print_contents(res)
-
-```
-
-### Example with Search V1
-
-```python
-# Synchronous Example with the Search V1 API
-from youdotcom import You
-from youdotcom.types.typesafe_models import print_search
-
-with You(
-    api_key_auth="Your You.com API Key",
-) as you:
-    res = you.search.unified(
-        query="latest AI developments",
-    )
-    print_search(res)
-```
-
-
 <!-- End SDK Example Usage [usage] -->
 
 <!-- Start Authentication [security] -->
@@ -249,7 +185,7 @@ This SDK supports the following security scheme globally:
 | -------------- | ------ | ------- | -------------------- |
 | `api_key_auth` | apiKey | API key | `YOU_API_KEY_AUTH`   |
 
-To authenticate with the API the `api_key_auth` parameter must be set when initializing the SDK client instance. It's best practice to use an environment variable to access this key.
+To authenticate with the API the `api_key_auth` parameter must be set when initializing the SDK client instance. For example:
 ```python
 import os
 from youdotcom import You
@@ -258,9 +194,19 @@ from youdotcom import You
 with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
-    # Rest of application code ...
-```
 
+    res = you.agents_runs(request={
+        "agent": "express",
+        "input": "What is the capital of France?",
+        "stream": False,
+    })
+
+    with res as event_stream:
+        for event in event_stream:
+            # handle event
+            print(event, flush=True)
+
+```
 <!-- End Authentication [security] -->
 
 <!-- Start Available Resources and Operations [operations] -->
@@ -269,17 +215,11 @@ with You(
 <details open>
 <summary>Available methods</summary>
 
-#### [agents.runs](docs/sdks/runs/README.md)
+### [You SDK](docs/sdks/you/README.md)
 
-* [create](docs/sdks/runs/README.md#create)
-
-### [contents](docs/sdks/contents/README.md)
-
-* [generate](docs/sdks/contents/README.md#generate) - Returns the content of the web pages
-
-### [search](docs/sdks/search/README.md)
-
-* [unified](docs/sdks/search/README.md#unified) - Returns a list of unified search results from web and news sources
+* [agents_runs](docs/sdks/you/README.md#agents_runs) - Run an Agent
+* [search](docs/sdks/you/README.md#search) - Returns a list of unified search results from web and news sources
+* [contents](docs/sdks/you/README.md#contents) - Returns the content of the web pages
 
 </details>
 <!-- End Available Resources and Operations [operations] -->
@@ -296,25 +236,25 @@ underlying connection.
 The stream is also a [Context Manager][context-manager] and can be used with the `with` statement and will close the
 underlying connection when the context is exited.
 
-For simple text output when streaming, you can use the stream_text_tokens helper utility (see Example section).
-
 ```python
-from youdotcom import You, AgentType
+import os
+from youdotcom import You
+
 
 with You(
-    api_key_auth="Your You.com API Key",
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
-    res = you.agents.runs.create(
-        agent=AgentType.EXPRESS,
-        input="Teach me how to make an omelet",
-        stream=True,
-    )
+
+    res = you.agents_runs(request={
+        "agent": "express",
+        "input": "What is the capital of France?",
+        "stream": False,
+    })
+
     with res as event_stream:
         for event in event_stream:
-            if event.response:
-                response = event.response
-                    if response.delta:
-                        print(response.delta, end="", flush=True)
+            # handle event
+            print(event, flush=True)
 
 ```
 
@@ -339,11 +279,11 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.agents.runs.create(agent="express", input="What is the capital of France?", stream=False, tools=[
-        {
-            "type": "compute",
-        },
-    ],
+    res = you.agents_runs(request={
+        "agent": "express",
+        "input": "What is the capital of France?",
+        "stream": False,
+    },
         RetryConfig("backoff", BackoffStrategy(1, 50, 1.1, 100), False))
 
     with res as event_stream:
@@ -365,11 +305,11 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.agents.runs.create(agent="express", input="What is the capital of France?", stream=False, tools=[
-        {
-            "type": "compute",
-        },
-    ])
+    res = you.agents_runs(request={
+        "agent": "express",
+        "input": "What is the capital of France?",
+        "stream": False,
+    })
 
     with res as event_stream:
         for event in event_stream:
@@ -405,11 +345,11 @@ with You(
     res = None
     try:
 
-        res = you.agents.runs.create(agent="express", input="What is the capital of France?", stream=False, tools=[
-            {
-                "type": "compute",
-            },
-        ])
+        res = you.agents_runs(request={
+            "agent": "express",
+            "input": "What is the capital of France?",
+            "stream": False,
+        })
 
         with res as event_stream:
             for event in event_stream:
@@ -426,8 +366,8 @@ with You(
         print(e.raw_response)
 
         # Depending on the method different errors may be thrown
-        if isinstance(e, errors.BadRequestError):
-            print(e.data.errors)  # List[models.BadRequestError]
+        if isinstance(e, errors.AgentRuns400ResponseError):
+            print(e.data.detail)  # Optional[str]
 ```
 
 ### Error Classes
@@ -445,15 +385,15 @@ with You(
 
 
 **Inherit from [`YouError`](./src/youdotcom/errors/youerror.py)**:
-* [`BadRequestError`](./src/youdotcom/errors/badrequesterror.py): Bad Request. Invalid or malformed request body/parameters. Status code `400`. Applicable to 1 of 3 methods.*
-* [`PostV1ContentsUnauthorizedError`](./src/youdotcom/errors/postv1contentsunauthorizederror.py): Unauthorized. Status code `401`. Applicable to 1 of 3 methods.*
-* [`GetV1SearchUnauthorizedError`](./src/youdotcom/errors/getv1searchunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 3 methods.*
-* [`PostV1AgentsRunsUnauthorizedError`](./src/youdotcom/errors/postv1agentsrunsunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 3 methods.*
-* [`PostV1ContentsForbiddenError`](./src/youdotcom/errors/postv1contentsforbiddenerror.py): Forbidden. Status code `403`. Applicable to 1 of 3 methods.*
-* [`GetV1SearchForbiddenError`](./src/youdotcom/errors/getv1searchforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 3 methods.*
-* [`PostV1AgentsRunsForbiddenError`](./src/youdotcom/errors/postv1agentsrunsforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 3 methods.*
-* [`PostV1ContentsInternalServerError`](./src/youdotcom/errors/postv1contentsinternalservererror.py): Internal Server Error. Status code `500`. Applicable to 1 of 3 methods.*
-* [`GetV1SearchInternalServerError`](./src/youdotcom/errors/getv1searchinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 3 methods.*
+* [`AgentRuns400ResponseError`](./src/youdotcom/errors/agentruns400responseerror.py): The message returned by the error. Status code `400`. Applicable to 1 of 3 methods.*
+* [`AgentRuns401ResponseError`](./src/youdotcom/errors/agentruns401responseerror.py): The message returned by the error. Status code `401`. Applicable to 1 of 3 methods.*
+* [`SearchUnauthorizedError`](./src/youdotcom/errors/searchunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 3 methods.*
+* [`ContentsUnauthorizedError`](./src/youdotcom/errors/contentsunauthorizederror.py): Unauthorized. Status code `401`. Applicable to 1 of 3 methods.*
+* [`SearchForbiddenError`](./src/youdotcom/errors/searchforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 3 methods.*
+* [`ContentsForbiddenError`](./src/youdotcom/errors/contentsforbiddenerror.py): Forbidden. Status code `403`. Applicable to 1 of 3 methods.*
+* [`AgentRuns422ResponseError`](./src/youdotcom/errors/agentruns422responseerror.py): Unprocessable Entity - Invalid request data. Status code `422`. Applicable to 1 of 3 methods.*
+* [`SearchInternalServerError`](./src/youdotcom/errors/searchinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 3 methods.*
+* [`ContentsInternalServerError`](./src/youdotcom/errors/contentsinternalservererror.py): Internal Server Error. Status code `500`. Applicable to 1 of 3 methods.*
 * [`ResponseValidationError`](./src/youdotcom/errors/responsevalidationerror.py): Type mismatch between the response data and the expected Pydantic model. Provides access to the Pydantic validation error via the `cause` attribute.
 
 </details>
@@ -464,58 +404,24 @@ with You(
 <!-- Start Server Selection [server] -->
 ## Server Selection
 
-### Select Server by Index
-
-You can override the default server globally by passing a server index to the `server_idx: int` optional parameter when initializing the SDK client instance. The selected server will then be used as the default on the operations that use it. This table lists the indexes associated with the available servers:
-
-| #   | Server                 | Description                          |
-| --- | ---------------------- | ------------------------------------ |
-| 0   | `https://ydc-index.io` | Production - Search and Contents API |
-| 1   | `https://api.you.com`  | Production - Agents API              |
-
-#### Example
-
-```python
-import os
-from youdotcom import You
-
-
-with You(
-    server_idx=0,
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
-) as you:
-
-    res = you.agents.runs.create(agent="express", input="What is the capital of France?", stream=False, tools=[
-        {
-            "type": "compute",
-        },
-    ])
-
-    with res as event_stream:
-        for event in event_stream:
-            # handle event
-            print(event, flush=True)
-
-```
-
 ### Override Server URL Per-Client
 
-The default server can also be overridden globally by passing a URL to the `server_url: str` optional parameter when initializing the SDK client instance. For example:
+The default server can be overridden globally by passing a URL to the `server_url: str` optional parameter when initializing the SDK client instance. For example:
 ```python
 import os
 from youdotcom import You
 
 
 with You(
-    server_url="https://api.you.com",
+    server_url="https://ydc-index.io",
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.agents.runs.create(agent="express", input="What is the capital of France?", stream=False, tools=[
-        {
-            "type": "compute",
-        },
-    ])
+    res = you.agents_runs(request={
+        "agent": "express",
+        "input": "What is the capital of France?",
+        "stream": False,
+    })
 
     with res as event_stream:
         for event in event_stream:
@@ -536,11 +442,11 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.agents.runs.create(agent="express", input="What is the capital of France?", stream=False, tools=[
-        {
-            "type": "compute",
-        },
-    ], server_url="https://api.you.com")
+    res = you.agents_runs(request={
+        "agent": "express",
+        "input": "What is the capital of France?",
+        "stream": False,
+    }, server_url="https://api.you.com")
 
     with res as event_stream:
         for event in event_stream:

@@ -1,10 +1,47 @@
 # Data
 
 
-## Fields
+## Supported Types
 
-| Field                                                                | Type                                                                 | Required                                                             | Description                                                          | Example                                                              |
-| -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `seq_id`                                                             | *Optional[int]*                                                      | :heavy_minus_sign:                                                   | Sequence number of the SSE event, starts from 0. Same as `id` field. | 0                                                                    |
-| `type`                                                               | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | The type of the SSE event. Same as `event` field.                    | response.output_item.added                                           |
-| `response`                                                           | [Optional[models.Response]](../models/response.md)                   | :heavy_minus_sign:                                                   | N/A                                                                  |                                                                      |
+### `models.ResponseCreated`
+
+```python
+value: models.ResponseCreated = /* values here */
+```
+
+### `models.ResponseStarting`
+
+```python
+value: models.ResponseStarting = /* values here */
+```
+
+### `models.ResponseOutputItemAdded`
+
+```python
+value: models.ResponseOutputItemAdded = /* values here */
+```
+
+### `models.ResponseOutputContentFull`
+
+```python
+value: models.ResponseOutputContentFull = /* values here */
+```
+
+### `models.ResponseOutputItemDone`
+
+```python
+value: models.ResponseOutputItemDone = /* values here */
+```
+
+### `models.ResponseOutputTextDelta`
+
+```python
+value: models.ResponseOutputTextDelta = /* values here */
+```
+
+### `models.ResponseDone`
+
+```python
+value: models.ResponseDone = /* values here */
+```
+

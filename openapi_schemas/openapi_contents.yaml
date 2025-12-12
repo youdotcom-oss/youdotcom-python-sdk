@@ -1,0 +1,147 @@
+openapi: 3.0.0
+info:
+  title: You.com Contents API
+  description: Get the best search results from web and news sources
+  version: 0.0.1
+servers:
+  - url: https://ydc-index.io
+
+
+paths:
+  /v1/contents:
+    post:
+      operationId: contents
+      summary: Returns the content of the web pages
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                urls:
+                  description: Array of URLs to fetch the contents from.
+                  type: array
+                  items:
+                    type: string
+                    format: uri
+                    example: "https://www.you.com"
+                format:
+                  description: The format of the content to be returned.
+                  oneOf:
+                    - $ref: '#/components/schemas/Format'
+                    - type: string
+                  enum: [html, markdown]
+                  example: "html"
+      responses:
+        "200":
+          description: An array of JSON objects containing the page content of each web page
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    url:
+                      description: The webpage URL whose content has been fetched.
+                      type: string
+                      format: uri
+                      example: "https://www.you.com"
+                    title:
+                      type: string
+                      description: The title of the web page.
+                      example: "The best website in the world"
+                    html:
+                      nullable: true
+                      type: string
+                      description: The retrieved HTML content of the web page.
+                    markdown:
+                      nullable: true
+                      type: string
+                      description: The retrieved Markdown content of the web page.
+                    metadata:
+                      type: object
+                      properties:
+                        site_name:
+                          type: string
+                          description: The OpenGraph site name of the web page.
+                          example: "You.com"
+                        favicon_url:
+                          type: string
+                          description: The URL of the favicon of the web page's domain.
+                          example: "https://www.you.com/favicon.ico"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error detail message.
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    detail: "API key is required"
+                invalidOrExpired:
+                  summary: Invalid/expired API key
+                  value:
+                    detail: "Invalid or expired API key"
+                otherAuthParsing:
+                  summary: Other auth parsing errors
+                  value:
+                    detail: "<error message>"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                missingScopes:
+                  summary: Missing required scopes
+                  value:
+                    detail: "Missing required scopes"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                authFailure:
+                  summary: Authentication failure
+                  value:
+                    detail: "Internal authentication error"
+                authorizationFailure:
+                  summary: Authorization failure
+                  value:
+                    detail: "Internal authorization error"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: "The unique API Key required to authorize API access. Learn how to get yours in the [“Get your API key” section of the documentation](https://documentation.you.com/docs/quickstart#get-your-api-key)."
+  schemas:
+    # Enum types
+    Format:
+      type: string
+      enum: [html, markdown]
+      description: "The format of the content to be returned."
+      x-speakeasy-enums:
+        - HTML
+        - MARKDOWN
+security:
+  - ApiKeyAuth: []
