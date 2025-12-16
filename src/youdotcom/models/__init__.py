@@ -45,6 +45,7 @@ if TYPE_CHECKING:
         AgentsRunsResponseTypedDict,
     )
     from .computetool import ComputeTool, ComputeToolTypedDict
+    from .contentsformat import ContentsFormat
     from .contentsop import (
         ContentsMetadata,
         ContentsMetadataTypedDict,
@@ -52,10 +53,6 @@ if TYPE_CHECKING:
         ContentsRequestTypedDict,
         ContentsResponse,
         ContentsResponseTypedDict,
-        Format,
-        FormatEnum1,
-        FormatEnum2,
-        FormatTypedDict,
     )
     from .country import Country
     from .customagentrunsrequest import (
@@ -64,8 +61,6 @@ if TYPE_CHECKING:
     )
     from .expressagentrunsrequest import (
         ExpressAgentRunsRequest,
-        ExpressAgentRunsRequestTool,
-        ExpressAgentRunsRequestToolTypedDict,
         ExpressAgentRunsRequestTypedDict,
     )
     from .freshness import Freshness
@@ -114,6 +109,8 @@ if TYPE_CHECKING:
         Results,
         ResultsTypedDict,
         SEARCH_OP_SERVERS,
+        SearchContents,
+        SearchContentsTypedDict,
         SearchCountry,
         SearchCountryTypedDict,
         SearchFreshness,
@@ -135,6 +132,7 @@ if TYPE_CHECKING:
     )
     from .security import Security, SecurityTypedDict
     from .verbosity import Verbosity
+    from .websearchtool import WebSearchTool, WebSearchToolTypedDict
 
 __all__ = [
     "AGENTS_RUNS_OP_SERVERS",
@@ -154,6 +152,7 @@ __all__ = [
     "AgentsRunsResponseTypedDict",
     "ComputeTool",
     "ComputeToolTypedDict",
+    "ContentsFormat",
     "ContentsMetadata",
     "ContentsMetadataTypedDict",
     "ContentsRequest",
@@ -168,13 +167,7 @@ __all__ = [
     "Detail",
     "DetailTypedDict",
     "ExpressAgentRunsRequest",
-    "ExpressAgentRunsRequestTool",
-    "ExpressAgentRunsRequestToolTypedDict",
     "ExpressAgentRunsRequestTypedDict",
-    "Format",
-    "FormatEnum1",
-    "FormatEnum2",
-    "FormatTypedDict",
     "Freshness",
     "Input",
     "InputTypedDict",
@@ -217,6 +210,8 @@ __all__ = [
     "Role",
     "SEARCH_OP_SERVERS",
     "SafeSearch",
+    "SearchContents",
+    "SearchContentsTypedDict",
     "SearchCountry",
     "SearchCountryTypedDict",
     "SearchEffort",
@@ -241,6 +236,8 @@ __all__ = [
     "Type",
     "Verbosity",
     "Web",
+    "WebSearchTool",
+    "WebSearchToolTypedDict",
     "WebTypedDict",
     "WorkflowConfig",
     "WorkflowConfigTypedDict",
@@ -278,22 +275,17 @@ _dynamic_imports: dict[str, str] = {
     "AgentsRunsResponseTypedDict": ".agentsrunsop",
     "ComputeTool": ".computetool",
     "ComputeToolTypedDict": ".computetool",
+    "ContentsFormat": ".contentsformat",
     "ContentsMetadata": ".contentsop",
     "ContentsMetadataTypedDict": ".contentsop",
     "ContentsRequest": ".contentsop",
     "ContentsRequestTypedDict": ".contentsop",
     "ContentsResponse": ".contentsop",
     "ContentsResponseTypedDict": ".contentsop",
-    "Format": ".contentsop",
-    "FormatEnum1": ".contentsop",
-    "FormatEnum2": ".contentsop",
-    "FormatTypedDict": ".contentsop",
     "Country": ".country",
     "CustomAgentRunsRequest": ".customagentrunsrequest",
     "CustomAgentRunsRequestTypedDict": ".customagentrunsrequest",
     "ExpressAgentRunsRequest": ".expressagentrunsrequest",
-    "ExpressAgentRunsRequestTool": ".expressagentrunsrequest",
-    "ExpressAgentRunsRequestToolTypedDict": ".expressagentrunsrequest",
     "ExpressAgentRunsRequestTypedDict": ".expressagentrunsrequest",
     "Freshness": ".freshness",
     "Language": ".language",
@@ -333,6 +325,8 @@ _dynamic_imports: dict[str, str] = {
     "Results": ".searchop",
     "ResultsTypedDict": ".searchop",
     "SEARCH_OP_SERVERS": ".searchop",
+    "SearchContents": ".searchop",
+    "SearchContentsTypedDict": ".searchop",
     "SearchCountry": ".searchop",
     "SearchCountryTypedDict": ".searchop",
     "SearchFreshness": ".searchop",
@@ -354,6 +348,8 @@ _dynamic_imports: dict[str, str] = {
     "Security": ".security",
     "SecurityTypedDict": ".security",
     "Verbosity": ".verbosity",
+    "WebSearchTool": ".websearchtool",
+    "WebSearchToolTypedDict": ".websearchtool",
 }
 
 

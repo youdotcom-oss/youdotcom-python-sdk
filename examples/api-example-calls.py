@@ -7,7 +7,7 @@ Setup Instructions:
 -------------------
 1. Create and activate a virtual environment:
    python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   source .venv/bin/activate  # On Windows: .venv\\Scripts\\activate
 
 2. Install the package:
    pip install youdotcom
@@ -18,6 +18,7 @@ Setup Instructions:
    The script will prompt you to enter your API key at runtime.
 """
 
+from typing import Optional
 from youdotcom import You
 from youdotcom.models import (
     ResearchTool,
@@ -35,12 +36,14 @@ from youdotcom.models import (
     ResponseOutputContentFull,
     ResponseOutputItemDone,
     ResponseOutputTextDelta,
-    ResponseDone
+    ResponseDone,
+    AgentRunsBatchResponse,
+    ContentsFormat,
+    WebSearchTool
 )
 
-# Will be initialized with API key
-you = None
-
+# Will be initialized with API key in main()
+you: Optional[You] = None
 
 def express_batch_request():
     """
@@ -48,27 +51,36 @@ def express_batch_request():
     """
     print("\n🚀 Running Express Batch Request...\n")
 
+    assert you is not None, "SDK client not initialized"
+
     request = ExpressAgentRunsRequest(
         input="What is the capital of France?",
         stream=False,
         tools=[
-            ExpressAgentRunsRequestTool(type="web_search")
+            WebSearchTool()
         ]
     )
 
-    results = you.agents_runs(request=request)
+    results = you.agents.runs.create(request=request)
 
-    # Access the results
-    if results.output:
-        for output in results.output:
-            if output.text:
-                print(output.text)
-                break
+    res = you.agents.runs.create(request={
+        "agent": "express",
+        "input": "What is the capital of France?",
+        "stream": False,
+    })
+    # Access the results - check if it's a batch response
+    if isinstance(results, AgentRunsBatchResponse):
+        if results.output:
+            for output in results.output:
+                if output.text:
+                    print(output.text)
+                    break
+            else:
+                print("No text response found in agent output")
         else:
-            print("No text response found in agent output")
+            print("No response from agent")
     else:
-        print("No response from agent")
-
+        print("Unexpected response type")
 
 def express_streaming_request():
     """
@@ -76,15 +88,17 @@ def express_streaming_request():
     """
     print("\n🚀 Running Express Streaming Request...\n")
 
+    assert you is not None, "SDK client not initialized"
+
     request = ExpressAgentRunsRequest(
         input="Restaurants in San Francisco",
         stream=True,
         tools=[
-            ExpressAgentRunsRequestTool(type="web_search")
+            WebSearchTool()
         ]
     )
 
-    stream = you.agents_runs(request=request)
+    stream = you.agents.runs.create(request=request)
 
     # Iterate through the stream and handle each event type
     # Each chunk is an AgentRunsStreamingResponse with a 'data' field
@@ -131,6 +145,8 @@ def advanced_batch_request():
     """
     print("\n🚀 Running Advanced Batch Request...\n")
 
+    assert you is not None, "SDK client not initialized"
+
     request = AdvancedAgentRunsRequest(
         input="What is the capital of France?",
         stream=False,
@@ -142,18 +158,21 @@ def advanced_batch_request():
         ]
     )
 
-    results = you.agents_runs(request=request)
+    results = you.agents.runs.create(request=request)
 
-    # Access the results
-    if results.output:
-        for output in results.output:
-            if output.text:
-                print(output.text)
-                break
+    # Access the results - check if it's a batch response
+    if isinstance(results, AgentRunsBatchResponse):
+        if results.output:
+            for output in results.output:
+                if output.text:
+                    print(output.text)
+                    break
+            else:
+                print("No text response found in agent output")
         else:
-            print("No text response found in agent output")
+            print("No response from agent")
     else:
-        print("No response from agent")
+        print("Unexpected response type")
 
 
 def custom_batch_request():
@@ -162,6 +181,8 @@ def custom_batch_request():
     Note: Replace the agent ID with your own custom agent ID
     """
     print("\n🚀 Running Custom Batch Request...\n")
+
+    assert you is not None, "SDK client not initialized"
 
     # Replace this with your actual custom agent ID
     custom_agent_id = "63773261-b4de-4d8f-9dfd-cff206a5cb51"
@@ -173,7 +194,7 @@ def custom_batch_request():
     )
 
     try:
-        results = you.agents_runs(request=request)
+        results = you.agents.runs.create(request=request)
         print(results)
     except Exception as e:
         print(f"Error: {e}")
@@ -186,7 +207,9 @@ def search_request():
     """
     print("\n🚀 Running Search Request...\n")
 
-    results = you.search(
+    assert you is not None, "SDK client not initialized"
+
+    results = you.search.unified(
         query="artificial intelligence in farming",
         count=1,
         livecrawl=LiveCrawl.WEB,
@@ -210,9 +233,11 @@ def content_request():
     """
     print("\n🚀 Running Content Request...\n")
 
-    results = you.contents(
+    assert you is not None, "SDK client not initialized"
+
+    results = you.contents.generate(
         urls=["https://you.com"],
-        format="markdown"
+        format_=ContentsFormat.MARKDOWN
     )
 
     print(results)

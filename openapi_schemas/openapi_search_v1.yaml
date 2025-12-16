@@ -127,6 +127,16 @@ paths:
                               format: date-time
                               description: The age of the search result.
                               example: "2025-06-25T11:41:00"
+                            contents:
+                              type: object
+                              description: Contents of the page if livecrawl was enabled.
+                              properties:
+                                html:
+                                  type: string
+                                  description: The HTML content of the page.
+                                markdown:
+                                  type: string
+                                  description: The Markdown content of the page.
                             authors:
                               type: array
                               description: An array of authors of the search result.

@@ -6,6 +6,9 @@ sources:
             - location: ./openapi_schemas/openapi_unified_agents.yaml
             - location: ./openapi_schemas/openapi_search_v1.yaml
             - location: ./openapi_schemas/openapi_contents.yaml
+            - location: ./openapi_schemas/openapi_base.yaml
+        overlays:
+            - location: ./openapi_schemas/python_overlay.yaml
         output: .speakeasy/out.openapi.yaml
         registry:
             location: registry.speakeasyapi.dev/youcom/python-sdk/you-com-search-api

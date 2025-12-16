@@ -1,11 +1,10 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
   title: You.com Contents API
   description: Get the best search results from web and news sources
   version: 0.0.1
 servers:
   - url: https://ydc-index.io
-
 
 paths:
   /v1/contents:
@@ -27,12 +26,7 @@ paths:
                     format: uri
                     example: "https://www.you.com"
                 format:
-                  description: The format of the content to be returned.
-                  oneOf:
-                    - $ref: '#/components/schemas/Format'
-                    - type: string
-                  enum: [html, markdown]
-                  example: "html"
+                  $ref: "#/components/schemas/ContentsFormat"
       responses:
         "200":
           description: An array of JSON objects containing the page content of each web page
@@ -136,10 +130,11 @@ components:
       description: "The unique API Key required to authorize API access. Learn how to get yours in the [“Get your API key” section of the documentation](https://documentation.you.com/docs/quickstart#get-your-api-key)."
   schemas:
     # Enum types
-    Format:
+    ContentsFormat:
       type: string
       enum: [html, markdown]
       description: "The format of the content to be returned."
+      example: "html"
       x-speakeasy-enums:
         - HTML
         - MARKDOWN

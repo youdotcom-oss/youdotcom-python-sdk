@@ -15,7 +15,10 @@ The official developer-friendly & type-safe Python SDK specifically designed to 
 <!-- Start Summary [summary] -->
 ## Summary
 
-You.com Contents API: Get the best search results from web and news sources
+You.com API: Comprehensive API for You.com services:
+- **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
+- **Search API**: Get search results from web and news sources
+- **Contents API**: Retrieve and process web page content
 <!-- End Summary [summary] -->
 
 <!-- Start Table of Contents [toc] -->
@@ -131,7 +134,7 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.agents_runs(request={
+    res = you.agents.runs.create(request={
         "agent": "express",
         "input": "What is the capital of France?",
         "stream": False,
@@ -159,7 +162,7 @@ async def main():
         api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
     ) as you:
 
-        res = await you.agents_runs_async(request={
+        res = await you.agents.runs.create_async(request={
             "agent": "express",
             "input": "What is the capital of France?",
             "stream": False,
@@ -195,7 +198,7 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.agents_runs(request={
+    res = you.agents.runs.create(request={
         "agent": "express",
         "input": "What is the capital of France?",
         "stream": False,
@@ -215,11 +218,17 @@ with You(
 <details open>
 <summary>Available methods</summary>
 
-### [You SDK](docs/sdks/you/README.md)
+### [Agents.Runs](docs/sdks/runs/README.md)
 
-* [agents_runs](docs/sdks/you/README.md#agents_runs) - Run an Agent
-* [search](docs/sdks/you/README.md#search) - Returns a list of unified search results from web and news sources
-* [contents](docs/sdks/you/README.md#contents) - Returns the content of the web pages
+* [create](docs/sdks/runs/README.md#create) - Run an Agent
+
+### [Contents](docs/sdks/contentssdk/README.md)
+
+* [generate](docs/sdks/contentssdk/README.md#generate) - Returns the content of the web pages
+
+### [Search](docs/sdks/search/README.md)
+
+* [unified](docs/sdks/search/README.md#unified) - Returns a list of unified search results from web and news sources
 
 </details>
 <!-- End Available Resources and Operations [operations] -->
@@ -245,7 +254,7 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.agents_runs(request={
+    res = you.agents.runs.create(request={
         "agent": "express",
         "input": "What is the capital of France?",
         "stream": False,
@@ -279,7 +288,7 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.agents_runs(request={
+    res = you.agents.runs.create(request={
         "agent": "express",
         "input": "What is the capital of France?",
         "stream": False,
@@ -305,7 +314,7 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.agents_runs(request={
+    res = you.agents.runs.create(request={
         "agent": "express",
         "input": "What is the capital of France?",
         "stream": False,
@@ -345,7 +354,7 @@ with You(
     res = None
     try:
 
-        res = you.agents_runs(request={
+        res = you.agents.runs.create(request={
             "agent": "express",
             "input": "What is the capital of France?",
             "stream": False,
@@ -386,9 +395,9 @@ with You(
 
 **Inherit from [`YouError`](./src/youdotcom/errors/youerror.py)**:
 * [`AgentRuns400ResponseError`](./src/youdotcom/errors/agentruns400responseerror.py): The message returned by the error. Status code `400`. Applicable to 1 of 3 methods.*
-* [`AgentRuns401ResponseError`](./src/youdotcom/errors/agentruns401responseerror.py): The message returned by the error. Status code `401`. Applicable to 1 of 3 methods.*
 * [`SearchUnauthorizedError`](./src/youdotcom/errors/searchunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 3 methods.*
 * [`ContentsUnauthorizedError`](./src/youdotcom/errors/contentsunauthorizederror.py): Unauthorized. Status code `401`. Applicable to 1 of 3 methods.*
+* [`AgentRuns401ResponseError`](./src/youdotcom/errors/agentruns401responseerror.py): The message returned by the error. Status code `401`. Applicable to 1 of 3 methods.*
 * [`SearchForbiddenError`](./src/youdotcom/errors/searchforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 3 methods.*
 * [`ContentsForbiddenError`](./src/youdotcom/errors/contentsforbiddenerror.py): Forbidden. Status code `403`. Applicable to 1 of 3 methods.*
 * [`AgentRuns422ResponseError`](./src/youdotcom/errors/agentruns422responseerror.py): Unprocessable Entity - Invalid request data. Status code `422`. Applicable to 1 of 3 methods.*
@@ -417,7 +426,7 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.agents_runs(request={
+    res = you.agents.runs.create(request={
         "agent": "express",
         "input": "What is the capital of France?",
         "stream": False,
@@ -442,7 +451,7 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.agents_runs(request={
+    res = you.agents.runs.create(request={
         "agent": "express",
         "input": "What is the capital of France?",
         "stream": False,

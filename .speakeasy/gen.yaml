@@ -23,6 +23,10 @@ generation:
     allOfMergeStrategy: shallowMerge
   requestBodyFieldName: body
   persistentEdits: {}
+  tests:
+    generateTests: true
+    generateNewTests: false
+    skipResponseBodyAssertions: false
   docs:
     examples:
       - usage.md

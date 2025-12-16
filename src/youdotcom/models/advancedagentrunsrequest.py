@@ -41,7 +41,7 @@ class AdvancedAgentRunsRequestTypedDict(TypedDict):
     stream: NotRequired[bool]
     r"""Must be set to `true` when you want to stream the agent response as it's being generated, and `false` when you want the response to return after the agent has finished."""
     tools: NotRequired[List[ToolTypedDict]]
-    r"""The advanced agent accepts either `compute` or `research` tools <Note> Compute allows your agent to use a Python code interpreter for tasks such as data analysis, mathematical calculations, and plot generation.<br><br>   Research iteratively searches the web, analyzes the results, and stops when finished. It then provides a comprehensive report to your agent with current, cited information.</Note>"""
+    r"""The advanced agent accepts either `compute` or `research` tools <Note> Compute allows your agent to use a Python code interpreter for tasks such as data analysis, mathematical calculations, and plot generation.<br><br> Research iteratively searches the web, analyzes the results, and stops when finished. It then provides a comprehensive report to your agent with current, cited information.</Note>"""
     verbosity: NotRequired[Verbosity]
     r"""Controls the level of detail provided by the agent's response. Choosing high maps to a long-form report while medium maps to a medium verbosity report that captures most details but is less comprehensive."""
     workflow_config: NotRequired[WorkflowConfigTypedDict]
@@ -62,7 +62,7 @@ class AdvancedAgentRunsRequest(BaseModel):
     r"""Must be set to `true` when you want to stream the agent response as it's being generated, and `false` when you want the response to return after the agent has finished."""
 
     tools: Optional[List[Tool]] = None
-    r"""The advanced agent accepts either `compute` or `research` tools <Note> Compute allows your agent to use a Python code interpreter for tasks such as data analysis, mathematical calculations, and plot generation.<br><br>   Research iteratively searches the web, analyzes the results, and stops when finished. It then provides a comprehensive report to your agent with current, cited information.</Note>"""
+    r"""The advanced agent accepts either `compute` or `research` tools <Note> Compute allows your agent to use a Python code interpreter for tasks such as data analysis, mathematical calculations, and plot generation.<br><br> Research iteratively searches the web, analyzes the results, and stops when finished. It then provides a comprehensive report to your agent with current, cited information.</Note>"""
 
     verbosity: Optional[Verbosity] = None
     r"""Controls the level of detail provided by the agent's response. Choosing high maps to a long-form report while medium maps to a medium verbosity report that captures most details but is less comprehensive."""

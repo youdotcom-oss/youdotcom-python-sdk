@@ -9,7 +9,7 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.agents_runs(request={
+    res = you.agents.runs.create(request={
         "agent": "express",
         "input": "What is the capital of France?",
         "stream": False,
@@ -37,7 +37,7 @@ async def main():
         api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
     ) as you:
 
-        res = await you.agents_runs_async(request={
+        res = await you.agents.runs.create_async(request={
             "agent": "express",
             "input": "What is the capital of France?",
             "stream": False,

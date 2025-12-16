@@ -16,11 +16,11 @@ paths:
       summary: Run an Agent
       description: |
         Execute queries using You.com's AI agents. This endpoint supports three agent types:
-        
+
         - **Express Agent**: Fast responses with optional web search (max 1 search)
         - **Advanced Agent**: Complex queries with multi-turn reasoning, planning, and tool usage
         - **Custom Agent**: User-configured assistants created in the You.com UI
-        
+
         The response format depends on the `stream` parameter - either a complete JSON payload or Server-Sent Events (SSE).
       requestBody:
         description: "The parameters to ask the agent a question"
@@ -32,12 +32,6 @@ paths:
                 - $ref: "#/components/schemas/ExpressAgentRunsRequest"
                 - $ref: "#/components/schemas/AdvancedAgentRunsRequest"
                 - $ref: "#/components/schemas/CustomAgentRunsRequest"
-              # discriminator:
-              #   propertyName: agent
-              #   mapping:
-              #     express: "#/components/schemas/ExpressAgentRunsRequest"
-              #     advanced: "#/components/schemas/AdvancedAgentRunsRequest"
-              #     custom: "#/components/schemas/CustomAgentRunsRequest"
             examples:
               express_batch:
                 summary: Express Agent - Batch Response
@@ -97,7 +91,6 @@ paths:
             text/event-stream:
               schema:
                 $ref: "#/components/schemas/AgentRunsStreamingResponse"
-                # $ref: "#/components/schemas/SSEResponse"
         "400":
           description: The Authorization Bearer token was missing or invalid
           content:
@@ -119,10 +112,6 @@ paths:
 
 components:
   securitySchemes:
-    # bearerAuth:
-    #   type: http
-    #   scheme: bearer
-    #   description: "A unique API Key is required to authorize API access. For details, see how to [get your API Key](/get-started/quickstart#get-your-api-key)."
     ApiKeyAuth:
       type: apiKey
       in: header
@@ -132,7 +121,7 @@ components:
 
   schemas:
     # ==================== REQUEST SCHEMAS ====================
-    
+
     ExpressAgentRunsRequest:
       type: object
       required:
@@ -158,14 +147,7 @@ components:
           type: array
           description: You can optionally ground the express agent response using results fetched from the web (max 1 web search)
           items:
-            type: object
-            required:
-              - type
-            properties:
-              type:
-                type: string
-                const: web_search
-                description: Setting this value to "web_search" is mandatory to use the web_search tool.
+            $ref: "#/components/schemas/WebSearchTool"
 
     AdvancedAgentRunsRequest:
       type: object
@@ -192,7 +174,7 @@ components:
           type: array
           description: >-
             The advanced agent accepts either `compute` or `research` tools
-            <Note> Compute allows your agent to use a Python code interpreter for tasks such as data analysis, mathematical calculations, and plot generation.<br><br>  
+            <Note> Compute allows your agent to use a Python code interpreter for tasks such as data analysis, mathematical calculations, and plot generation.<br><br>
             Research iteratively searches the web, analyzes the results, and stops when finished. It then provides a comprehensive report to your agent with current, cited information.</Note>
           items:
             oneOf:
@@ -240,7 +222,17 @@ components:
             Must be set to `true` when you want to stream the agent response as it's being generated, and `false` when you want the response to return after the agent has finished.
 
     # ==================== TOOL SCHEMAS ====================
-    
+
+    WebSearchTool:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          const: web_search
+          description: Setting this value to "web_search" is mandatory to use the web_search tool.
+
     ComputeTool:
       type: object
       required:
@@ -275,8 +267,8 @@ components:
         - medium
         - high
       description: >-
-        This parameter maps to different configurations regarding the depth of research the tool can perform. Its values range from `low`, `medium` to `high`.  
-        
+        This parameter maps to different configurations regarding the depth of research the tool can perform. Its values range from `low`, `medium` to `high`.
+
 
         Alternatively, use `auto` mode for a more dynamic search approach, allowing the tool the freedom to adjust its subparameters.
 
@@ -413,7 +405,7 @@ components:
           example: "https://www.foodnetwork.com/recipes/photos/30-minute-dinner-recipes"
 
     # ==================== STREAMING RESPONSE SCHEMAS ====================
-    
+
     AgentRunsStreamingResponse:
       type: object
       description: A server-sent event containing stock market update content
@@ -434,16 +426,6 @@ components:
             - $ref: "#/components/schemas/response.output_item.done"
             - $ref: "#/components/schemas/response.output_text.delta"
             - $ref: "#/components/schemas/response.done"
-          # discriminator:
-          #   propertyName: event
-          #   mapping:
-          #     response.created: "#/components/schemas/response.created"
-          #     response.starting: "#/components/schemas/response.starting"
-          #     response.output_item.added: "#/components/schemas/response.output_item.added"
-          #     response.output_content.full: "#/components/schemas/response.output_content.full"
-          #     response.output_item.done: "#/components/schemas/response.output_item.done"
-          #     response.output_text.delta: "#/components/schemas/response.output_text.delta"
-          #     response.done: "#/components/schemas/response.done"
 
     response.created:
       type: object
@@ -620,7 +602,7 @@ components:
               example: true
 
     # ==================== ERROR RESPONSE SCHEMAS ====================
-    
+
     AgentRuns400Response:
       type: object
       properties:

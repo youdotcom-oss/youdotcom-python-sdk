@@ -1,4 +1,4 @@
-# FormatEnum1
+# ContentsFormat
 
 The format of the content to be returned.
 

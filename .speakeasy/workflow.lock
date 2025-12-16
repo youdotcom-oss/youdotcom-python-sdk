@@ -2,19 +2,19 @@ speakeasyVersion: 1.676.1
 sources:
     You.com API:
         sourceNamespace: you-com-search-api
-        sourceRevisionDigest: sha256:ba46d0f3f1c4c364cf0bc03dcc51ab09a80972574ad02a8874e626dafc1fe911
-        sourceBlobDigest: sha256:69bdacd9e44600238d6d69753322f8a13451e64774c92e9fa5939e3c8b30f7b9
+        sourceRevisionDigest: sha256:988265f3110f7071f9feca47e4e7a8a10e681c0e81768086dd57e4424b067b43
+        sourceBlobDigest: sha256:f871a8384a183a622e9b619f8a5a6be70e5acfa1c506bc3ddc99305b1487eb35
         tags:
             - latest
-            - 0.0.1
+            - 1.0.0
 targets:
     you:
         source: You.com API
         sourceNamespace: you-com-search-api
-        sourceRevisionDigest: sha256:ba46d0f3f1c4c364cf0bc03dcc51ab09a80972574ad02a8874e626dafc1fe911
-        sourceBlobDigest: sha256:69bdacd9e44600238d6d69753322f8a13451e64774c92e9fa5939e3c8b30f7b9
+        sourceRevisionDigest: sha256:988265f3110f7071f9feca47e4e7a8a10e681c0e81768086dd57e4424b067b43
+        sourceBlobDigest: sha256:f871a8384a183a622e9b619f8a5a6be70e5acfa1c506bc3ddc99305b1487eb35
         codeSamplesNamespace: you-com-search-api-code-samples
-        codeSamplesRevisionDigest: sha256:57bba0cb76ece1bca538e559f73b5c8033ce7aeb1badbab654ed6294b7bf1148
+        codeSamplesRevisionDigest: sha256:d243d97e642dc99b4a94a9e091c9b06bd2ac1988f37a7db64d1f9cc22ac1f251
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest
@@ -24,6 +24,9 @@ workflow:
                 - location: ./openapi_schemas/openapi_unified_agents.yaml
                 - location: ./openapi_schemas/openapi_search_v1.yaml
                 - location: ./openapi_schemas/openapi_contents.yaml
+                - location: ./openapi_schemas/openapi_base.yaml
+            overlays:
+                - location: ./openapi_schemas/python_overlay.yaml
             output: .speakeasy/out.openapi.yaml
             registry:
                 location: registry.speakeasyapi.dev/youcom/python-sdk/you-com-search-api

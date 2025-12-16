@@ -145,6 +145,25 @@ class SearchRequest(BaseModel):
     r"""Indicates the format of the livecrawled content."""
 
 
+class SearchContentsTypedDict(TypedDict):
+    r"""Contents of the page if livecrawl was enabled."""
+
+    html: NotRequired[str]
+    r"""The HTML content of the page."""
+    markdown: NotRequired[str]
+    r"""The Markdown content of the page."""
+
+
+class SearchContents(BaseModel):
+    r"""Contents of the page if livecrawl was enabled."""
+
+    html: Optional[str] = None
+    r"""The HTML content of the page."""
+
+    markdown: Optional[str] = None
+    r"""The Markdown content of the page."""
+
+
 class WebTypedDict(TypedDict):
     url: NotRequired[str]
     r"""The URL of the specific search result."""
@@ -158,6 +177,8 @@ class WebTypedDict(TypedDict):
     r"""URL of the thumbnail."""
     page_age: NotRequired[datetime]
     r"""The age of the search result."""
+    contents: NotRequired[SearchContentsTypedDict]
+    r"""Contents of the page if livecrawl was enabled."""
     authors: NotRequired[List[str]]
     r"""An array of authors of the search result."""
     favicon_url: NotRequired[str]
@@ -182,6 +203,9 @@ class Web(BaseModel):
 
     page_age: Optional[datetime] = None
     r"""The age of the search result."""
+
+    contents: Optional[SearchContents] = None
+    r"""Contents of the page if livecrawl was enabled."""
 
     authors: Optional[List[str]] = None
     r"""An array of authors of the search result."""
