@@ -129,14 +129,10 @@ components:
       name: X-API-Key
       description: "The unique API Key required to authorize API access. Learn how to get yours in the [“Get your API key” section of the documentation](https://documentation.you.com/docs/quickstart#get-your-api-key)."
   schemas:
-    # Enum types
     ContentsFormat:
       type: string
       enum: [html, markdown]
       description: "The format of the content to be returned."
       example: "html"
-      x-speakeasy-enums:
-        - HTML
-        - MARKDOWN
 security:
   - ApiKeyAuth: []

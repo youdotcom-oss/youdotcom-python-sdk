@@ -258,53 +258,11 @@ components:
       type: string
       enum: [day, week, month, year]
       description: "Specifies the freshness of the results to return."
-      x-speakeasy-enums:
-        - DAY
-        - WEEK
-        - MONTH
-        - YEAR
 
     Country:
       type: string
       enum: ['AR', 'AU', 'AT', 'BE', 'BR', 'CA', 'CL', 'DK', 'FI', 'FR', 'DE', 'HK', 'IN', 'ID', 'IT', 'JP', 'KR', 'MY', 'MX', 'NL', 'NZ', 'NO', 'CN', 'PL', 'PT', 'PH', 'RU', 'SA', 'ZA', 'ES', 'SE', 'CH', 'TW', 'TR', 'GB', 'US']
       description: "The country code that determines the geographical focus of the web results."
-      x-speakeasy-enums:
-        - AR
-        - AU
-        - AT
-        - BE
-        - BR
-        - CA
-        - CL
-        - DK
-        - FI
-        - FR
-        - DE
-        - HK
-        - IN
-        - ID
-        - IT
-        - JP
-        - KR
-        - MY
-        - MX
-        - NL
-        - NZ
-        - NO
-        - CN
-        - PL
-        - PT
-        - PH
-        - RU
-        - SA
-        - ZA
-        - ES
-        - SE
-        - CH
-        - TW
-        - TR
-        - GB
-        - US
 
     Language:
       type: string
@@ -315,24 +273,13 @@ components:
       type: string
       enum: [ off, moderate, strict]
       description: "Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."
-      x-speakeasy-enums:
-        - OFF
-        - MODERATE
-        - STRICT
 
     LiveCrawl:
       type: string
       enum: [web, news, all]
       description: "Indicates which section(s) of search results to livecrawl and return full page content."
-      x-speakeasy-enums:
-        - WEB
-        - NEWS
-        - ALL
 
     LiveCrawlFormats:
       type: string
       enum: [html, markdown]
       description: "Indicates the format of the livecrawled content."
-      x-speakeasy-enums:
-        - HTML
-        - MARKDOWN

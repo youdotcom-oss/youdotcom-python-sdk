@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 77dbe0f5-bd71-4808-8102-230d4ffc4dc7
 management:
-  docChecksum: 3eb084726909c2178e44ff4827d73b2b
+  docChecksum: 3c2c070a5cb0bc67c207ae45e6470c7e
   docVersion: 1.0.0
   speakeasyVersion: 1.678.0
   generationVersion: 2.787.2
@@ -9,8 +9,8 @@ management:
   configChecksum: 2fd5e07c8c7334e19138ab0419972867
   published: true
 persistentEdits:
-  generation_id: 3d732cd0-2a59-4673-b9d0-5f20d4adc53b
-  pristine_commit_hash: de776864775b97bee269ff73949a49e73169ccdd
+  generation_id: ac83b5ab-5641-4c76-9be4-e8c48a5d785f
+  pristine_commit_hash: a4a90685c267ad6f6b89c07b85cb6276ef6effd0
   pristine_tree_hash: 0ce760f047d3d57bfe983e9d9baa8342b9f25426
 features:
   python:
@@ -20,7 +20,6 @@ features:
     core: 5.23.14
     defaultEnabledRetries: 0.2.0
     enumUnions: 0.1.0
-    enums: 3.2.0
     envVarSecurityUsage: 0.3.2
     flatRequests: 1.0.1
     flattening: 3.1.1
