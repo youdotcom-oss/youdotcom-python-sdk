@@ -23,7 +23,6 @@ from youdotcom import You
 from youdotcom.models import (
     ResearchTool,
     ExpressAgentRunsRequest,
-    ExpressAgentRunsRequestTool,
     AdvancedAgentRunsRequest,
     SearchEffort,
     ReportVerbosity,
@@ -38,9 +37,11 @@ from youdotcom.models import (
     ResponseOutputTextDelta,
     ResponseDone,
     AgentRunsBatchResponse,
+    AgentRunsStreamingResponse,
     ContentsFormat,
     WebSearchTool
 )
+from youdotcom.utils import eventstreaming
 
 # Will be initialized with API key in main()
 you: Optional[You] = None
@@ -98,7 +99,11 @@ def express_streaming_request():
         ]
     )
 
-    stream = you.agents.runs.create(request=request)
+    response = you.agents.runs.create(request=request)
+
+    # Type narrow to ensure we have a streaming response
+    assert isinstance(response, eventstreaming.EventStream), "Expected streaming response"
+    stream: eventstreaming.EventStream[AgentRunsStreamingResponse] = response
 
     # Iterate through the stream and handle each event type
     # Each chunk is an AgentRunsStreamingResponse with a 'data' field

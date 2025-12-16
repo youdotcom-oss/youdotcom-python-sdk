@@ -1,4 +1,4 @@
-speakeasyVersion: 1.676.1
+speakeasyVersion: 1.678.0
 sources:
     You.com API:
         sourceNamespace: you-com-search-api
@@ -14,7 +14,7 @@ targets:
         sourceRevisionDigest: sha256:988265f3110f7071f9feca47e4e7a8a10e681c0e81768086dd57e4424b067b43
         sourceBlobDigest: sha256:f871a8384a183a622e9b619f8a5a6be70e5acfa1c506bc3ddc99305b1487eb35
         codeSamplesNamespace: you-com-search-api-code-samples
-        codeSamplesRevisionDigest: sha256:d243d97e642dc99b4a94a9e091c9b06bd2ac1988f37a7db64d1f9cc22ac1f251
+        codeSamplesRevisionDigest: sha256:ac7197990949c24308081fef61ef688d55b7e06645fe74d484f2c033b21a6a2a
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest
