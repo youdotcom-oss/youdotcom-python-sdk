@@ -176,6 +176,7 @@ async def main():
 asyncio.run(main())
 ```
 <!-- End SDK Example Usage [usage] -->
+For more thorough examples of how to use our APIs, including typesafe patterns, see `api-example-calls.py` under the `examples` folder.
 
 <!-- Start Authentication [security] -->
 ## Authentication
@@ -240,7 +241,7 @@ with You(
 operations. These operations will expose the stream as [Generator][generator] that
 can be consumed using a simple `for` loop. The loop will
 terminate when the server no longer has any events to send and closes the
-underlying connection.  
+underlying connection.
 
 The stream is also a [Context Manager][context-manager] and can be used with the `with` statement and will close the
 underlying connection when the context is exited.
@@ -254,23 +255,59 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.agents.runs.create(request={
-        "agent": "express",
-        "input": "What is the capital of France?",
-        "stream": False,
-    })
+response = you.agents.runs.create(request=ExpressAgentRunsRequest(
+    input="Restaurants in San Francisco",
+    stream=True,
+    tools=[
+        WebSearchTool()
+    ]
+))
 
-    with res as event_stream:
-        for event in event_stream:
-            # handle event
-            print(event, flush=True)
+# Type narrow to ensure we have a streaming response
+assert isinstance(response, eventstreaming.EventStream), "Expected streaming response"
+with response as AgentRunsStreamingResponse:
+    # Iterate through the stream and handle each event type
+    # Each chunk is an AgentRunsStreamingResponse with a 'data' field
+    for chunk in response:
+        # The data field contains the actual event (discriminated by TYPE)
+        event_data = chunk.data
 
+        # Use isinstance() to narrow the type and handle each event
+        if isinstance(event_data, ResponseCreated):
+            print(f"✨ Response created (seq: {event_data.seq_id})")
+
+        elif isinstance(event_data, ResponseStarting):
+            print(f"🚀 Response starting (seq: {event_data.seq_id})")
+
+        elif isinstance(event_data, ResponseOutputItemAdded):
+            print(f"➕ Output item added: {event_data.seq_id}")
+
+        elif isinstance(event_data, ResponseOutputContentFull):
+            print("\n🔍 Web Search Results:")
+            if event_data.response.full:
+                for idx, result in enumerate(event_data.response.full, 1):
+                    print(f"  {idx}. {result.title} - {result.url}")
+
+        elif isinstance(event_data, ResponseOutputTextDelta):
+            # Print the delta text as it streams in (without newline)
+            print(event_data.response.delta, end='', flush=True)
+
+        elif isinstance(event_data, ResponseOutputItemDone):
+            print(f"\n✅ Output item done (index: {event_data.response.output_index})")
+
+        elif isinstance(event_data, ResponseDone):
+            print("\n🎉 Response completed!")
+            print(f"   Runtime: {event_data.response.run_time_ms} seconds")
+            print(f"   Finished: {event_data.response.finished}")
+
+        else:
+            print(f"⚠️  Unknown event type: {type(event_data).__name__}")
 ```
 
 [mdn-sse]: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
 [generator]: https://book.pythontips.com/en/latest/generators.html
 [context-manager]: https://book.pythontips.com/en/latest/context_managers.html
-<!-- End Server-sent event streaming [eventstream] -->
+<!-- No Server-sent event streaming [eventstream] -->
 
 <!-- Start Retries [retries] -->
 ## Retries
@@ -630,7 +667,7 @@ For more details on testing, see the [tests README](tests/README.md).
 
 ## Contributions
 
-While we value open-source contributions to this SDK, this library is generated programmatically. Any manual changes added to internal files will be overwritten on the next generation. 
-We look forward to hearing your feedback. Feel free to open a PR or an issue with a proof of concept and we'll do our best to include it in a future release. 
+While we value open-source contributions to this SDK, this library is generated programmatically. Any manual changes added to internal files will be overwritten on the next generation.
+We look forward to hearing your feedback. Feel free to open a PR or an issue with a proof of concept and we'll do our best to include it in a future release.
 
 ### SDK Created by [Speakeasy](https://www.speakeasy.com/?utm_source=youdotcom&utm_campaign=python)

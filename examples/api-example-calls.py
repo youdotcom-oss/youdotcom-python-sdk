@@ -91,57 +91,54 @@ def express_streaming_request():
 
     assert you is not None, "SDK client not initialized"
 
-    request = ExpressAgentRunsRequest(
+    response = you.agents.runs.create(request=ExpressAgentRunsRequest(
         input="Restaurants in San Francisco",
         stream=True,
         tools=[
             WebSearchTool()
         ]
-    )
-
-    response = you.agents.runs.create(request=request)
+    ))
 
     # Type narrow to ensure we have a streaming response
     assert isinstance(response, eventstreaming.EventStream), "Expected streaming response"
-    stream: eventstreaming.EventStream[AgentRunsStreamingResponse] = response
+    with response as AgentRunsStreamingResponse:
+        # Iterate through the stream and handle each event type
+        # Each chunk is an AgentRunsStreamingResponse with a 'data' field
+        for chunk in response:
+            # The data field contains the actual event (discriminated by TYPE)
+            event_data = chunk.data
 
-    # Iterate through the stream and handle each event type
-    # Each chunk is an AgentRunsStreamingResponse with a 'data' field
-    for chunk in stream:
-        # The data field contains the actual event (discriminated by TYPE)
-        event_data = chunk.data
+            # Use isinstance() to narrow the type and handle each event
+            # This is the proper way to do a "switch statement" on Union types in Python
+            if isinstance(event_data, ResponseCreated):
+                print(f"✨ Response created (seq: {event_data.seq_id})")
 
-        # Use isinstance() to narrow the type and handle each event
-        # This is the proper way to do a "switch statement" on Union types in Python
-        if isinstance(event_data, ResponseCreated):
-            print(f"✨ Response created (seq: {event_data.seq_id})")
+            elif isinstance(event_data, ResponseStarting):
+                print(f"🚀 Response starting (seq: {event_data.seq_id})")
 
-        elif isinstance(event_data, ResponseStarting):
-            print(f"🚀 Response starting (seq: {event_data.seq_id})")
+            elif isinstance(event_data, ResponseOutputItemAdded):
+                print(f"➕ Output item added: {event_data.seq_id}")
 
-        elif isinstance(event_data, ResponseOutputItemAdded):
-            print(f"➕ Output item added: {event_data.seq_id}")
+            elif isinstance(event_data, ResponseOutputContentFull):
+                print("\n🔍 Web Search Results:")
+                if event_data.response.full:
+                    for idx, result in enumerate(event_data.response.full, 1):
+                        print(f"  {idx}. {result.title} - {result.url}")
 
-        elif isinstance(event_data, ResponseOutputContentFull):
-            print("\n🔍 Web Search Results:")
-            if event_data.response.full:
-                for idx, result in enumerate(event_data.response.full, 1):
-                    print(f"  {idx}. {result.title} - {result.url}")
+            elif isinstance(event_data, ResponseOutputTextDelta):
+                # Print the delta text as it streams in (without newline)
+                print(event_data.response.delta, end='', flush=True)
 
-        elif isinstance(event_data, ResponseOutputTextDelta):
-            # Print the delta text as it streams in (without newline)
-            print(event_data.response.delta, end='', flush=True)
+            elif isinstance(event_data, ResponseOutputItemDone):
+                print(f"\n✅ Output item done (index: {event_data.response.output_index})")
 
-        elif isinstance(event_data, ResponseOutputItemDone):
-            print(f"\n✅ Output item done (index: {event_data.response.output_index})")
+            elif isinstance(event_data, ResponseDone):
+                print("\n🎉 Response completed!")
+                print(f"   Runtime: {event_data.response.run_time_ms} seconds")
+                print(f"   Finished: {event_data.response.finished}")
 
-        elif isinstance(event_data, ResponseDone):
-            print("\n🎉 Response completed!")
-            print(f"   Runtime: {event_data.response.run_time_ms} seconds")
-            print(f"   Finished: {event_data.response.finished}")
-
-        else:
-            print(f"⚠️  Unknown event type: {type(event_data).__name__}")
+            else:
+                print(f"⚠️  Unknown event type: {type(event_data).__name__}")
 
 
 def advanced_batch_request():
