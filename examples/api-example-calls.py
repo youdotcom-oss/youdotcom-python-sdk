@@ -54,21 +54,14 @@ def express_batch_request():
 
     assert you is not None, "SDK client not initialized"
 
-    request = ExpressAgentRunsRequest(
+    results = you.agents.runs.create(request=ExpressAgentRunsRequest(
         input="What is the capital of France?",
         stream=False,
         tools=[
             WebSearchTool()
         ]
-    )
+    ))
 
-    results = you.agents.runs.create(request=request)
-
-    res = you.agents.runs.create(request={
-        "agent": "express",
-        "input": "What is the capital of France?",
-        "stream": False,
-    })
     # Access the results - check if it's a batch response
     if isinstance(results, AgentRunsBatchResponse):
         if results.output:

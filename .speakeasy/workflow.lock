@@ -1,9 +1,9 @@
-speakeasyVersion: 1.678.0
+speakeasyVersion: 1.680.0
 sources:
     You.com API:
         sourceNamespace: you-com-search-api
-        sourceRevisionDigest: sha256:0d2c0dc0cd5c17f1a623c44d60c3d4b50b18be2897d758a9df202018c146afcc
-        sourceBlobDigest: sha256:96a674a7ed7ea8e63fe21f64bde429767ae77836d68d32302620a1b3b853223b
+        sourceRevisionDigest: sha256:e0b0cc76f92610d86e5359925e360a15269d06286eb5db9d9a0af0ce17700fec
+        sourceBlobDigest: sha256:e1fcdf368a5f66d9510bc02874a38bfda2e88f48c822c9966f3d9816d9a1e181
         tags:
             - latest
             - 1.0.0
@@ -11,10 +11,10 @@ targets:
     you:
         source: You.com API
         sourceNamespace: you-com-search-api
-        sourceRevisionDigest: sha256:0d2c0dc0cd5c17f1a623c44d60c3d4b50b18be2897d758a9df202018c146afcc
-        sourceBlobDigest: sha256:96a674a7ed7ea8e63fe21f64bde429767ae77836d68d32302620a1b3b853223b
+        sourceRevisionDigest: sha256:e0b0cc76f92610d86e5359925e360a15269d06286eb5db9d9a0af0ce17700fec
+        sourceBlobDigest: sha256:e1fcdf368a5f66d9510bc02874a38bfda2e88f48c822c9966f3d9816d9a1e181
         codeSamplesNamespace: you-com-search-api-code-samples
-        codeSamplesRevisionDigest: sha256:aa1de6a505f37685a025485e194fc0ff51c724fad5e3091c513a0b1ca114c3d7
+        codeSamplesRevisionDigest: sha256:6f27c553247c2bcd7c70be4084e9bdd18a4734cc9c02c0b22f67d2e1cadab51d
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest
