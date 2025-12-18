@@ -17,9 +17,6 @@ from youdotcom.types import OptionalNullable, UNSET
 
 SERVERS = [
     "https://ydc-index.io",
-    # Production - Search API
-    "https://api.you.com",
-    # Production - Agents API
 ]
 """Contains the list of servers available to the SDK"""
 

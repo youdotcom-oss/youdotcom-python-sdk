@@ -16,30 +16,27 @@ class Search(BaseSDK):
         query: str = "Your query",
         count: Optional[int] = None,
         freshness: Optional[
-            Union[models.GetV1SearchFreshness, models.GetV1SearchFreshnessTypedDict]
+            Union[models.SearchFreshness, models.SearchFreshnessTypedDict]
         ] = None,
         offset: Optional[int] = None,
         country: Optional[
-            Union[models.GetV1SearchCountry, models.GetV1SearchCountryTypedDict]
+            Union[models.SearchCountry, models.SearchCountryTypedDict]
         ] = None,
-        language: Optional[models.Language] = "EN",
+        language: Optional[models.Language] = models.Language.EN,
         safesearch: Optional[
-            Union[models.GetV1SearchSafesearch, models.GetV1SearchSafesearchTypedDict]
+            Union[models.SearchSafesearch, models.SearchSafesearchTypedDict]
         ] = None,
         livecrawl: Optional[
-            Union[models.GetV1SearchLivecrawl, models.GetV1SearchLivecrawlTypedDict]
+            Union[models.SearchLivecrawl, models.SearchLivecrawlTypedDict]
         ] = None,
         livecrawl_formats: Optional[
-            Union[
-                models.GetV1SearchLivecrawlFormats,
-                models.GetV1SearchLivecrawlFormatsTypedDict,
-            ]
+            Union[models.SearchLivecrawlFormats, models.SearchLivecrawlFormatsTypedDict]
         ] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
-    ) -> models.GetV1SearchResponse:
+    ) -> models.SearchResponse:
         r"""Returns a list of unified search results from web and news sources
 
         :param query: The search query used to retrieve relevant results from the web. You can also include [search operators](#search-operators) to refine your search.
@@ -64,9 +61,9 @@ class Search(BaseSDK):
         if server_url is not None:
             base_url = server_url
         else:
-            base_url = self._get_url(base_url, url_variables)
+            base_url = models.SEARCH_OP_SERVERS[0]
 
-        request = models.GetV1SearchRequest(
+        request = models.SearchRequest(
             query=query,
             count=count,
             freshness=freshness,
@@ -91,6 +88,7 @@ class Search(BaseSDK):
             accept_header_value="application/json",
             http_headers=http_headers,
             security=self.sdk_configuration.security,
+            allow_empty_value=None,
             timeout_ms=timeout_ms,
         )
 
@@ -106,7 +104,7 @@ class Search(BaseSDK):
             hook_ctx=HookContext(
                 config=self.sdk_configuration,
                 base_url=base_url or "",
-                operation_id="get_/v1/search",
+                operation_id="search",
                 oauth2_scopes=None,
                 security_source=get_security_from_env(
                     self.sdk_configuration.security, models.Security
@@ -119,22 +117,22 @@ class Search(BaseSDK):
 
         response_data: Any = None
         if utils.match_response(http_res, "200", "application/json"):
-            return unmarshal_json_response(models.GetV1SearchResponse, http_res)
+            return unmarshal_json_response(models.SearchResponse, http_res)
         if utils.match_response(http_res, "401", "application/json"):
             response_data = unmarshal_json_response(
-                errors.GetV1SearchUnauthorizedErrorData, http_res
+                errors.SearchUnauthorizedErrorData, http_res
             )
-            raise errors.GetV1SearchUnauthorizedError(response_data, http_res)
+            raise errors.SearchUnauthorizedError(response_data, http_res)
         if utils.match_response(http_res, "403", "application/json"):
             response_data = unmarshal_json_response(
-                errors.GetV1SearchForbiddenErrorData, http_res
+                errors.SearchForbiddenErrorData, http_res
             )
-            raise errors.GetV1SearchForbiddenError(response_data, http_res)
+            raise errors.SearchForbiddenError(response_data, http_res)
         if utils.match_response(http_res, "500", "application/json"):
             response_data = unmarshal_json_response(
-                errors.GetV1SearchInternalServerErrorData, http_res
+                errors.SearchInternalServerErrorData, http_res
             )
-            raise errors.GetV1SearchInternalServerError(response_data, http_res)
+            raise errors.SearchInternalServerError(response_data, http_res)
         if utils.match_response(http_res, "4XX", "*"):
             http_res_text = utils.stream_to_text(http_res)
             raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
@@ -150,30 +148,27 @@ class Search(BaseSDK):
         query: str = "Your query",
         count: Optional[int] = None,
         freshness: Optional[
-            Union[models.GetV1SearchFreshness, models.GetV1SearchFreshnessTypedDict]
+            Union[models.SearchFreshness, models.SearchFreshnessTypedDict]
         ] = None,
         offset: Optional[int] = None,
         country: Optional[
-            Union[models.GetV1SearchCountry, models.GetV1SearchCountryTypedDict]
+            Union[models.SearchCountry, models.SearchCountryTypedDict]
         ] = None,
-        language: Optional[models.Language] = "EN",
+        language: Optional[models.Language] = models.Language.EN,
         safesearch: Optional[
-            Union[models.GetV1SearchSafesearch, models.GetV1SearchSafesearchTypedDict]
+            Union[models.SearchSafesearch, models.SearchSafesearchTypedDict]
         ] = None,
         livecrawl: Optional[
-            Union[models.GetV1SearchLivecrawl, models.GetV1SearchLivecrawlTypedDict]
+            Union[models.SearchLivecrawl, models.SearchLivecrawlTypedDict]
         ] = None,
         livecrawl_formats: Optional[
-            Union[
-                models.GetV1SearchLivecrawlFormats,
-                models.GetV1SearchLivecrawlFormatsTypedDict,
-            ]
+            Union[models.SearchLivecrawlFormats, models.SearchLivecrawlFormatsTypedDict]
         ] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
-    ) -> models.GetV1SearchResponse:
+    ) -> models.SearchResponse:
         r"""Returns a list of unified search results from web and news sources
 
         :param query: The search query used to retrieve relevant results from the web. You can also include [search operators](#search-operators) to refine your search.
@@ -198,9 +193,9 @@ class Search(BaseSDK):
         if server_url is not None:
             base_url = server_url
         else:
-            base_url = self._get_url(base_url, url_variables)
+            base_url = models.SEARCH_OP_SERVERS[0]
 
-        request = models.GetV1SearchRequest(
+        request = models.SearchRequest(
             query=query,
             count=count,
             freshness=freshness,
@@ -225,6 +220,7 @@ class Search(BaseSDK):
             accept_header_value="application/json",
             http_headers=http_headers,
             security=self.sdk_configuration.security,
+            allow_empty_value=None,
             timeout_ms=timeout_ms,
         )
 
@@ -240,7 +236,7 @@ class Search(BaseSDK):
             hook_ctx=HookContext(
                 config=self.sdk_configuration,
                 base_url=base_url or "",
-                operation_id="get_/v1/search",
+                operation_id="search",
                 oauth2_scopes=None,
                 security_source=get_security_from_env(
                     self.sdk_configuration.security, models.Security
@@ -253,22 +249,22 @@ class Search(BaseSDK):
 
         response_data: Any = None
         if utils.match_response(http_res, "200", "application/json"):
-            return unmarshal_json_response(models.GetV1SearchResponse, http_res)
+            return unmarshal_json_response(models.SearchResponse, http_res)
         if utils.match_response(http_res, "401", "application/json"):
             response_data = unmarshal_json_response(
-                errors.GetV1SearchUnauthorizedErrorData, http_res
+                errors.SearchUnauthorizedErrorData, http_res
             )
-            raise errors.GetV1SearchUnauthorizedError(response_data, http_res)
+            raise errors.SearchUnauthorizedError(response_data, http_res)
         if utils.match_response(http_res, "403", "application/json"):
             response_data = unmarshal_json_response(
-                errors.GetV1SearchForbiddenErrorData, http_res
+                errors.SearchForbiddenErrorData, http_res
             )
-            raise errors.GetV1SearchForbiddenError(response_data, http_res)
+            raise errors.SearchForbiddenError(response_data, http_res)
         if utils.match_response(http_res, "500", "application/json"):
             response_data = unmarshal_json_response(
-                errors.GetV1SearchInternalServerErrorData, http_res
+                errors.SearchInternalServerErrorData, http_res
             )
-            raise errors.GetV1SearchInternalServerError(response_data, http_res)
+            raise errors.SearchInternalServerError(response_data, http_res)
         if utils.match_response(http_res, "4XX", "*"):
             http_res_text = await utils.stream_to_text_async(http_res)
             raise errors.YouDefaultError("API error occurred", http_res, http_res_text)

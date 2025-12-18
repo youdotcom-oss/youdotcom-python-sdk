@@ -21,15 +21,20 @@ if TYPE_CHECKING:
 
 
 class You(BaseSDK):
-    r"""You.com API: Enterprise AI Solutions, driving limitless innovation"""
+    r"""You.com API: Comprehensive API for You.com services:
+    - **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
+    - **Search API**: Get search results from web and news sources
+    - **Contents API**: Retrieve and process web page content
+
+    """
 
     agents: "Agents"
-    contents: "ContentsSDK"
     search: "Search"
+    contents: "ContentsSDK"
     _sub_sdk_map = {
         "agents": ("youdotcom.agents", "Agents"),
-        "contents": ("youdotcom.contents_sdk", "ContentsSDK"),
         "search": ("youdotcom.search", "Search"),
+        "contents": ("youdotcom.contents_sdk", "ContentsSDK"),
     }
 
     def __init__(

@@ -7,80 +7,84 @@ import builtins
 import sys
 
 if TYPE_CHECKING:
-    from .get_v1_searchop import (
-        GetV1SearchForbiddenError,
-        GetV1SearchForbiddenErrorData,
-        GetV1SearchInternalServerError,
-        GetV1SearchInternalServerErrorData,
-        GetV1SearchUnauthorizedError,
-        GetV1SearchUnauthorizedErrorData,
+    from .agentruns400response_error import (
+        AgentRuns400ResponseError,
+        AgentRuns400ResponseErrorData,
+    )
+    from .agentruns401response_error import (
+        AgentRuns401ResponseError,
+        AgentRuns401ResponseErrorData,
+    )
+    from .agentruns422response_error import (
+        AgentRuns422ResponseError,
+        AgentRuns422ResponseErrorData,
+    )
+    from .contentsop import (
+        ContentsForbiddenError,
+        ContentsForbiddenErrorData,
+        ContentsInternalServerError,
+        ContentsInternalServerErrorData,
+        ContentsUnauthorizedError,
+        ContentsUnauthorizedErrorData,
     )
     from .no_response_error import NoResponseError
-    from .post_v1_agents_runsop import (
-        BadRequestError,
-        BadRequestErrorData,
-        PostV1AgentsRunsForbiddenError,
-        PostV1AgentsRunsForbiddenErrorData,
-        PostV1AgentsRunsUnauthorizedError,
-        PostV1AgentsRunsUnauthorizedErrorData,
-    )
-    from .post_v1_contentsop import (
-        PostV1ContentsForbiddenError,
-        PostV1ContentsForbiddenErrorData,
-        PostV1ContentsInternalServerError,
-        PostV1ContentsInternalServerErrorData,
-        PostV1ContentsUnauthorizedError,
-        PostV1ContentsUnauthorizedErrorData,
-    )
     from .responsevalidationerror import ResponseValidationError
+    from .searchop import (
+        SearchForbiddenError,
+        SearchForbiddenErrorData,
+        SearchInternalServerError,
+        SearchInternalServerErrorData,
+        SearchUnauthorizedError,
+        SearchUnauthorizedErrorData,
+    )
     from .youdefaulterror import YouDefaultError
 
 __all__ = [
-    "BadRequestError",
-    "BadRequestErrorData",
-    "GetV1SearchForbiddenError",
-    "GetV1SearchForbiddenErrorData",
-    "GetV1SearchInternalServerError",
-    "GetV1SearchInternalServerErrorData",
-    "GetV1SearchUnauthorizedError",
-    "GetV1SearchUnauthorizedErrorData",
+    "AgentRuns400ResponseError",
+    "AgentRuns400ResponseErrorData",
+    "AgentRuns401ResponseError",
+    "AgentRuns401ResponseErrorData",
+    "AgentRuns422ResponseError",
+    "AgentRuns422ResponseErrorData",
+    "ContentsForbiddenError",
+    "ContentsForbiddenErrorData",
+    "ContentsInternalServerError",
+    "ContentsInternalServerErrorData",
+    "ContentsUnauthorizedError",
+    "ContentsUnauthorizedErrorData",
     "NoResponseError",
-    "PostV1AgentsRunsForbiddenError",
-    "PostV1AgentsRunsForbiddenErrorData",
-    "PostV1AgentsRunsUnauthorizedError",
-    "PostV1AgentsRunsUnauthorizedErrorData",
-    "PostV1ContentsForbiddenError",
-    "PostV1ContentsForbiddenErrorData",
-    "PostV1ContentsInternalServerError",
-    "PostV1ContentsInternalServerErrorData",
-    "PostV1ContentsUnauthorizedError",
-    "PostV1ContentsUnauthorizedErrorData",
     "ResponseValidationError",
+    "SearchForbiddenError",
+    "SearchForbiddenErrorData",
+    "SearchInternalServerError",
+    "SearchInternalServerErrorData",
+    "SearchUnauthorizedError",
+    "SearchUnauthorizedErrorData",
     "YouDefaultError",
     "YouError",
 ]
 
 _dynamic_imports: dict[str, str] = {
-    "GetV1SearchForbiddenError": ".get_v1_searchop",
-    "GetV1SearchForbiddenErrorData": ".get_v1_searchop",
-    "GetV1SearchInternalServerError": ".get_v1_searchop",
-    "GetV1SearchInternalServerErrorData": ".get_v1_searchop",
-    "GetV1SearchUnauthorizedError": ".get_v1_searchop",
-    "GetV1SearchUnauthorizedErrorData": ".get_v1_searchop",
+    "AgentRuns400ResponseError": ".agentruns400response_error",
+    "AgentRuns400ResponseErrorData": ".agentruns400response_error",
+    "AgentRuns401ResponseError": ".agentruns401response_error",
+    "AgentRuns401ResponseErrorData": ".agentruns401response_error",
+    "AgentRuns422ResponseError": ".agentruns422response_error",
+    "AgentRuns422ResponseErrorData": ".agentruns422response_error",
+    "ContentsForbiddenError": ".contentsop",
+    "ContentsForbiddenErrorData": ".contentsop",
+    "ContentsInternalServerError": ".contentsop",
+    "ContentsInternalServerErrorData": ".contentsop",
+    "ContentsUnauthorizedError": ".contentsop",
+    "ContentsUnauthorizedErrorData": ".contentsop",
     "NoResponseError": ".no_response_error",
-    "BadRequestError": ".post_v1_agents_runsop",
-    "BadRequestErrorData": ".post_v1_agents_runsop",
-    "PostV1AgentsRunsForbiddenError": ".post_v1_agents_runsop",
-    "PostV1AgentsRunsForbiddenErrorData": ".post_v1_agents_runsop",
-    "PostV1AgentsRunsUnauthorizedError": ".post_v1_agents_runsop",
-    "PostV1AgentsRunsUnauthorizedErrorData": ".post_v1_agents_runsop",
-    "PostV1ContentsForbiddenError": ".post_v1_contentsop",
-    "PostV1ContentsForbiddenErrorData": ".post_v1_contentsop",
-    "PostV1ContentsInternalServerError": ".post_v1_contentsop",
-    "PostV1ContentsInternalServerErrorData": ".post_v1_contentsop",
-    "PostV1ContentsUnauthorizedError": ".post_v1_contentsop",
-    "PostV1ContentsUnauthorizedErrorData": ".post_v1_contentsop",
     "ResponseValidationError": ".responsevalidationerror",
+    "SearchForbiddenError": ".searchop",
+    "SearchForbiddenErrorData": ".searchop",
+    "SearchInternalServerError": ".searchop",
+    "SearchInternalServerErrorData": ".searchop",
+    "SearchUnauthorizedError": ".searchop",
+    "SearchUnauthorizedErrorData": ".searchop",
     "YouDefaultError": ".youdefaulterror",
 }
 

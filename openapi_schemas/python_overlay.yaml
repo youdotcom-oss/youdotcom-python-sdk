@@ -1,0 +1,21 @@
+overlay: 1.0.0
+x-speakeasy-jsonpath: rfc9535
+info:
+  title: Python Specific Modifications
+  version: 1.0.0
+actions:
+  - target: $["paths"]["/v1/contents"]["post"]
+    update:
+      tags:
+        - contents
+      x-speakeasy-name-override: generate
+  - target: $["paths"]["/v1/search"]["get"]
+    update:
+      tags:
+        - search
+      x-speakeasy-name-override: unified
+  - target: $["paths"]["/v1/agents/runs"]["post"]
+    update:
+      tags:
+        - agents.runs
+      x-speakeasy-name-override: create

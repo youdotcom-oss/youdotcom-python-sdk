@@ -2,10 +2,10 @@
 
 from .basesdk import BaseSDK
 from enum import Enum
-from typing import Any, List, Literal, Mapping, Optional, Union, overload
+from typing import Any, Mapping, Optional, Union, cast
 from youdotcom import errors, models, utils
 from youdotcom._hooks import HookContext
-from youdotcom.types import OptionalNullable, UNSET
+from youdotcom.types import BaseModel, OptionalNullable, UNSET
 from youdotcom.utils import eventstreaming, get_security_from_env
 from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
 
@@ -16,91 +16,28 @@ class CreateAcceptEnum(str, Enum):
 
 
 class Runs(BaseSDK):
-    @overload
     def create(
         self,
         *,
-        agent: Union[models.Agent, models.AgentTypedDict],
-        input: str,
-        stream: Union[Literal[False], None] = None,
-        tools: Optional[Union[List[models.Tool], List[models.ToolTypedDict]]] = None,
-        verbosity: Optional[models.Verbosity] = None,
-        workflow_config: Optional[
-            Union[models.WorkflowConfig, models.WorkflowConfigTypedDict]
-        ] = None,
+        request: Union[models.AgentsRunsRequest, models.AgentsRunsRequestTypedDict],
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
+        accept_header_override: Optional[CreateAcceptEnum] = None,
         http_headers: Optional[Mapping[str, str]] = None,
-    ) -> models.PostV1AgentsRunsResponseBody:
-        r"""
-        :param agent: Agent type (express, advanced) or custom agent UUID
-        :param input: User input prompt.
-        :param stream:
-        :param tools: Array of tool configurations
-        :param verbosity: Response verbosity level
-        :param workflow_config:
-        :param retries: Override the default retry configuration for this method
-        :param server_url: Override the default server URL for this method
-        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
-        :param accept_header_override: Override the default accept header for this method
-        :param http_headers: Additional headers to set or replace on requests.
-        """
+    ) -> models.AgentsRunsResponse:
+        r"""Run an Agent
 
-    @overload
-    def create(
-        self,
-        *,
-        agent: Union[models.Agent, models.AgentTypedDict],
-        input: str,
-        stream: Literal[True],
-        tools: Optional[Union[List[models.Tool], List[models.ToolTypedDict]]] = None,
-        verbosity: Optional[models.Verbosity] = None,
-        workflow_config: Optional[
-            Union[models.WorkflowConfig, models.WorkflowConfigTypedDict]
-        ] = None,
-        retries: OptionalNullable[utils.RetryConfig] = UNSET,
-        server_url: Optional[str] = None,
-        timeout_ms: Optional[int] = None,
-        http_headers: Optional[Mapping[str, str]] = None,
-    ) -> eventstreaming.EventStream[models.Data]:
-        r"""
-        :param agent: Agent type (express, advanced) or custom agent UUID
-        :param input: User input prompt.
-        :param stream:
-        :param tools: Array of tool configurations
-        :param verbosity: Response verbosity level
-        :param workflow_config:
-        :param retries: Override the default retry configuration for this method
-        :param server_url: Override the default server URL for this method
-        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
-        :param accept_header_override: Override the default accept header for this method
-        :param http_headers: Additional headers to set or replace on requests.
-        """
+        Execute queries using You.com's AI agents. This endpoint supports three agent types:
 
-    def create(
-        self,
-        *,
-        agent: Union[models.Agent, models.AgentTypedDict],
-        input: str,
-        stream: Optional[bool] = False,
-        tools: Optional[Union[List[models.Tool], List[models.ToolTypedDict]]] = None,
-        verbosity: Optional[models.Verbosity] = None,
-        workflow_config: Optional[
-            Union[models.WorkflowConfig, models.WorkflowConfigTypedDict]
-        ] = None,
-        retries: OptionalNullable[utils.RetryConfig] = UNSET,
-        server_url: Optional[str] = None,
-        timeout_ms: Optional[int] = None,
-        http_headers: Optional[Mapping[str, str]] = None,
-    ) -> models.PostV1AgentsRunsResponse:
-        r"""
-        :param agent: Agent type (express, advanced) or custom agent UUID
-        :param input: User input prompt.
-        :param stream:
-        :param tools: Array of tool configurations
-        :param verbosity: Response verbosity level
-        :param workflow_config:
+        - **Express Agent**: Fast responses with optional web search (max 1 search)
+        - **Advanced Agent**: Complex queries with multi-turn reasoning, planning, and tool usage
+        - **Custom Agent**: User-configured assistants created in the You.com UI
+
+        The response format depends on the `stream` parameter - either a complete JSON payload or Server-Sent Events (SSE).
+
+
+        :param request: The request object to send.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -115,18 +52,11 @@ class Runs(BaseSDK):
         if server_url is not None:
             base_url = server_url
         else:
-            base_url = models.POST_V1_AGENTS_RUNS_OP_SERVERS[0]
+            base_url = models.AGENTS_RUNS_OP_SERVERS[0]
 
-        request = models.PostV1AgentsRunsRequest(
-            agent=agent,
-            input=input,
-            stream=stream,
-            tools=utils.get_pydantic_model(tools, Optional[List[models.Tool]]),
-            verbosity=verbosity,
-            workflow_config=utils.get_pydantic_model(
-                workflow_config, Optional[models.WorkflowConfig]
-            ),
-        )
+        if not isinstance(request, BaseModel):
+            request = utils.unmarshal(request, models.AgentsRunsRequest)
+        request = cast(models.AgentsRunsRequest, request)
 
         req = self._build_request(
             method="POST",
@@ -138,12 +68,15 @@ class Runs(BaseSDK):
             request_has_path_params=False,
             request_has_query_params=True,
             user_agent_header="user-agent",
-            accept_header_value="text/event-stream" if stream else "application/json",
+            accept_header_value=accept_header_override.value
+            if accept_header_override is not None
+            else "application/json;q=1, text/event-stream;q=0",
             http_headers=http_headers,
             security=self.sdk_configuration.security,
             get_serialized_body=lambda: utils.serialize_request_body(
-                request, False, False, "json", models.PostV1AgentsRunsRequest
+                request, False, False, "json", models.AgentsRunsRequest
             ),
+            allow_empty_value=None,
             timeout_ms=timeout_ms,
         )
 
@@ -159,14 +92,14 @@ class Runs(BaseSDK):
             hook_ctx=HookContext(
                 config=self.sdk_configuration,
                 base_url=base_url or "",
-                operation_id="post_/v1/agents/runs",
+                operation_id="AgentsRuns",
                 oauth2_scopes=None,
                 security_source=get_security_from_env(
                     self.sdk_configuration.security, models.Security
                 ),
             ),
             request=req,
-            error_status_codes=["400", "401", "403", "4XX", "5XX"],
+            error_status_codes=["400", "401", "422", "4XX", "5XX"],
             stream=True,
             retry_config=retry_config,
         )
@@ -175,36 +108,38 @@ class Runs(BaseSDK):
         if utils.match_response(http_res, "200", "application/json"):
             http_res_text = utils.stream_to_text(http_res)
             return unmarshal_json_response(
-                models.PostV1AgentsRunsResponseBody, http_res, http_res_text
+                models.AgentRunsBatchResponse, http_res, http_res_text
             )
         if utils.match_response(http_res, "200", "text/event-stream"):
             return eventstreaming.EventStream(
                 http_res,
                 lambda raw: utils.unmarshal_json(
-                    raw, models.PostV1AgentsRunsEventStreamResponseBody
-                ).data,
+                    raw, models.AgentRunsStreamingResponse
+                ),
                 client_ref=self,
             )
         if utils.match_response(http_res, "400", "application/json"):
             http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.BadRequestErrorData, http_res, http_res_text
+                errors.AgentRuns400ResponseErrorData, http_res, http_res_text
             )
-            raise errors.BadRequestError(response_data, http_res, http_res_text)
+            raise errors.AgentRuns400ResponseError(
+                response_data, http_res, http_res_text
+            )
         if utils.match_response(http_res, "401", "application/json"):
             http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.PostV1AgentsRunsUnauthorizedErrorData, http_res, http_res_text
+                errors.AgentRuns401ResponseErrorData, http_res, http_res_text
             )
-            raise errors.PostV1AgentsRunsUnauthorizedError(
+            raise errors.AgentRuns401ResponseError(
                 response_data, http_res, http_res_text
             )
-        if utils.match_response(http_res, "403", "application/json"):
+        if utils.match_response(http_res, "422", "application/json"):
             http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.PostV1AgentsRunsForbiddenErrorData, http_res, http_res_text
+                errors.AgentRuns422ResponseErrorData, http_res, http_res_text
             )
-            raise errors.PostV1AgentsRunsForbiddenError(
+            raise errors.AgentRuns422ResponseError(
                 response_data, http_res, http_res_text
             )
         if utils.match_response(http_res, "4XX", "*"):
@@ -219,91 +154,28 @@ class Runs(BaseSDK):
             "Unexpected response received", http_res, http_res_text
         )
 
-    @overload
     async def create_async(
         self,
         *,
-        agent: Union[models.Agent, models.AgentTypedDict],
-        input: str,
-        stream: Union[Literal[False], None] = None,
-        tools: Optional[Union[List[models.Tool], List[models.ToolTypedDict]]] = None,
-        verbosity: Optional[models.Verbosity] = None,
-        workflow_config: Optional[
-            Union[models.WorkflowConfig, models.WorkflowConfigTypedDict]
-        ] = None,
+        request: Union[models.AgentsRunsRequest, models.AgentsRunsRequestTypedDict],
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
+        accept_header_override: Optional[CreateAcceptEnum] = None,
         http_headers: Optional[Mapping[str, str]] = None,
-    ) -> models.PostV1AgentsRunsResponseBody:
-        r"""
-        :param agent: Agent type (express, advanced) or custom agent UUID
-        :param input: User input prompt.
-        :param stream:
-        :param tools: Array of tool configurations
-        :param verbosity: Response verbosity level
-        :param workflow_config:
-        :param retries: Override the default retry configuration for this method
-        :param server_url: Override the default server URL for this method
-        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
-        :param accept_header_override: Override the default accept header for this method
-        :param http_headers: Additional headers to set or replace on requests.
-        """
+    ) -> models.AgentsRunsResponse:
+        r"""Run an Agent
 
-    @overload
-    async def create_async(
-        self,
-        *,
-        agent: Union[models.Agent, models.AgentTypedDict],
-        input: str,
-        stream: Literal[True],
-        tools: Optional[Union[List[models.Tool], List[models.ToolTypedDict]]] = None,
-        verbosity: Optional[models.Verbosity] = None,
-        workflow_config: Optional[
-            Union[models.WorkflowConfig, models.WorkflowConfigTypedDict]
-        ] = None,
-        retries: OptionalNullable[utils.RetryConfig] = UNSET,
-        server_url: Optional[str] = None,
-        timeout_ms: Optional[int] = None,
-        http_headers: Optional[Mapping[str, str]] = None,
-    ) -> eventstreaming.EventStreamAsync[models.Data]:
-        r"""
-        :param agent: Agent type (express, advanced) or custom agent UUID
-        :param input: User input prompt.
-        :param stream:
-        :param tools: Array of tool configurations
-        :param verbosity: Response verbosity level
-        :param workflow_config:
-        :param retries: Override the default retry configuration for this method
-        :param server_url: Override the default server URL for this method
-        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
-        :param accept_header_override: Override the default accept header for this method
-        :param http_headers: Additional headers to set or replace on requests.
-        """
+        Execute queries using You.com's AI agents. This endpoint supports three agent types:
 
-    async def create_async(
-        self,
-        *,
-        agent: Union[models.Agent, models.AgentTypedDict],
-        input: str,
-        stream: Optional[bool] = False,
-        tools: Optional[Union[List[models.Tool], List[models.ToolTypedDict]]] = None,
-        verbosity: Optional[models.Verbosity] = None,
-        workflow_config: Optional[
-            Union[models.WorkflowConfig, models.WorkflowConfigTypedDict]
-        ] = None,
-        retries: OptionalNullable[utils.RetryConfig] = UNSET,
-        server_url: Optional[str] = None,
-        timeout_ms: Optional[int] = None,
-        http_headers: Optional[Mapping[str, str]] = None,
-    ) -> models.PostV1AgentsRunsResponse:
-        r"""
-        :param agent: Agent type (express, advanced) or custom agent UUID
-        :param input: User input prompt.
-        :param stream:
-        :param tools: Array of tool configurations
-        :param verbosity: Response verbosity level
-        :param workflow_config:
+        - **Express Agent**: Fast responses with optional web search (max 1 search)
+        - **Advanced Agent**: Complex queries with multi-turn reasoning, planning, and tool usage
+        - **Custom Agent**: User-configured assistants created in the You.com UI
+
+        The response format depends on the `stream` parameter - either a complete JSON payload or Server-Sent Events (SSE).
+
+
+        :param request: The request object to send.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -318,18 +190,11 @@ class Runs(BaseSDK):
         if server_url is not None:
             base_url = server_url
         else:
-            base_url = models.POST_V1_AGENTS_RUNS_OP_SERVERS[0]
+            base_url = models.AGENTS_RUNS_OP_SERVERS[0]
 
-        request = models.PostV1AgentsRunsRequest(
-            agent=agent,
-            input=input,
-            stream=stream,
-            tools=utils.get_pydantic_model(tools, Optional[List[models.Tool]]),
-            verbosity=verbosity,
-            workflow_config=utils.get_pydantic_model(
-                workflow_config, Optional[models.WorkflowConfig]
-            ),
-        )
+        if not isinstance(request, BaseModel):
+            request = utils.unmarshal(request, models.AgentsRunsRequest)
+        request = cast(models.AgentsRunsRequest, request)
 
         req = self._build_request_async(
             method="POST",
@@ -341,12 +206,15 @@ class Runs(BaseSDK):
             request_has_path_params=False,
             request_has_query_params=True,
             user_agent_header="user-agent",
-            accept_header_value="text/event-stream" if stream else "application/json",
+            accept_header_value=accept_header_override.value
+            if accept_header_override is not None
+            else "application/json;q=1, text/event-stream;q=0",
             http_headers=http_headers,
             security=self.sdk_configuration.security,
             get_serialized_body=lambda: utils.serialize_request_body(
-                request, False, False, "json", models.PostV1AgentsRunsRequest
+                request, False, False, "json", models.AgentsRunsRequest
             ),
+            allow_empty_value=None,
             timeout_ms=timeout_ms,
         )
 
@@ -362,14 +230,14 @@ class Runs(BaseSDK):
             hook_ctx=HookContext(
                 config=self.sdk_configuration,
                 base_url=base_url or "",
-                operation_id="post_/v1/agents/runs",
+                operation_id="AgentsRuns",
                 oauth2_scopes=None,
                 security_source=get_security_from_env(
                     self.sdk_configuration.security, models.Security
                 ),
             ),
             request=req,
-            error_status_codes=["400", "401", "403", "4XX", "5XX"],
+            error_status_codes=["400", "401", "422", "4XX", "5XX"],
             stream=True,
             retry_config=retry_config,
         )
@@ -378,36 +246,38 @@ class Runs(BaseSDK):
         if utils.match_response(http_res, "200", "application/json"):
             http_res_text = await utils.stream_to_text_async(http_res)
             return unmarshal_json_response(
-                models.PostV1AgentsRunsResponseBody, http_res, http_res_text
+                models.AgentRunsBatchResponse, http_res, http_res_text
             )
         if utils.match_response(http_res, "200", "text/event-stream"):
             return eventstreaming.EventStreamAsync(
                 http_res,
                 lambda raw: utils.unmarshal_json(
-                    raw, models.PostV1AgentsRunsEventStreamResponseBody
-                ).data,
+                    raw, models.AgentRunsStreamingResponse
+                ),
                 client_ref=self,
             )
         if utils.match_response(http_res, "400", "application/json"):
             http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.BadRequestErrorData, http_res, http_res_text
+                errors.AgentRuns400ResponseErrorData, http_res, http_res_text
             )
-            raise errors.BadRequestError(response_data, http_res, http_res_text)
+            raise errors.AgentRuns400ResponseError(
+                response_data, http_res, http_res_text
+            )
         if utils.match_response(http_res, "401", "application/json"):
             http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.PostV1AgentsRunsUnauthorizedErrorData, http_res, http_res_text
+                errors.AgentRuns401ResponseErrorData, http_res, http_res_text
             )
-            raise errors.PostV1AgentsRunsUnauthorizedError(
+            raise errors.AgentRuns401ResponseError(
                 response_data, http_res, http_res_text
             )
-        if utils.match_response(http_res, "403", "application/json"):
+        if utils.match_response(http_res, "422", "application/json"):
             http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.PostV1AgentsRunsForbiddenErrorData, http_res, http_res_text
+                errors.AgentRuns422ResponseErrorData, http_res, http_res_text
             )
-            raise errors.PostV1AgentsRunsForbiddenError(
+            raise errors.AgentRuns422ResponseError(
                 response_data, http_res, http_res_text
             )
         if utils.match_response(http_res, "4XX", "*"):
