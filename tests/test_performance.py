@@ -31,18 +31,21 @@ from tests.metrics import (
 )
 from tests.timing_client import SDKCallTiming, TimingHTTPClient
 from youdotcom import You
-from youdotcom.models import ComputeTool, ResearchTool, WebSearchTool
-from youdotcom.types.typesafe_models import (
-    AgentType,
+from youdotcom.models import (
+    ComputeTool,
+    ResearchTool,
+    WebSearchTool,
     Country,
-    Format,
+    ContentsFormat,
     Freshness,
     Language,
     LiveCrawl,
     LiveCrawlFormats,
     SafeSearch,
     SearchEffort,
-    Trigger,
+    ReportVerbosity,
+    ExpressAgentRunsRequest,
+    AdvancedAgentRunsRequest,
     Verbosity,
 )
 
@@ -463,9 +466,10 @@ class TestAgentsPerformance:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.EXPRESS,
-                    input="Teach me how to make an omelet",
-                    stream=False,
+                    request=ExpressAgentRunsRequest(
+                        input="Teach me how to make an omelet",
+                        stream=False,
+                    ),
                     server_url=server_url,
                 )
             
@@ -481,11 +485,12 @@ class TestAgentsPerformance:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.EXPRESS,
-                    input="What are the latest AI developments?",
-                    stream=False,
+                    request=ExpressAgentRunsRequest(
+                        input="What are the latest AI developments?",
+                        stream=False,
+                        tools=[WebSearchTool()],
+                    ),
                     server_url=server_url,
-                    tools=[WebSearchTool()],
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Agents: EXPRESS + WebSearchTool")
@@ -494,20 +499,21 @@ class TestAgentsPerformance:
                 print_detailed_metrics(metrics)
     
     def test_agents_express_with_websearch_force(self, server_url, api_key, iterations, show_detailed):
-        """Express agent with WebSearchTool (forced trigger)."""
+        """Express agent with WebSearchTool."""
         client = create_timing_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.EXPRESS,
-                    input="Tell me about Python",
-                    stream=False,
+                    request=ExpressAgentRunsRequest(
+                        input="Tell me about Python",
+                        stream=False,
+                        tools=[WebSearchTool()],
+                    ),
                     server_url=server_url,
-                    tools=[WebSearchTool(trigger=Trigger.FORCE)],
                 )
             
-            metrics = measure_sdk_call(call, client, iterations, "Agents: EXPRESS + WebSearchTool (force)")
+            metrics = measure_sdk_call(call, client, iterations, "Agents: EXPRESS + WebSearchTool")
             ALL_METRICS.append(metrics)
             if show_detailed:
                 print_detailed_metrics(metrics)
@@ -519,9 +525,10 @@ class TestAgentsPerformance:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.ADVANCED,
-                    input="Explain quantum entanglement",
-                    stream=False,
+                    request=AdvancedAgentRunsRequest(
+                        input="Explain quantum entanglement",
+                        stream=False,
+                    ),
                     server_url=server_url,
                 )
             
@@ -537,11 +544,12 @@ class TestAgentsPerformance:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.ADVANCED,
-                    input="Research the latest breakthroughs in quantum computing",
-                    stream=False,
+                    request=AdvancedAgentRunsRequest(
+                        input="Research the latest breakthroughs in quantum computing",
+                        stream=False,
+                        tools=[ResearchTool()],
+                    ),
                     server_url=server_url,
-                    tools=[ResearchTool()],
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Agents: ADVANCED + ResearchTool")
@@ -556,11 +564,12 @@ class TestAgentsPerformance:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.ADVANCED,
-                    input="Quick research on AI",
-                    stream=False,
+                    request=AdvancedAgentRunsRequest(
+                        input="Quick research on AI",
+                        stream=False,
+                        tools=[ResearchTool(search_effort=SearchEffort.LOW)],
+                    ),
                     server_url=server_url,
-                    tools=[ResearchTool(search_effort=SearchEffort.LOW)],
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Agents: ADVANCED + ResearchTool (low effort)")
@@ -575,11 +584,12 @@ class TestAgentsPerformance:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.ADVANCED,
-                    input="Deep research on climate change",
-                    stream=False,
+                    request=AdvancedAgentRunsRequest(
+                        input="Deep research on climate change",
+                        stream=False,
+                        tools=[ResearchTool(search_effort=SearchEffort.HIGH)],
+                    ),
                     server_url=server_url,
-                    tools=[ResearchTool(search_effort=SearchEffort.HIGH)],
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Agents: ADVANCED + ResearchTool (high effort)")
@@ -594,11 +604,12 @@ class TestAgentsPerformance:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.ADVANCED,
-                    input="Brief summary of AI trends",
-                    stream=False,
+                    request=AdvancedAgentRunsRequest(
+                        input="Brief summary of AI trends",
+                        stream=False,
+                        tools=[ResearchTool(report_verbosity=ReportVerbosity.LOW)],
+                    ),
                     server_url=server_url,
-                    tools=[ResearchTool(report_verbosity=Verbosity.LOW)],
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Agents: ADVANCED + ResearchTool (low verbosity)")
@@ -613,11 +624,12 @@ class TestAgentsPerformance:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.ADVANCED,
-                    input="Detailed analysis of blockchain",
-                    stream=False,
+                    request=AdvancedAgentRunsRequest(
+                        input="Detailed analysis of blockchain",
+                        stream=False,
+                        tools=[ResearchTool(report_verbosity=ReportVerbosity.HIGH)],
+                    ),
                     server_url=server_url,
-                    tools=[ResearchTool(report_verbosity=Verbosity.HIGH)],
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Agents: ADVANCED + ResearchTool (high verbosity)")
@@ -632,11 +644,12 @@ class TestAgentsPerformance:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.ADVANCED,
-                    input="Calculate the square root of 169",
-                    stream=False,
+                    request=AdvancedAgentRunsRequest(
+                        input="Calculate the square root of 169",
+                        stream=False,
+                        tools=[ComputeTool()],
+                    ),
                     server_url=server_url,
-                    tools=[ComputeTool()],
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Agents: ADVANCED + ComputeTool")
@@ -645,39 +658,41 @@ class TestAgentsPerformance:
                 print_detailed_metrics(metrics)
     
     def test_agents_advanced_with_websearch_and_research(self, server_url, api_key, iterations, show_detailed):
-        """Advanced agent with WebSearchTool + ResearchTool."""
+        """Advanced agent with ResearchTool."""
         client = create_timing_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.ADVANCED,
-                    input="Find and research AI startups",
-                    stream=False,
+                    request=AdvancedAgentRunsRequest(
+                        input="Find and research AI startups",
+                        stream=False,
+                        tools=[ResearchTool()],
+                    ),
                     server_url=server_url,
-                    tools=[WebSearchTool(), ResearchTool()],
                 )
             
-            metrics = measure_sdk_call(call, client, iterations, "Agents: ADVANCED + WebSearch + Research")
+            metrics = measure_sdk_call(call, client, iterations, "Agents: ADVANCED + Research")
             ALL_METRICS.append(metrics)
             if show_detailed:
                 print_detailed_metrics(metrics)
     
     def test_agents_advanced_with_websearch_and_compute(self, server_url, api_key, iterations, show_detailed):
-        """Advanced agent with WebSearchTool + ComputeTool."""
+        """Advanced agent with ComputeTool."""
         client = create_timing_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.ADVANCED,
-                    input="Find stock prices and calculate averages",
-                    stream=False,
+                    request=AdvancedAgentRunsRequest(
+                        input="Find stock prices and calculate averages",
+                        stream=False,
+                        tools=[ComputeTool()],
+                    ),
                     server_url=server_url,
-                    tools=[WebSearchTool(), ComputeTool()],
                 )
             
-            metrics = measure_sdk_call(call, client, iterations, "Agents: ADVANCED + WebSearch + Compute")
+            metrics = measure_sdk_call(call, client, iterations, "Agents: ADVANCED + Compute")
             ALL_METRICS.append(metrics)
             if show_detailed:
                 print_detailed_metrics(metrics)
@@ -689,11 +704,12 @@ class TestAgentsPerformance:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.ADVANCED,
-                    input="Research market trends and calculate growth rates",
-                    stream=False,
+                    request=AdvancedAgentRunsRequest(
+                        input="Research market trends and calculate growth rates",
+                        stream=False,
+                        tools=[ResearchTool(), ComputeTool()],
+                    ),
                     server_url=server_url,
-                    tools=[ResearchTool(), ComputeTool()],
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Agents: ADVANCED + Research + Compute")
@@ -702,17 +718,18 @@ class TestAgentsPerformance:
                 print_detailed_metrics(metrics)
     
     def test_agents_advanced_with_all_tools(self, server_url, api_key, iterations, show_detailed):
-        """Advanced agent with all three tools."""
+        """Advanced agent with all tools."""
         client = create_timing_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.ADVANCED,
-                    input="Research tech trends, find data, and calculate statistics",
-                    stream=False,
+                    request=AdvancedAgentRunsRequest(
+                        input="Research tech trends, find data, and calculate statistics",
+                        stream=False,
+                        tools=[ResearchTool(), ComputeTool()],
+                    ),
                     server_url=server_url,
-                    tools=[WebSearchTool(), ResearchTool(), ComputeTool()],
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Agents: ADVANCED + all tools")
@@ -721,39 +738,39 @@ class TestAgentsPerformance:
                 print_detailed_metrics(metrics)
     
     def test_agents_express_verbosity_low(self, server_url, api_key, iterations, show_detailed):
-        """Express agent with low verbosity."""
+        """Express agent (verbosity not supported for express)."""
         client = create_timing_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.EXPRESS,
-                    input="Brief overview of Python",
-                    stream=False,
+                    request=ExpressAgentRunsRequest(
+                        input="Brief overview of Python",
+                        stream=False,
+                    ),
                     server_url=server_url,
-                    verbosity=Verbosity.LOW,
                 )
             
-            metrics = measure_sdk_call(call, client, iterations, "Agents: EXPRESS, verbosity=LOW")
+            metrics = measure_sdk_call(call, client, iterations, "Agents: EXPRESS")
             ALL_METRICS.append(metrics)
             if show_detailed:
                 print_detailed_metrics(metrics)
     
     def test_agents_express_verbosity_high(self, server_url, api_key, iterations, show_detailed):
-        """Express agent with high verbosity."""
+        """Express agent (verbosity not supported for express)."""
         client = create_timing_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.agents.runs.create(
-                    agent=AgentType.EXPRESS,
-                    input="Detailed explanation of Python",
-                    stream=False,
+                    request=ExpressAgentRunsRequest(
+                        input="Detailed explanation of Python",
+                        stream=False,
+                    ),
                     server_url=server_url,
-                    verbosity=Verbosity.HIGH,
                 )
             
-            metrics = measure_sdk_call(call, client, iterations, "Agents: EXPRESS, verbosity=HIGH")
+            metrics = measure_sdk_call(call, client, iterations, "Agents: EXPRESS")
             ALL_METRICS.append(metrics)
             if show_detailed:
                 print_detailed_metrics(metrics)
@@ -774,7 +791,7 @@ class TestContentsPerformance:
             def call():
                 you.contents.generate(
                     urls=["https://www.python.org"],
-                    format_=Format.HTML,
+                    format_=ContentsFormat.HTML,
                     server_url=server_url,
                 )
             
@@ -791,7 +808,7 @@ class TestContentsPerformance:
             def call():
                 you.contents.generate(
                     urls=["https://www.python.org"],
-                    format_=Format.MARKDOWN,
+                    format_=ContentsFormat.MARKDOWN,
                     server_url=server_url,
                 )
             
@@ -812,7 +829,7 @@ class TestContentsPerformance:
                         "https://www.github.com",
                         "https://www.example.com",
                     ],
-                    format_=Format.HTML,
+                    format_=ContentsFormat.HTML,
                     server_url=server_url,
                 )
             
@@ -833,7 +850,7 @@ class TestContentsPerformance:
                         "https://www.github.com",
                         "https://www.example.com",
                     ],
-                    format_=Format.MARKDOWN,
+                    format_=ContentsFormat.MARKDOWN,
                     server_url=server_url,
                 )
             
@@ -856,7 +873,7 @@ class TestContentsPerformance:
                         "https://www.you.com",
                         "https://www.wikipedia.org",
                     ],
-                    format_=Format.HTML,
+                    format_=ContentsFormat.HTML,
                     server_url=server_url,
                 )
             

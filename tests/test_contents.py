@@ -4,10 +4,10 @@ import pytest
 from tests.test_client import create_test_http_client
 from youdotcom import You
 from youdotcom.errors import (
-    PostV1ContentsForbiddenError,
-    PostV1ContentsUnauthorizedError,
+    ContentsForbiddenError,
+    ContentsUnauthorizedError,
 )
-from youdotcom.types.typesafe_models import Format
+from youdotcom.models import ContentsFormat
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ class TestContentsBasic:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             res = you.contents.generate(
                 urls=["https://www.python.org", "https://www.example.com"],
-                format_=Format.HTML,
+                format_=ContentsFormat.HTML,
                 server_url=server_url,
             )
             
@@ -41,7 +41,7 @@ class TestContentsBasic:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             res = you.contents.generate(
                 urls=["https://www.python.org"],
-                format_=Format.MARKDOWN,
+                format_=ContentsFormat.MARKDOWN,
                 server_url=server_url,
             )
             
@@ -58,7 +58,7 @@ class TestContentsBasic:
                     "https://www.github.com",
                     "https://www.python.org",
                 ],
-                format_=Format.MARKDOWN,
+                format_=ContentsFormat.MARKDOWN,
                 server_url=server_url,
             )
             
@@ -71,7 +71,7 @@ class TestContentsBasic:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             res = you.contents.generate(
                 urls=["https://www.example.com"],
-                format_=Format.HTML,
+                format_=ContentsFormat.HTML,
                 server_url=server_url,
             )
             
@@ -96,7 +96,7 @@ class TestContentsErrors:
         client = create_test_http_client("post_/v1/contents-unauthorized")
         
         with You(server_url=server_url, client=client, api_key_auth="invalid") as you:
-            with pytest.raises(PostV1ContentsUnauthorizedError):
+            with pytest.raises(ContentsUnauthorizedError):
                 you.contents.generate(
                     urls=["https://www.example.com"],
                     server_url=server_url,
@@ -106,7 +106,7 @@ class TestContentsErrors:
         client = create_test_http_client("post_/v1/contents-forbidden")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            with pytest.raises(PostV1ContentsForbiddenError):
+            with pytest.raises(ContentsForbiddenError):
                 you.contents.generate(
                     urls=["https://www.example.com"],
                     server_url=server_url,
@@ -118,7 +118,7 @@ class TestContentsErrors:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             res = you.contents.generate(
                 urls=[],
-                format_=Format.HTML,
+                format_=ContentsFormat.HTML,
                 server_url=server_url,
             )
             
