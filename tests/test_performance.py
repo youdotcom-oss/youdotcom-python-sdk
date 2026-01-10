@@ -173,7 +173,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="latest AI developments")
+                you.search.unified(query="latest AI developments", server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: basic query")
             ALL_METRICS.append(metrics)
@@ -186,7 +186,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="python programming", count=10)
+                you.search.unified(query="python programming", count=10, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: with count=10")
             ALL_METRICS.append(metrics)
@@ -199,7 +199,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="breaking news", freshness=Freshness.DAY)
+                you.search.unified(query="breaking news", freshness=Freshness.DAY, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: freshness=DAY")
             ALL_METRICS.append(metrics)
@@ -212,7 +212,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="renewable energy", freshness=Freshness.WEEK)
+                you.search.unified(query="renewable energy", freshness=Freshness.WEEK, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: freshness=WEEK")
             ALL_METRICS.append(metrics)
@@ -225,7 +225,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="local restaurants", country=Country.US)
+                you.search.unified(query="local restaurants", country=Country.US, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: country=US")
             ALL_METRICS.append(metrics)
@@ -238,7 +238,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="football news", country=Country.GB)
+                you.search.unified(query="football news", country=Country.GB, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: country=GB")
             ALL_METRICS.append(metrics)
@@ -251,7 +251,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="machine learning", language=Language.EN)
+                you.search.unified(query="machine learning", language=Language.EN, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: language=EN")
             ALL_METRICS.append(metrics)
@@ -264,7 +264,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="tecnología", language=Language.ES)
+                you.search.unified(query="tecnología", language=Language.ES, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: language=ES")
             ALL_METRICS.append(metrics)
@@ -277,7 +277,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="research", safesearch=SafeSearch.OFF)
+                you.search.unified(query="research", safesearch=SafeSearch.OFF, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: safesearch=OFF")
             ALL_METRICS.append(metrics)
@@ -290,7 +290,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="family content", safesearch=SafeSearch.MODERATE)
+                you.search.unified(query="family content", safesearch=SafeSearch.MODERATE, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: safesearch=MODERATE")
             ALL_METRICS.append(metrics)
@@ -303,7 +303,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="kids learning", safesearch=SafeSearch.STRICT)
+                you.search.unified(query="kids learning", safesearch=SafeSearch.STRICT, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: safesearch=STRICT")
             ALL_METRICS.append(metrics)
@@ -316,7 +316,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="python tutorials", count=5, offset=2)
+                you.search.unified(query="python tutorials", count=5, offset=2, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: with pagination (offset=2)")
             ALL_METRICS.append(metrics)
@@ -333,6 +333,7 @@ class TestSearchPerformance:
                     query="machine learning tutorials",
                     count=3,
                     livecrawl=LiveCrawl.WEB,
+                    server_url=server_url,
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Search: livecrawl=WEB")
@@ -350,6 +351,7 @@ class TestSearchPerformance:
                     query="tech news",
                     count=3,
                     livecrawl=LiveCrawl.NEWS,
+                    server_url=server_url,
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Search: livecrawl=NEWS")
@@ -367,6 +369,7 @@ class TestSearchPerformance:
                     query="quantum computing",
                     count=3,
                     livecrawl=LiveCrawl.ALL,
+                    server_url=server_url,
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Search: livecrawl=ALL")
@@ -385,6 +388,7 @@ class TestSearchPerformance:
                     count=3,
                     livecrawl=LiveCrawl.WEB,
                     livecrawl_formats=LiveCrawlFormats.HTML,
+                    server_url=server_url,
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Search: livecrawl HTML format")
@@ -403,6 +407,7 @@ class TestSearchPerformance:
                     count=3,
                     livecrawl=LiveCrawl.WEB,
                     livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                    server_url=server_url,
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Search: livecrawl Markdown format")
@@ -424,6 +429,7 @@ class TestSearchPerformance:
                     language=Language.EN,
                     safesearch=SafeSearch.MODERATE,
                     offset=0,
+                    server_url=server_url,
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Search: all filters combined")
@@ -444,6 +450,7 @@ class TestSearchPerformance:
                     country=Country.GB,
                     livecrawl=LiveCrawl.WEB,
                     livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                    server_url=server_url,
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Search: filters + livecrawl")
@@ -547,7 +554,10 @@ class TestAgentsPerformance:
                     request=AdvancedAgentRunsRequest(
                         input="Research the latest breakthroughs in quantum computing",
                         stream=False,
-                        tools=[ResearchTool()],
+                        tools=[ResearchTool(
+                            search_effort=SearchEffort.AUTO,
+                            report_verbosity=ReportVerbosity.MEDIUM,
+                        )],
                     ),
                     server_url=server_url,
                 )
@@ -567,7 +577,10 @@ class TestAgentsPerformance:
                     request=AdvancedAgentRunsRequest(
                         input="Quick research on AI",
                         stream=False,
-                        tools=[ResearchTool(search_effort=SearchEffort.LOW)],
+                        tools=[ResearchTool(
+                            search_effort=SearchEffort.LOW,
+                            report_verbosity=ReportVerbosity.MEDIUM,
+                        )],
                     ),
                     server_url=server_url,
                 )
@@ -587,7 +600,10 @@ class TestAgentsPerformance:
                     request=AdvancedAgentRunsRequest(
                         input="Deep research on climate change",
                         stream=False,
-                        tools=[ResearchTool(search_effort=SearchEffort.HIGH)],
+                        tools=[ResearchTool(
+                            search_effort=SearchEffort.HIGH,
+                            report_verbosity=ReportVerbosity.HIGH,
+                        )],
                     ),
                     server_url=server_url,
                 )
@@ -607,7 +623,10 @@ class TestAgentsPerformance:
                     request=AdvancedAgentRunsRequest(
                         input="Brief summary of AI trends",
                         stream=False,
-                        tools=[ResearchTool(report_verbosity=ReportVerbosity.LOW)],
+                        tools=[ResearchTool(
+                            search_effort=SearchEffort.LOW,
+                            report_verbosity=ReportVerbosity.MEDIUM,
+                        )],
                     ),
                     server_url=server_url,
                 )
@@ -627,7 +646,10 @@ class TestAgentsPerformance:
                     request=AdvancedAgentRunsRequest(
                         input="Detailed analysis of blockchain",
                         stream=False,
-                        tools=[ResearchTool(report_verbosity=ReportVerbosity.HIGH)],
+                        tools=[ResearchTool(
+                            search_effort=SearchEffort.HIGH,
+                            report_verbosity=ReportVerbosity.HIGH,
+                        )],
                     ),
                     server_url=server_url,
                 )
@@ -667,7 +689,10 @@ class TestAgentsPerformance:
                     request=AdvancedAgentRunsRequest(
                         input="Find and research AI startups",
                         stream=False,
-                        tools=[ResearchTool()],
+                        tools=[ResearchTool(
+                            search_effort=SearchEffort.AUTO,
+                            report_verbosity=ReportVerbosity.MEDIUM,
+                        )],
                     ),
                     server_url=server_url,
                 )
@@ -707,7 +732,10 @@ class TestAgentsPerformance:
                     request=AdvancedAgentRunsRequest(
                         input="Research market trends and calculate growth rates",
                         stream=False,
-                        tools=[ResearchTool(), ComputeTool()],
+                        tools=[ResearchTool(
+                            search_effort=SearchEffort.AUTO,
+                            report_verbosity=ReportVerbosity.MEDIUM,
+                        ), ComputeTool()],
                     ),
                     server_url=server_url,
                 )
@@ -727,7 +755,10 @@ class TestAgentsPerformance:
                     request=AdvancedAgentRunsRequest(
                         input="Research tech trends, find data, and calculate statistics",
                         stream=False,
-                        tools=[ResearchTool(), ComputeTool()],
+                        tools=[ResearchTool(
+                            search_effort=SearchEffort.AUTO,
+                            report_verbosity=ReportVerbosity.MEDIUM,
+                        ), ComputeTool()],
                     ),
                     server_url=server_url,
                 )
