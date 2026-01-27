@@ -1,12 +1,11 @@
 # Verbosity
 
-Response verbosity level
+Controls the level of detail provided by the agent's response. Choosing high maps to a long-form report while medium maps to a medium verbosity report that captures most details but is less comprehensive.
 
 
 ## Values
 
 | Name     | Value    |
 | -------- | -------- |
-| `LOW`    | low      |
 | `MEDIUM` | medium   |
 | `HIGH`   | high     |

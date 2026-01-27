@@ -60,7 +60,7 @@ func testPostV1ContentsPostV1Contents0(w http.ResponseWriter, req *http.Request)
 		return
 	}
 	
-	// Parse request body to determine format and URLs
+	// Parse request body to determine formats, URLs, and crawl_timeout
 	var requestBody map[string]interface{}
 	bodyBytes, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -74,9 +74,25 @@ func testPostV1ContentsPostV1Contents0(w http.ResponseWriter, req *http.Request)
 		return
 	}
 	
-	format := "html" // default
-	if f, ok := requestBody["format"].(string); ok {
-		format = f
+	// Parse formats array (new in 2.0.0 - replaces single format field)
+	// formats can be: "html", "markdown", "metadata"
+	formats := make(map[string]bool)
+	if formatsArray, ok := requestBody["formats"].([]interface{}); ok {
+		for _, f := range formatsArray {
+			if fStr, ok := f.(string); ok {
+				formats[fStr] = true
+			}
+		}
+	}
+	// Default to html if no formats specified
+	if len(formats) == 0 {
+		formats["html"] = true
+	}
+	
+	// Parse crawl_timeout (new in 2.0.0 - optional, 1-60 seconds)
+	// We just acknowledge it here, mock server doesn't actually use it
+	if crawlTimeout, ok := requestBody["crawl_timeout"].(float64); ok {
+		log.Printf("crawl_timeout specified: %.1f seconds\n", crawlTimeout)
 	}
 	
 	// Get URLs from request or use defaults
@@ -94,7 +110,7 @@ func testPostV1ContentsPostV1Contents0(w http.ResponseWriter, req *http.Request)
 		urls = []string{"https://www.python.org"}
 	}
 	
-	// Build response based on URLs and format
+	// Build response based on URLs and requested formats
 	var respBody []operations.ResponseBody
 	for _, url := range urls {
 		item := operations.ResponseBody{
@@ -102,10 +118,22 @@ func testPostV1ContentsPostV1Contents0(w http.ResponseWriter, req *http.Request)
 			Title: types.String("Mock Title for " + url),
 		}
 		
-		if format == "markdown" {
-			item.Markdown = types.String("# Mock Markdown Content\n\nThis is mock markdown content for " + url)
-		} else {
+		// Include HTML if requested
+		if formats["html"] {
 			item.HTML = types.String("<html><body><h1>Mock HTML Content</h1><p>This is mock HTML content for " + url + "</p></body></html>")
+		}
+		
+		// Include Markdown if requested
+		if formats["markdown"] {
+			item.Markdown = types.String("# Mock Markdown Content\n\nThis is mock markdown content for " + url)
+		}
+		
+		// Include Metadata if requested (new in 2.0.0 - returns json+ld, opengraph info)
+		if formats["metadata"] {
+			item.Metadata = &operations.ContentsMetadata{
+				SiteName:   types.String("Mock Site for " + url),
+				FaviconURL: types.String(url + "/favicon.ico"),
+			}
 		}
 		
 		respBody = append(respBody, item)

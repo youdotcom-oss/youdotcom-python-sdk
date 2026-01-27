@@ -1,0 +1,11 @@
+# Detail
+
+
+## Fields
+
+| Field                                                               | Type                                                                | Required                                                            | Description                                                         | Example                                                             |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `type`                                                              | *str*                                                               | :heavy_check_mark:                                                  | N/A                                                                 | model_attributes_type                                               |
+| `loc`                                                               | List[[models.Loc](../models/loc.md)]                                | :heavy_check_mark:                                                  | N/A                                                                 | [<br/>"body",<br/>"tools",<br/>0<br/>]                              |
+| `msg`                                                               | *str*                                                               | :heavy_check_mark:                                                  | N/A                                                                 | Input should be a valid dictionary or object to extract fields from |
+| `input`                                                             | *str*                                                               | :heavy_check_mark:                                                  | N/A                                                                 | web_search                                                          |

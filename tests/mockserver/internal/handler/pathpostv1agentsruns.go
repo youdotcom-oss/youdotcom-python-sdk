@@ -9,9 +9,6 @@ import (
 	"log"
 	"mockserver/internal/handler/assert"
 	"mockserver/internal/logging"
-	"mockserver/internal/sdk/models/operations"
-	"mockserver/internal/sdk/types"
-	"mockserver/internal/sdk/utils"
 	"mockserver/internal/tracking"
 	"net/http"
 )
@@ -93,23 +90,24 @@ func testPostV1AgentsRunsPostV1AgentsRuns0(w http.ResponseWriter, req *http.Requ
 	// Generate response text based on input
 	responseText := "This is a mock response to: " + input
 	
-	var respBody *operations.PostV1AgentsRunsResponseBody = &operations.PostV1AgentsRunsResponseBody{
-		Output: []operations.Output{
-			operations.Output{
-				Type: types.String("chat_node.answer"),
-				Text: types.String(responseText),
-				Content: types.Pointer(operations.CreateContentUnion2MapOfAny(
-					map[string]any{
-						"query": input,
-						"agent": agent,
-					},
-				)),
-				Agent: types.String(agent),
+	// Construct response with correct structure matching current SDK expectations
+	respMap := map[string]interface{}{
+		"agent": agent,
+		"input": []map[string]interface{}{
+			{
+				"role":    "user",
+				"content": input,
+			},
+		},
+		"output": []map[string]interface{}{
+			{
+				"type": "message.answer",
+				"text": responseText,
 			},
 		},
 	}
-	respBodyBytes, err := utils.MarshalJSON(respBody, "", true)
-
+	
+	respBodyBytes, err := json.Marshal(respMap)
 	if err != nil {
 		http.Error(
 			w,

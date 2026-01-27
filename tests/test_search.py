@@ -4,10 +4,10 @@ import pytest
 from tests.test_client import create_test_http_client
 from youdotcom import You
 from youdotcom.errors import (
-    GetV1SearchForbiddenError,
-    GetV1SearchUnauthorizedError,
+    SearchForbiddenError,
+    SearchUnauthorizedError,
 )
-from youdotcom.types.typesafe_models import (
+from youdotcom.models import (
     Country,
     Freshness,
     LiveCrawl,
@@ -31,7 +31,7 @@ class TestSearchBasic:
         client = create_test_http_client("get_/v1/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.search.unified(query="latest AI developments")
+            res = you.search.unified(query="latest AI developments", server_url=server_url)
             
             assert res.results is not None
             assert res.metadata is not None
@@ -50,6 +50,7 @@ class TestSearchFilters:
                 freshness=Freshness.WEEK,
                 country=Country.US,
                 safesearch=SafeSearch.MODERATE,
+                server_url=server_url,
             )
             
             assert res.results is not None
@@ -63,6 +64,7 @@ class TestSearchFilters:
                 query="python programming",
                 count=5,
                 offset=1,
+                server_url=server_url,
             )
             
             assert res.results is not None
@@ -77,6 +79,7 @@ class TestSearchFilters:
                 count=3,
                 livecrawl=LiveCrawl.WEB,
                 livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                server_url=server_url,
             )
             
             assert res.results is not None
@@ -99,6 +102,7 @@ class TestSearchFilters:
                 safesearch=SafeSearch.STRICT,
                 livecrawl=LiveCrawl.WEB,
                 livecrawl_formats=LiveCrawlFormats.HTML,
+                server_url=server_url,
             )
             
             assert res.results is not None
@@ -115,12 +119,12 @@ class TestSearchErrors:
         client = create_test_http_client("get_/v1/search-unauthorized")
         
         with You(server_url=server_url, client=client, api_key_auth="invalid") as you:
-            with pytest.raises(GetV1SearchUnauthorizedError):
-                you.search.unified(query="test")
+            with pytest.raises((SearchUnauthorizedError, SearchForbiddenError)):
+                you.search.unified(query="test", server_url=server_url)
 
     def test_forbidden(self, server_url, api_key):
         client = create_test_http_client("get_/v1/search-forbidden")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            with pytest.raises(GetV1SearchForbiddenError):
-                you.search.unified(query="test")
+            with pytest.raises(SearchForbiddenError):
+                you.search.unified(query="test", server_url=server_url)

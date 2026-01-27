@@ -4,23 +4,25 @@ package operations
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"mockserver/internal/sdk/models/components"
-	"mockserver/internal/sdk/utils"
 )
 
-type FormatEnum2 string
+// ContentsFormats represents the available format types for content retrieval.
+// In 2.0.0, this changed from a single format string to an array of formats.
+type ContentsFormats string
 
 const (
-	FormatEnum2HTML     FormatEnum2 = "html"
-	FormatEnum2Markdown FormatEnum2 = "markdown"
+	ContentsFormatsHTML     ContentsFormats = "html"
+	ContentsFormatsMarkdown ContentsFormats = "markdown"
+	ContentsFormatsMetadata ContentsFormats = "metadata"
 )
 
-func (e FormatEnum2) ToPointer() *FormatEnum2 {
+func (e ContentsFormats) ToPointer() *ContentsFormats {
 	return &e
 }
-func (e *FormatEnum2) UnmarshalJSON(data []byte) error {
+
+func (e *ContentsFormats) UnmarshalJSON(data []byte) error {
 	var v string
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
@@ -29,109 +31,24 @@ func (e *FormatEnum2) UnmarshalJSON(data []byte) error {
 	case "html":
 		fallthrough
 	case "markdown":
-		*e = FormatEnum2(v)
-		return nil
-	default:
-		return fmt.Errorf("invalid value for FormatEnum2: %v", v)
-	}
-}
-
-// FormatEnum1 - The format of the content to be returned.
-type FormatEnum1 string
-
-const (
-	FormatEnum1Html     FormatEnum1 = "html"
-	FormatEnum1Markdown FormatEnum1 = "markdown"
-)
-
-func (e FormatEnum1) ToPointer() *FormatEnum1 {
-	return &e
-}
-func (e *FormatEnum1) UnmarshalJSON(data []byte) error {
-	var v string
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	switch v {
-	case "html":
 		fallthrough
-	case "markdown":
-		*e = FormatEnum1(v)
+	case "metadata":
+		*e = ContentsFormats(v)
 		return nil
 	default:
-		return fmt.Errorf("invalid value for FormatEnum1: %v", v)
+		return fmt.Errorf("invalid value for ContentsFormats: %v", v)
 	}
-}
-
-type FormatType string
-
-const (
-	FormatTypeFormatEnum1 FormatType = "Format_enum_1"
-	FormatTypeFormatEnum2 FormatType = "format_enum_2"
-)
-
-// Format - The format of the content to be returned.
-type Format struct {
-	FormatEnum1 *FormatEnum1 `queryParam:"inline"`
-	FormatEnum2 *FormatEnum2 `queryParam:"inline"`
-
-	Type FormatType
-}
-
-func CreateFormatFormatEnum1(formatEnum1 FormatEnum1) Format {
-	typ := FormatTypeFormatEnum1
-
-	return Format{
-		FormatEnum1: &formatEnum1,
-		Type:        typ,
-	}
-}
-
-func CreateFormatFormatEnum2(formatEnum2 FormatEnum2) Format {
-	typ := FormatTypeFormatEnum2
-
-	return Format{
-		FormatEnum2: &formatEnum2,
-		Type:        typ,
-	}
-}
-
-func (u *Format) UnmarshalJSON(data []byte) error {
-
-	var formatEnum1 FormatEnum1 = FormatEnum1("")
-	if err := utils.UnmarshalJSON(data, &formatEnum1, "", true, nil); err == nil {
-		u.FormatEnum1 = &formatEnum1
-		u.Type = FormatTypeFormatEnum1
-		return nil
-	}
-
-	var formatEnum2 FormatEnum2 = FormatEnum2("")
-	if err := utils.UnmarshalJSON(data, &formatEnum2, "", true, nil); err == nil {
-		u.FormatEnum2 = &formatEnum2
-		u.Type = FormatTypeFormatEnum2
-		return nil
-	}
-
-	return fmt.Errorf("could not unmarshal `%s` into any supported union types for Format", string(data))
-}
-
-func (u Format) MarshalJSON() ([]byte, error) {
-	if u.FormatEnum1 != nil {
-		return utils.MarshalJSON(u.FormatEnum1, "", true)
-	}
-
-	if u.FormatEnum2 != nil {
-		return utils.MarshalJSON(u.FormatEnum2, "", true)
-	}
-
-	return nil, errors.New("could not marshal union type Format: all fields are null")
 }
 
 type PostV1ContentsRequest struct {
 	// Array of URLs to fetch the contents from.
 	Urls []string `json:"urls,omitempty"`
-	// The format of the content to be returned.
-	Format *Format `json:"format,omitempty"`
+	// The formats of the content to be returned. Can include 'html', 'markdown', and/or 'metadata'.
+	// Changed in 2.0.0: Now an array instead of single value.
+	Formats []ContentsFormats `json:"formats,omitempty"`
+	// The timeout in seconds for crawling each URL. Must be between 1 and 60 seconds.
+	// New in 2.0.0.
+	CrawlTimeout *float64 `json:"crawl_timeout,omitempty"`
 }
 
 func (o *PostV1ContentsRequest) GetUrls() []string {
@@ -141,11 +58,42 @@ func (o *PostV1ContentsRequest) GetUrls() []string {
 	return o.Urls
 }
 
-func (o *PostV1ContentsRequest) GetFormat() *Format {
+func (o *PostV1ContentsRequest) GetFormats() []ContentsFormats {
 	if o == nil {
 		return nil
 	}
-	return o.Format
+	return o.Formats
+}
+
+func (o *PostV1ContentsRequest) GetCrawlTimeout() *float64 {
+	if o == nil {
+		return nil
+	}
+	return o.CrawlTimeout
+}
+
+// ContentsMetadata contains metadata about the web page.
+// Only returned when 'metadata' is included in the formats array.
+// Returns json+ld, opengraph information when available.
+type ContentsMetadata struct {
+	// The OpenGraph site name of the web page.
+	SiteName *string `json:"site_name,omitempty"`
+	// The URL of the favicon of the web page's domain.
+	FaviconURL *string `json:"favicon_url,omitempty"`
+}
+
+func (o *ContentsMetadata) GetSiteName() *string {
+	if o == nil {
+		return nil
+	}
+	return o.SiteName
+}
+
+func (o *ContentsMetadata) GetFaviconURL() *string {
+	if o == nil {
+		return nil
+	}
+	return o.FaviconURL
 }
 
 type ResponseBody struct {
@@ -157,6 +105,9 @@ type ResponseBody struct {
 	HTML *string `json:"html,omitempty"`
 	// The retrieved Markdown content of the web page.
 	Markdown *string `json:"markdown,omitempty"`
+	// Metadata about the web page (json+ld, opengraph info).
+	// Only returned when 'metadata' is included in the formats array.
+	Metadata *ContentsMetadata `json:"metadata,omitempty"`
 }
 
 func (o *ResponseBody) GetURL() *string {
@@ -185,6 +136,13 @@ func (o *ResponseBody) GetMarkdown() *string {
 		return nil
 	}
 	return o.Markdown
+}
+
+func (o *ResponseBody) GetMetadata() *ContentsMetadata {
+	if o == nil {
+		return nil
+	}
+	return o.Metadata
 }
 
 type PostV1ContentsResponse struct {

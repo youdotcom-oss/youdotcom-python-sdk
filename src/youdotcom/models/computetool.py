@@ -10,15 +10,13 @@ from youdotcom.utils import validate_const
 
 
 class ComputeToolTypedDict(TypedDict):
-    r"""Mathematical computation tool"""
-
     type: Literal["compute"]
+    r"""Setting this value to \"compute\" is mandatory to use the compute agent."""
 
 
 class ComputeTool(BaseModel):
-    r"""Mathematical computation tool"""
-
     TYPE: Annotated[
         Annotated[Literal["compute"], AfterValidator(validate_const("compute"))],
         pydantic.Field(alias="type"),
     ] = "compute"
+    r"""Setting this value to \"compute\" is mandatory to use the compute agent."""

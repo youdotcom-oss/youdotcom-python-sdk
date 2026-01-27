@@ -1,0 +1,1125 @@
+openapi: 3.1.0
+info:
+  title: You.com API
+  description: |
+    Comprehensive API for You.com services:
+    - **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
+    - **Search API**: Get search results from web and news sources
+    - **Contents API**: Retrieve and process web page content
+  version: 1.0.0
+servers:
+  - url: https://ydc-index.io
+paths:
+  /v1/agents/runs:
+    post:
+      operationId: AgentsRuns
+      security:
+        - ApiKeyAuth: []
+      summary: Run an Agent
+      description: |
+        Execute queries using You.com's AI agents. This endpoint supports three agent types:
+
+        - **Express Agent**: Fast responses with optional web search (max 1 search)
+        - **Advanced Agent**: Complex queries with multi-turn reasoning, planning, and tool usage
+        - **Custom Agent**: User-configured assistants created in the You.com UI
+
+        The response format depends on the `stream` parameter - either a complete JSON payload or Server-Sent Events (SSE).
+      requestBody:
+        description: "The parameters to ask the agent a question"
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/ExpressAgentRunsRequest"
+                - $ref: "#/components/schemas/AdvancedAgentRunsRequest"
+                - $ref: "#/components/schemas/CustomAgentRunsRequest"
+            examples:
+              express_batch:
+                summary: Express Agent - Batch Response
+                value:
+                  agent: express
+                  input: "What is the capital of France?"
+                  stream: false
+              express_stream:
+                summary: Express Agent - Streaming Response
+                value:
+                  agent: express
+                  input: "What are some great recipes I can make in under half an hour"
+                  stream: true
+                  tools:
+                    - type: web_search
+              advanced_batch:
+                summary: Advanced Agent - Batch Response
+                value:
+                  agent: advanced
+                  input: "You are a biologist studying the impacts of microplastics. Explain what microplastics are to a group of engineers, explain the impacts of microplastics on the body, and what the common sources and dosages of microplastics are. Highlight what a safe dosage might be and how to achieve it"
+                  stream: false
+                  tools:
+                    - type: research
+                      search_effort: auto
+                      report_verbosity: medium
+              advanced_stream:
+                summary: Advanced Agent - Streaming Response
+                value:
+                  agent: advanced
+                  input: "Analyze the economic impact of renewable energy adoption"
+                  stream: true
+                  tools:
+                    - type: compute
+              custom_batch:
+                summary: Custom Agent - Batch Response
+                value:
+                  agent: "63773261-b4de-4d8f-9dfd-cff206a5cb51"
+                  input: "What is the capital of France?"
+                  stream: false
+              custom_stream:
+                summary: Custom Agent - Streaming Response
+                value:
+                  agent: "63773261-b4de-4d8f-9dfd-cff206a5cb51"
+                  input: "Tell me about the history of Paris"
+                  stream: true
+      responses:
+        "200":
+          description: |
+            Successful agent response. The content type depends on the `stream` parameter:
+            - When `stream: false` - Returns complete JSON response (`application/json`)
+            - When `stream: true` - Returns Server-Sent Events stream (`text/event-stream`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentRunsBatchResponse"
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/AgentRunsStreamingResponse"
+        "400":
+          description: The Authorization Bearer token was missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentRuns400Response"
+        "401":
+          description: Unauthorized - Invalid or expired API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentRuns401Response"
+        "422":
+          description: Unprocessable Entity - Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentRuns422Response"
+      servers:
+        - url: https://api.you.com
+      tags:
+        - agents.runs
+      x-speakeasy-name-override: create
+  /v1/search:
+    get:
+      operationId: search
+      summary: Returns a list of unified search results from web and news sources
+      servers:
+        - url: https://ydc-index.io
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: query
+          in: query
+          description: The search query used to retrieve relevant results from the web. You can also include [search operators](#search-operators) to refine your search.
+          required: true
+          schema:
+            type: string
+            default: "Your query"
+          example: "Your query"
+        - name: count
+          in: query
+          description: Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them).
+          required: false
+          schema:
+            type: integer
+            maximum: 100
+            minimum: 1
+        - name: freshness
+          in: query
+          description: Specifies the freshness of the results to return.
+          required: false
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Freshness'
+              - type: string
+        - name: offset
+          in: query
+          description: Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`.
+          required: false
+          schema:
+            type: integer
+        - name: country
+          in: query
+          description: The country code that determines the geographical focus of the web results.
+          required: false
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Country'
+              - type: string
+        - name: language
+          in: query
+          description: The language of the web results that will be returned (BCP 47 format).
+          required: false
+          schema:
+            $ref: '#/components/schemas/Language'
+        - name: safesearch
+          in: query
+          description: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
+          required: false
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/SafeSearch'
+              - type: string
+        - name: livecrawl
+          in: query
+          description: Indicates which section(s) of search results to livecrawl and return full page content.
+          required: false
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/LiveCrawl'
+              - type: string
+        - name: livecrawl_formats
+          in: query
+          description: Indicates the format of the livecrawled content.
+          required: false
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/LiveCrawlFormats'
+              - type: string
+      responses:
+        "200":
+          description: A JSON object containing unified search results from web and news sources
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: object
+                    properties:
+                      web:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type: string
+                              description: The URL of the specific search result.
+                              example: "https://you.com"
+                            title:
+                              type: string
+                              description: The title or name of the search result.
+                              example: "The World's Greatest Search Engine!"
+                            description:
+                              type: string
+                              description: A brief description of the content of the search result.
+                              example: "Search on YDC"
+                            snippets:
+                              type: array
+                              items:
+                                type: string
+                                example: "I'm an AI assistant that helps you get more done. What can I help you with?"
+                              description: An array of text snippets from the search result, providing a preview of the content.
+                            thumbnail_url:
+                              type: string
+                              description: URL of the thumbnail.
+                              example: "https://www.somethumbnailsite.com/thumbnail.jpg"
+                            page_age:
+                              type: string
+                              format: date-time
+                              description: The age of the search result.
+                              example: "2025-06-25T11:41:00"
+                            contents:
+                              type: object
+                              properties:
+                                html:
+                                  type: string
+                                  description: The HTML content of the page.
+                                markdown:
+                                  type: string
+                                  description: The Markdown content of the page.
+                              description: Contents of the page if livecrawl was enabled.
+                            authors:
+                              type: array
+                              items:
+                                type: string
+                                example: "John Doe"
+                              description: An array of authors of the search result.
+                            favicon_url:
+                              type: string
+                              description: The URL of the favicon of the search result's domain.
+                              example: "https://someurl.com/favicon"
+                      news:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            title:
+                              type: string
+                              description: The title of the news result.
+                              example: "Exclusive | You.com becomes the backbone of the EU's AI strategy"
+                            description:
+                              type: string
+                              description: A brief description of the content of the news result.
+                              example: "As the EU's AI strategy is being debated, You.com becomes the backbone of the EU's AI strategy."
+                            page_age:
+                              type: string
+                              format: date-time
+                              description: UTC timestamp of the article's publication date.
+                              example: "2025-06-25T11:41:00"
+                            thumbnail_url:
+                              type: string
+                              description: URL of the thumbnail.
+                              example: "https://www.somethumbnailsite.com/thumbnail.jpg"
+                            url:
+                              type: string
+                              description: The URL of the news result.
+                              example: "https://www.you.com/news/eu-ai-strategy-youcom"
+                  metadata:
+                    type: object
+                    properties:
+                      search_uuid:
+                        type: string
+                        format: uuid
+                        example: "942ccbdd-7705-4d9c-9d37-4ef386658e90"
+                      query:
+                        type: string
+                        description: Returns the search query used to retrieve the results.
+                        example: "Your query"
+                      latency:
+                        type: number
+                        example: 0.123
+        "401":
+          description: Unauthorized. Problems with API key.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error detail message.
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    detail: "API key is required"
+                invalidOrExpired:
+                  summary: Invalid/expired API key
+                  value:
+                    detail: "Invalid or expired API key"
+                otherAuthParsing:
+                  summary: Other auth parsing errors
+                  value:
+                    detail: "<error message>"
+        "403":
+          description: Forbidden. API key lacks scope for this path.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                missingScopes:
+                  summary: Missing required scopes
+                  value:
+                    detail: "Missing required scopes"
+        "500":
+          description: Internal Server Error during authentication/authorization middleware.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                authFailure:
+                  summary: Authentication failure
+                  value:
+                    detail: "Internal authentication error"
+                authorizationFailure:
+                  summary: Authorization failure
+                  value:
+                    detail: "Internal authorization error"
+      tags:
+        - search
+      x-speakeasy-name-override: unified
+  /v1/contents:
+    post:
+      operationId: contents
+      summary: Returns the content of the web pages
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                urls:
+                  type: array
+                  items:
+                    type: string
+                    format: uri
+                    example: "https://www.you.com"
+                  description: Array of URLs to fetch the contents from.
+                formats:
+                  $ref: '#/components/schemas/ContentsFormats'
+                crawl_timeout:
+                  type: number
+                  maximum: 60
+                  minimum: 1
+                  description: The timeout in seconds for crawling each URL. Must be between 1 and 60 seconds.
+                  example: 10
+        required: true
+      responses:
+        "200":
+          description: An array of JSON objects containing the page content of each web page
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                      format: uri
+                      description: The webpage URL whose content has been fetched.
+                      example: "https://www.you.com"
+                    title:
+                      type: string
+                      description: The title of the web page.
+                      example: "The best website in the world"
+                    html:
+                      type: string
+                      description: The retrieved HTML content of the web page.
+                      nullable: true
+                    markdown:
+                      type: string
+                      description: The retrieved Markdown content of the web page.
+                      nullable: true
+                    metadata:
+                      $ref: '#/components/schemas/ContentsMetadata'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error detail message.
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    detail: "API key is required"
+                invalidOrExpired:
+                  summary: Invalid/expired API key
+                  value:
+                    detail: "Invalid or expired API key"
+                otherAuthParsing:
+                  summary: Other auth parsing errors
+                  value:
+                    detail: "<error message>"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                missingScopes:
+                  summary: Missing required scopes
+                  value:
+                    detail: "Missing required scopes"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                authFailure:
+                  summary: Authentication failure
+                  value:
+                    detail: "Internal authentication error"
+                authorizationFailure:
+                  summary: Authorization failure
+                  value:
+                    detail: "Internal authorization error"
+      tags:
+        - contents
+      x-speakeasy-name-override: generate
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: "The unique API Key required to authorize API access. Learn how to get yours in the [“Get your API key” section of the documentation](https://docs.you.com/get-started/quickstart#get-your-api-key)."
+  schemas:
+    # REQUEST SCHEMAS
+    ExpressAgentRunsRequest:
+      type: object
+      required:
+        - agent
+        - input
+      properties:
+        agent:
+          type: string
+          const: express
+          description: >-
+            Setting this value to "express" is mandatory to use the express agent.
+          example: express
+        input:
+          type: string
+          description: "The question you'd like to ask the agent"
+          example: "What are some great recipes I can make in under half an hour"
+        stream:
+          type: boolean
+          default: false
+          description: >-
+            Must be set to `true` when you want to stream the express agent response as it's being generated, and `false` when you want the response to return after the agent has finished.
+        tools:
+          type: array
+          description: You can optionally ground the express agent response using results fetched from the web (max 1 web search)
+          items:
+            $ref: "#/components/schemas/WebSearchTool"
+    AdvancedAgentRunsRequest:
+      type: object
+      required:
+        - agent
+        - input
+      properties:
+        agent:
+          type: string
+          const: advanced
+          description: >-
+            Setting this value to "advanced" is mandatory to use the advanced agent.
+          example: advanced
+        input:
+          type: string
+          description: "The question you'd like to ask the agent"
+          example: "Analyze the economic impact of renewable energy adoption"
+        stream:
+          type: boolean
+          default: false
+          description: >-
+            Must be set to `true` when you want to stream the agent response as it's being generated, and `false` when you want the response to return after the agent has finished.
+        tools:
+          type: array
+          description: >-
+            The advanced agent accepts either `compute` or `research` tools <Note> Compute allows your agent to use a Python code interpreter for tasks such as data analysis, mathematical calculations, and plot generation.<br><br> Research iteratively searches the web, analyzes the results, and stops when finished. It then provides a comprehensive report to your agent with current, cited information.</Note>
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/ComputeTool"
+              - $ref: "#/components/schemas/ResearchTool"
+            discriminator:
+              propertyName: type
+              mapping:
+                compute: "#/components/schemas/ComputeTool"
+                research: "#/components/schemas/ResearchTool"
+        verbosity:
+          $ref: "#/components/schemas/Verbosity"
+        workflow_config:
+          type: object
+          required:
+            - max_workflow_steps
+          description: Defines the maximum number of steps the agent uses in its workflow plan to answer your query. Higher values allow for more tool calls, but it takes longer for the agent to provide the response. For instance, setting max_workflow_steps=5 could allow the agent to call the research tool 3 times and the compute tool 2 times.
+          properties:
+            max_workflow_steps:
+              type: integer
+              example: 10
+              default: 10
+              minimum: 1
+              maximum: 20
+    CustomAgentRunsRequest:
+      type: object
+      required:
+        - agent
+        - input
+      properties:
+        agent:
+          type: string
+          description: >-
+            Set the value to a Custom Agent's ID. Learn how to obtain an agent ID here [Create Custom Agents](/agents/custom/create-agents).
+          example: 63773261-b4de-4d8f-9dfd-cff206a5cb51
+        input:
+          type: string
+          description: "The question you'd like to ask the agent"
+          example: "What are some insights about my data?"
+        stream:
+          type: boolean
+          default: false
+          description: >-
+            Must be set to `true` when you want to stream the agent response as it's being generated, and `false` when you want the response to return after the agent has finished.
+    # TOOL SCHEMAS
+    WebSearchTool:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          const: web_search
+          description: Setting this value to "web_search" is mandatory to use the web_search tool.
+    ComputeTool:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          const: compute
+          description: Setting this value to "compute" is mandatory to use the compute agent.
+    ResearchTool:
+      type: object
+      required:
+        - type
+        - search_effort
+        - report_verbosity
+      properties:
+        type:
+          type: string
+          const: research
+          description: Setting this value to "research" is mandatory to use the research agent.
+        search_effort:
+          $ref: "#/components/schemas/SearchEffort"
+        report_verbosity:
+          $ref: "#/components/schemas/ReportVerbosity"
+    SearchEffort:
+      type: string
+      enum:
+        - auto
+        - low
+        - medium
+        - high
+      description: >-
+        This parameter maps to different configurations regarding the depth of research the tool can perform. Its values range from `low`, `medium` to `high`.
+
+
+        Alternatively, use `auto` mode for a more dynamic search approach, allowing the tool the freedom to adjust its subparameters.
+    ReportVerbosity:
+      type: string
+      enum:
+        - medium
+        - high
+      description: Select whether to receive a medium or high length model response.
+    Verbosity:
+      type: string
+      enum:
+        - medium
+        - high
+      example: medium
+      description: >-
+        Controls the level of detail provided by the agent's response. Choosing high maps to a long-form report while medium maps to a medium verbosity report that captures most details but is less comprehensive.
+    # RESPONSE SCHEMAS
+    AgentRunsBatchResponse:
+      type: object
+      required:
+        - agent
+        - input
+        - output
+      properties:
+        agent:
+          type: string
+          description: The id of the agent populated in the request.
+          example: express
+        mode:
+          type: string
+          description: The mode of the agent
+          example: express
+        input:
+          type: array
+          description: The users access role and question you asked the agent
+          items:
+            type: object
+            required:
+              - role
+              - content
+            properties:
+              role:
+                type: string
+                description: The access based role of the user
+                enum:
+                  - user
+                example: user
+              content:
+                type: string
+                description: The question populated in the request payload
+                example: What is the capital of France?
+        output:
+          type: array
+          description: Array of response outputs from the agent
+          items:
+            $ref: "#/components/schemas/AgentRunsResponseOutput"
+    AgentRunsResponseOutput:
+      type: object
+      description: The response populated by the agent.
+      required:
+        - type
+      properties:
+        text:
+          type: string
+          description: >-
+            The text response of the agent. This field returns when `type == message.answer`. The response returns as markdown formatted text.
+
+
+            For an overview of Markdown syntax, see the [Basic Syntax Markdown Guide](https://www.markdownguide.org/basic-syntax/)
+          example: "#### Capital of France\n\nThe capital of France is **Paris**. It is not only the capital but also the most populous city in the country. Paris is situated on the Seine River in the northern part of France, within the Île-de-France region. It serves as the main cultural, economic, and political center of France [[1]](https://www.coe.int/en/web/interculturalcities/paris)[[2]](https://en.wikipedia.org/wiki/Paris)."
+        type:
+          type: string
+          description: >-
+            The type of output. This can either be:
+
+            * `message.answer` for text responses
+
+            * `web_search.results` for output that contains web links. `web_search.results` only appear when you use the `research` tool or express agent with web_search
+          example: "web_search.results"
+          enum:
+            - message.answer
+            - web_search.results
+        content:
+          type: array
+          description: >-
+            The text response of the agent.
+
+            This field returns when `type == web_search.results`
+          items:
+            $ref: "#/components/schemas/AgentRunsResponseWebSearchResult"
+    AgentRunsResponseWebSearchResult:
+      type: object
+      description: The text response of the agent. This field only returns when the type is `web_search.results`
+      required:
+        - source_type
+        - citation_uri
+        - title
+        - snippet
+        - url
+      properties:
+        source_type:
+          type: string
+          description: The type of content the agent can return outside a text response
+          example: web_search
+          const: web_search
+        citation_uri:
+          type: string
+          description: The web search result the agent returned along in its response
+          example: "https://www.foodnetwork.com/recipes/photos/30-minute-dinner-recipes"
+        provider:
+          type: string
+          description: "This is currently unused"
+          example: null
+        title:
+          type: string
+          description: "The title of the web site returned under url"
+          example: "103 Easy 30-Minute Dinner Recipes That Will Save Your Weeknights"
+        snippet:
+          type: string
+          description: "A textual portion of the web site returned under url"
+          example: "Apr 11, 2025 ... These quick dinner ideas will help you get a meal on the table in half an hour or less. ... It's a simple recipe ready in under half an hour with ..."
+        thumbnail_url:
+          type: string
+          description: The thumbnail image of the url
+          example: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJTNucjGK8ZqfurwAmyuyhQ-7n7AVZHoJwUqfsqRYuCqlIpMwepNDEE_M&s"
+        url:
+          type: string
+          description: "The web search result the agent returned along in its response"
+          example: "https://www.foodnetwork.com/recipes/photos/30-minute-dinner-recipes"
+    # STREAMING RESPONSE SCHEMAS
+    AgentRunsStreamingResponse:
+      type: object
+      description: A server-sent event containing stock market update content
+      required: [id, event, data]
+      properties:
+        id:
+          type: string
+          description: "Sequence number of the SSE event, starts from 0"
+        event:
+          type: string
+          description: "The type of the SSE event"
+        data:
+          oneOf:
+            - $ref: "#/components/schemas/response.created"
+            - $ref: "#/components/schemas/response.starting"
+            - $ref: "#/components/schemas/response.output_item.added"
+            - $ref: "#/components/schemas/response.output_content.full"
+            - $ref: "#/components/schemas/response.output_item.done"
+            - $ref: "#/components/schemas/response.output_text.delta"
+            - $ref: "#/components/schemas/response.done"
+    response.created:
+      type: object
+      description: SSE event signifying the response stream has been created
+      required:
+        - seq_id
+        - type
+      properties:
+        seq_id:
+          type: integer
+          example: 0
+        type:
+          type: string
+          const: response.created
+          example: response.created
+    response.starting:
+      type: object
+      description: SSE event signifying the response is starting
+      required:
+        - seq_id
+        - type
+      properties:
+        seq_id:
+          type: integer
+          example: 1
+        type:
+          type: string
+          const: response.starting
+          example: response.starting
+    response.output_item.added:
+      type: object
+      description: SSE event signifying an output item has been added
+      required:
+        - seq_id
+        - type
+        - response
+      properties:
+        seq_id:
+          type: integer
+          example: 2
+        type:
+          type: string
+          const: response.output_item.added
+          example: response.output_item.added
+        response:
+          type: object
+          required:
+            - output_index
+          properties:
+            output_index:
+              type: integer
+              description: The index of the output item in the response
+              example: 0
+    response.output_content.full:
+      type: object
+      required:
+        - seq_id
+        - type
+        - response
+      properties:
+        seq_id:
+          type: integer
+          example: 3
+        type:
+          type: string
+          const: response.output_content.full
+          example: response.output_content.full
+        response:
+          type: object
+          required:
+            - output_index
+            - type
+            - full
+          properties:
+            output_index:
+              type: integer
+              example: 0
+            type:
+              type: string
+              const: web_search.results
+              example: web_search.results
+            full:
+              type: array
+              description: Complete web search results
+              items:
+                $ref: "#/components/schemas/AgentRunsResponseWebSearchResult"
+    response.output_item.done:
+      type: object
+      required:
+        - seq_id
+        - type
+        - response
+      properties:
+        seq_id:
+          type: integer
+          example: 4
+        type:
+          type: string
+          const: response.output_item.done
+          example: response.output_item.done
+        response:
+          type: object
+          required:
+            - output_index
+          properties:
+            output_index:
+              type: integer
+              example: 0
+    response.output_text.delta:
+      type: object
+      required:
+        - seq_id
+        - type
+        - response
+      properties:
+        seq_id:
+          type: integer
+          example: 6
+        type:
+          type: string
+          const: response.output_text.delta
+          example: response.output_text.delta
+        response:
+          type: object
+          required:
+            - output_index
+            - type
+            - delta
+          properties:
+            output_index:
+              type: integer
+              example: 1
+            type:
+              type: string
+              const: message.answer
+              example: message.answer
+            delta:
+              type: string
+              description: Incremental text content
+              example: " Test"
+    response.done:
+      type: object
+      required:
+        - seq_id
+        - type
+        - response
+      properties:
+        seq_id:
+          type: integer
+          example: 249
+        type:
+          type: string
+          const: response.done
+          example: response.done
+        response:
+          type: object
+          required:
+            - run_time_ms
+            - finished
+          properties:
+            run_time_ms:
+              type: string
+              description: Total runtime in milliseconds
+              example: "8.029"
+            finished:
+              type: boolean
+              description: Whether the response is complete
+              example: true
+    # ERROR RESPONSE SCHEMAS
+    AgentRuns400Response:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: "Invalid or expired API key"
+      description: "The message returned by the error"
+    AgentRuns401Response:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: "Invalid or expired API key"
+      description: "The message returned by the error"
+    AgentRuns422Response:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                example: model_attributes_type
+              loc:
+                type: array
+                items:
+                  oneOf:
+                    - type: string
+                    - type: integer
+                example: ["body", "tools", 0]
+              msg:
+                type: string
+                example: Input should be a valid dictionary or object to extract fields from
+              input:
+                type: string
+                example: web_search
+            required:
+              - type
+              - loc
+              - msg
+              - input
+    Freshness:
+      type: string
+      enum:
+        - day
+        - week
+        - month
+        - year
+      description: Specifies the freshness of the results to return.
+    Country:
+      type: string
+      enum:
+        - 'AR'
+        - 'AU'
+        - 'AT'
+        - 'BE'
+        - 'BR'
+        - 'CA'
+        - 'CL'
+        - 'DK'
+        - 'FI'
+        - 'FR'
+        - 'DE'
+        - 'HK'
+        - 'IN'
+        - 'ID'
+        - 'IT'
+        - 'JP'
+        - 'KR'
+        - 'MY'
+        - 'MX'
+        - 'NL'
+        - 'NZ'
+        - 'NO'
+        - 'CN'
+        - 'PL'
+        - 'PT'
+        - 'PH'
+        - 'RU'
+        - 'SA'
+        - 'ZA'
+        - 'ES'
+        - 'SE'
+        - 'CH'
+        - 'TW'
+        - 'TR'
+        - 'GB'
+        - 'US'
+      description: The country code that determines the geographical focus of the web results.
+    Language:
+      type: string
+      enum:
+        - 'AR'
+        - 'EU'
+        - 'BN'
+        - 'BG'
+        - 'CA'
+        - 'ZH-HANS'
+        - 'ZH-HANT'
+        - 'HR'
+        - 'CS'
+        - 'DA'
+        - 'NL'
+        - 'EN'
+        - 'EN-GB'
+        - 'ET'
+        - 'FI'
+        - 'FR'
+        - 'GL'
+        - 'DE'
+        - 'EL'
+        - 'GU'
+        - 'HE'
+        - 'HI'
+        - 'HU'
+        - 'IS'
+        - 'IT'
+        - 'JP'
+        - 'KN'
+        - 'KO'
+        - 'LV'
+        - 'LT'
+        - 'MS'
+        - 'ML'
+        - 'MR'
+        - 'NB'
+        - 'PL'
+        - 'PT-BR'
+        - 'PT-PT'
+        - 'PA'
+        - 'RO'
+        - 'RU'
+        - 'SR'
+        - 'SK'
+        - 'SL'
+        - 'ES'
+        - 'SV'
+        - 'TA'
+        - 'TE'
+        - 'TH'
+        - 'TR'
+        - 'UK'
+        - 'VI'
+      default: 'EN'
+    SafeSearch:
+      type: string
+      enum:
+        - off
+        - moderate
+        - strict
+      description: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
+    LiveCrawl:
+      type: string
+      enum:
+        - web
+        - news
+        - all
+      description: Indicates which section(s) of search results to livecrawl and return full page content.
+    LiveCrawlFormats:
+      type: string
+      enum:
+        - html
+        - markdown
+      description: Indicates the format of the livecrawled content.
+    ContentsFormats:
+      type: array
+      items:
+        type: string
+        enum:
+          - html
+          - markdown
+          - metadata
+      description: The formats of the content to be returned. Can include 'html', 'markdown', and/or 'metadata'.
+      example: ["html", "markdown"]
+    ContentsMetadata:
+      type: object
+      properties:
+        site_name:
+          type: string
+          description: The OpenGraph site name of the web page.
+          nullable: true
+          example: "You.com"
+        favicon_url:
+          type: string
+          description: The URL of the favicon of the web page's domain.
+          example: "https://api.ydc-index.io/favicon?domain=you.com&size=128"
+      description: Metadata about the web page. Only returned when 'metadata' is included in the formats array.
+      nullable: true
+security:
+  - ApiKeyAuth: []

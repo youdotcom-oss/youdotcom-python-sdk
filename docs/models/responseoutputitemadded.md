@@ -1,0 +1,12 @@
+# ResponseOutputItemAdded
+
+SSE event signifying an output item has been added
+
+
+## Fields
+
+| Field                                                                                  | Type                                                                                   | Required                                                                               | Description                                                                            | Example                                                                                |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `seq_id`                                                                               | *int*                                                                                  | :heavy_check_mark:                                                                     | N/A                                                                                    | 2                                                                                      |
+| `type`                                                                                 | *Literal["response.output_item.added"]*                                                | :heavy_check_mark:                                                                     | N/A                                                                                    | response.output_item.added                                                             |
+| `response`                                                                             | [models.ResponseOutputItemAddedResponse](../models/responseoutputitemaddedresponse.md) | :heavy_check_mark:                                                                     | N/A                                                                                    |                                                                                        |
