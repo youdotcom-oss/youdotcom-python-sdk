@@ -1,4 +1,4 @@
-# SearchMetadata
+# Metadata
 
 
 ## Fields

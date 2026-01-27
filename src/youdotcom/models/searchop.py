@@ -8,9 +8,10 @@ from .livecrawl import LiveCrawl
 from .livecrawlformats import LiveCrawlFormats
 from .safesearch import SafeSearch
 from datetime import datetime
+from pydantic import model_serializer
 from typing import List, Optional, Union
 from typing_extensions import Annotated, NotRequired, TypeAliasType, TypedDict
-from youdotcom.types import BaseModel
+from youdotcom.types import BaseModel, UNSET_SENTINEL
 from youdotcom.utils import FieldMetadata, QueryParamMetadata
 
 
@@ -144,6 +145,33 @@ class SearchRequest(BaseModel):
     ] = None
     r"""Indicates the format of the livecrawled content."""
 
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        optional_fields = set(
+            [
+                "count",
+                "freshness",
+                "offset",
+                "country",
+                "language",
+                "safesearch",
+                "livecrawl",
+                "livecrawl_formats",
+            ]
+        )
+        serialized = handler(self)
+        m = {}
+
+        for n, f in type(self).model_fields.items():
+            k = f.alias or n
+            val = serialized.get(k)
+
+            if val != UNSET_SENTINEL:
+                if val is not None or k not in optional_fields:
+                    m[k] = val
+
+        return m
+
 
 class SearchContentsTypedDict(TypedDict):
     r"""Contents of the page if livecrawl was enabled."""
@@ -162,6 +190,22 @@ class SearchContents(BaseModel):
 
     markdown: Optional[str] = None
     r"""The Markdown content of the page."""
+
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        optional_fields = set(["html", "markdown"])
+        serialized = handler(self)
+        m = {}
+
+        for n, f in type(self).model_fields.items():
+            k = f.alias or n
+            val = serialized.get(k)
+
+            if val != UNSET_SENTINEL:
+                if val is not None or k not in optional_fields:
+                    m[k] = val
+
+        return m
 
 
 class WebTypedDict(TypedDict):
@@ -213,6 +257,34 @@ class Web(BaseModel):
     favicon_url: Optional[str] = None
     r"""The URL of the favicon of the search result's domain."""
 
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        optional_fields = set(
+            [
+                "url",
+                "title",
+                "description",
+                "snippets",
+                "thumbnail_url",
+                "page_age",
+                "contents",
+                "authors",
+                "favicon_url",
+            ]
+        )
+        serialized = handler(self)
+        m = {}
+
+        for n, f in type(self).model_fields.items():
+            k = f.alias or n
+            val = serialized.get(k)
+
+            if val != UNSET_SENTINEL:
+                if val is not None or k not in optional_fields:
+                    m[k] = val
+
+        return m
+
 
 class NewsTypedDict(TypedDict):
     title: NotRequired[str]
@@ -243,6 +315,24 @@ class News(BaseModel):
     url: Optional[str] = None
     r"""The URL of the news result."""
 
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        optional_fields = set(
+            ["title", "description", "page_age", "thumbnail_url", "url"]
+        )
+        serialized = handler(self)
+        m = {}
+
+        for n, f in type(self).model_fields.items():
+            k = f.alias or n
+            val = serialized.get(k)
+
+            if val != UNSET_SENTINEL:
+                if val is not None or k not in optional_fields:
+                    m[k] = val
+
+        return m
+
 
 class ResultsTypedDict(TypedDict):
     web: NotRequired[List[WebTypedDict]]
@@ -254,15 +344,31 @@ class Results(BaseModel):
 
     news: Optional[List[News]] = None
 
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        optional_fields = set(["web", "news"])
+        serialized = handler(self)
+        m = {}
 
-class SearchMetadataTypedDict(TypedDict):
+        for n, f in type(self).model_fields.items():
+            k = f.alias or n
+            val = serialized.get(k)
+
+            if val != UNSET_SENTINEL:
+                if val is not None or k not in optional_fields:
+                    m[k] = val
+
+        return m
+
+
+class MetadataTypedDict(TypedDict):
     search_uuid: NotRequired[str]
     query: NotRequired[str]
     r"""Returns the search query used to retrieve the results."""
     latency: NotRequired[float]
 
 
-class SearchMetadata(BaseModel):
+class Metadata(BaseModel):
     search_uuid: Optional[str] = None
 
     query: Optional[str] = None
@@ -270,12 +376,28 @@ class SearchMetadata(BaseModel):
 
     latency: Optional[float] = None
 
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        optional_fields = set(["search_uuid", "query", "latency"])
+        serialized = handler(self)
+        m = {}
+
+        for n, f in type(self).model_fields.items():
+            k = f.alias or n
+            val = serialized.get(k)
+
+            if val != UNSET_SENTINEL:
+                if val is not None or k not in optional_fields:
+                    m[k] = val
+
+        return m
+
 
 class SearchResponseTypedDict(TypedDict):
     r"""A JSON object containing unified search results from web and news sources"""
 
     results: NotRequired[ResultsTypedDict]
-    metadata: NotRequired[SearchMetadataTypedDict]
+    metadata: NotRequired[MetadataTypedDict]
 
 
 class SearchResponse(BaseModel):
@@ -283,4 +405,20 @@ class SearchResponse(BaseModel):
 
     results: Optional[Results] = None
 
-    metadata: Optional[SearchMetadata] = None
+    metadata: Optional[Metadata] = None
+
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        optional_fields = set(["results", "metadata"])
+        serialized = handler(self)
+        m = {}
+
+        for n, f in type(self).model_fields.items():
+            k = f.alias or n
+            val = serialized.get(k)
+
+            if val != UNSET_SENTINEL:
+                if val is not None or k not in optional_fields:
+                    m[k] = val
+
+        return m

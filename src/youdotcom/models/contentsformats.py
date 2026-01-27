@@ -4,8 +4,7 @@ from __future__ import annotations
 from enum import Enum
 
 
-class ContentsFormat(str, Enum):
-    r"""The format of the content to be returned."""
-
+class ContentsFormats(str, Enum):
     HTML = "html"
     MARKDOWN = "markdown"
+    METADATA = "metadata"

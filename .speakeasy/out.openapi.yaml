@@ -118,74 +118,76 @@ paths:
   /v1/search:
     get:
       operationId: search
+      summary: Returns a list of unified search results from web and news sources
+      servers:
+        - url: https://ydc-index.io
       security:
         - ApiKeyAuth: []
-      summary: Returns a list of unified search results from web and news sources
       parameters:
         - name: query
           in: query
-          required: true
           description: The search query used to retrieve relevant results from the web. You can also include [search operators](#search-operators) to refine your search.
-          example: "Your query"
+          required: true
           schema:
             type: string
             default: "Your query"
+          example: "Your query"
         - name: count
           in: query
-          required: false
           description: Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them).
+          required: false
           schema:
             type: integer
-            minimum: 1
             maximum: 100
+            minimum: 1
         - name: freshness
           in: query
-          required: false
           description: Specifies the freshness of the results to return.
+          required: false
           schema:
             oneOf:
               - $ref: '#/components/schemas/Freshness'
               - type: string
         - name: offset
           in: query
-          required: false
           description: Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`.
+          required: false
           schema:
             type: integer
         - name: country
           in: query
-          required: false
           description: The country code that determines the geographical focus of the web results.
+          required: false
           schema:
             oneOf:
               - $ref: '#/components/schemas/Country'
               - type: string
         - name: language
           in: query
-          required: false
           description: The language of the web results that will be returned (BCP 47 format).
+          required: false
           schema:
-            $ref: "#/components/schemas/Language"
+            $ref: '#/components/schemas/Language'
         - name: safesearch
           in: query
-          required: false
           description: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
+          required: false
           schema:
             oneOf:
               - $ref: '#/components/schemas/SafeSearch'
               - type: string
         - name: livecrawl
           in: query
-          required: false
           description: Indicates which section(s) of search results to livecrawl and return full page content.
+          required: false
           schema:
             oneOf:
               - $ref: '#/components/schemas/LiveCrawl'
               - type: string
         - name: livecrawl_formats
           in: query
-          required: false
           description: Indicates the format of the livecrawled content.
+          required: false
           schema:
             oneOf:
               - $ref: '#/components/schemas/LiveCrawlFormats'
@@ -220,10 +222,10 @@ paths:
                               example: "Search on YDC"
                             snippets:
                               type: array
-                              description: An array of text snippets from the search result, providing a preview of the content.
                               items:
                                 type: string
                                 example: "I'm an AI assistant that helps you get more done. What can I help you with?"
+                              description: An array of text snippets from the search result, providing a preview of the content.
                             thumbnail_url:
                               type: string
                               description: URL of the thumbnail.
@@ -235,7 +237,6 @@ paths:
                               example: "2025-06-25T11:41:00"
                             contents:
                               type: object
-                              description: Contents of the page if livecrawl was enabled.
                               properties:
                                 html:
                                   type: string
@@ -243,12 +244,13 @@ paths:
                                 markdown:
                                   type: string
                                   description: The Markdown content of the page.
+                              description: Contents of the page if livecrawl was enabled.
                             authors:
                               type: array
-                              description: An array of authors of the search result.
                               items:
                                 type: string
                                 example: "John Doe"
+                              description: An array of authors of the search result.
                             favicon_url:
                               type: string
                               description: The URL of the favicon of the search result's domain.
@@ -287,8 +289,8 @@ paths:
                         format: uuid
                         example: "942ccbdd-7705-4d9c-9d37-4ef386658e90"
                       query:
-                        description: Returns the search query used to retrieve the results.
                         type: string
+                        description: Returns the search query used to retrieve the results.
                         example: "Your query"
                       latency:
                         type: number
@@ -348,8 +350,6 @@ paths:
                   summary: Authorization failure
                   value:
                     detail: "Internal authorization error"
-      servers:
-        - url: https://ydc-index.io
       tags:
         - search
       x-speakeasy-name-override: unified
@@ -358,21 +358,27 @@ paths:
       operationId: contents
       summary: Returns the content of the web pages
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               type: object
               properties:
                 urls:
-                  description: Array of URLs to fetch the contents from.
                   type: array
                   items:
                     type: string
                     format: uri
                     example: "https://www.you.com"
-                format:
-                  $ref: "#/components/schemas/ContentsFormat"
+                  description: Array of URLs to fetch the contents from.
+                formats:
+                  $ref: '#/components/schemas/ContentsFormats'
+                crawl_timeout:
+                  type: number
+                  maximum: 60
+                  minimum: 1
+                  description: The timeout in seconds for crawling each URL. Must be between 1 and 60 seconds.
+                  example: 10
+        required: true
       responses:
         "200":
           description: An array of JSON objects containing the page content of each web page
@@ -384,33 +390,24 @@ paths:
                   type: object
                   properties:
                     url:
-                      description: The webpage URL whose content has been fetched.
                       type: string
                       format: uri
+                      description: The webpage URL whose content has been fetched.
                       example: "https://www.you.com"
                     title:
                       type: string
                       description: The title of the web page.
                       example: "The best website in the world"
                     html:
-                      nullable: true
                       type: string
                       description: The retrieved HTML content of the web page.
-                    markdown:
                       nullable: true
+                    markdown:
                       type: string
                       description: The retrieved Markdown content of the web page.
+                      nullable: true
                     metadata:
-                      type: object
-                      properties:
-                        site_name:
-                          type: string
-                          description: The OpenGraph site name of the web page.
-                          example: "You.com"
-                        favicon_url:
-                          type: string
-                          description: The URL of the favicon of the web page's domain.
-                          example: "https://www.you.com/favicon.ico"
+                      $ref: '#/components/schemas/ContentsMetadata'
         "401":
           description: Unauthorized
           content:
@@ -475,8 +472,9 @@ components:
       type: apiKey
       in: header
       name: X-API-Key
-      description: "The unique API Key required to authorize API access. Learn how to get yours in the [“Get your API key” section of the documentation](https://documentation.you.com/docs/quickstart#get-your-api-key)."
+      description: "The unique API Key required to authorize API access. Learn how to get yours in the [“Get your API key” section of the documentation](https://docs.you.com/get-started/quickstart#get-your-api-key)."
   schemas:
+    # REQUEST SCHEMAS
     ExpressAgentRunsRequest:
       type: object
       required:
@@ -571,6 +569,7 @@ components:
           default: false
           description: >-
             Must be set to `true` when you want to stream the agent response as it's being generated, and `false` when you want the response to return after the agent has finished.
+    # TOOL SCHEMAS
     WebSearchTool:
       type: object
       required:
@@ -630,6 +629,7 @@ components:
       example: medium
       description: >-
         Controls the level of detail provided by the agent's response. Choosing high maps to a long-form report while medium maps to a medium verbosity report that captures most details but is less comprehensive.
+    # RESPONSE SCHEMAS
     AgentRunsBatchResponse:
       type: object
       required:
@@ -725,7 +725,7 @@ components:
         provider:
           type: string
           description: "This is currently unused"
-          example:
+          example: null
         title:
           type: string
           description: "The title of the web site returned under url"
@@ -742,13 +742,11 @@ components:
           type: string
           description: "The web search result the agent returned along in its response"
           example: "https://www.foodnetwork.com/recipes/photos/30-minute-dinner-recipes"
+    # STREAMING RESPONSE SCHEMAS
     AgentRunsStreamingResponse:
       type: object
       description: A server-sent event containing stock market update content
-      required:
-        - id
-        - event
-        - data
+      required: [id, event, data]
       properties:
         id:
           type: string
@@ -932,6 +930,7 @@ components:
               type: boolean
               description: Whether the response is complete
               example: true
+    # ERROR RESPONSE SCHEMAS
     AgentRuns400Response:
       type: object
       properties:
@@ -982,7 +981,7 @@ components:
         - week
         - month
         - year
-      description: "Specifies the freshness of the results to return."
+      description: Specifies the freshness of the results to return.
     Country:
       type: string
       enum:
@@ -1022,10 +1021,9 @@ components:
         - 'TR'
         - 'GB'
         - 'US'
-      description: "The country code that determines the geographical focus of the web results."
+      description: The country code that determines the geographical focus of the web results.
     Language:
       type: string
-      default: 'EN'
       enum:
         - 'AR'
         - 'EU'
@@ -1078,32 +1076,50 @@ components:
         - 'TR'
         - 'UK'
         - 'VI'
+      default: 'EN'
     SafeSearch:
       type: string
       enum:
         - off
         - moderate
         - strict
-      description: "Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."
+      description: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
     LiveCrawl:
       type: string
       enum:
         - web
         - news
         - all
-      description: "Indicates which section(s) of search results to livecrawl and return full page content."
+      description: Indicates which section(s) of search results to livecrawl and return full page content.
     LiveCrawlFormats:
       type: string
       enum:
         - html
         - markdown
-      description: "Indicates the format of the livecrawled content."
-    ContentsFormat:
-      type: string
-      enum:
-        - html
-        - markdown
-      description: "The format of the content to be returned."
-      example: "html"
+      description: Indicates the format of the livecrawled content.
+    ContentsFormats:
+      type: array
+      items:
+        type: string
+        enum:
+          - html
+          - markdown
+          - metadata
+      description: The formats of the content to be returned. Can include 'html', 'markdown', and/or 'metadata'.
+      example: ["html", "markdown"]
+    ContentsMetadata:
+      type: object
+      properties:
+        site_name:
+          type: string
+          description: The OpenGraph site name of the web page.
+          nullable: true
+          example: "You.com"
+        favicon_url:
+          type: string
+          description: The URL of the favicon of the web page's domain.
+          example: "https://api.ydc-index.io/favicon?domain=you.com&size=128"
+      description: Metadata about the web page. Only returned when 'metadata' is included in the formats array.
+      nullable: true
 security:
   - ApiKeyAuth: []

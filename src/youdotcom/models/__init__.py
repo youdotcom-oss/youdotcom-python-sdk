@@ -45,10 +45,9 @@ if TYPE_CHECKING:
         AgentsRunsResponseTypedDict,
     )
     from .computetool import ComputeTool, ComputeToolTypedDict
-    from .contentsformat import ContentsFormat
+    from .contentsformats import ContentsFormats
+    from .contentsmetadata import ContentsMetadata, ContentsMetadataTypedDict
     from .contentsop import (
-        ContentsMetadata,
-        ContentsMetadataTypedDict,
         ContentsRequest,
         ContentsRequestTypedDict,
         ContentsResponse,
@@ -104,6 +103,8 @@ if TYPE_CHECKING:
     from .safesearch import SafeSearch
     from .searcheffort import SearchEffort
     from .searchop import (
+        Metadata,
+        MetadataTypedDict,
         News,
         NewsTypedDict,
         Results,
@@ -119,8 +120,6 @@ if TYPE_CHECKING:
         SearchLivecrawlFormats,
         SearchLivecrawlFormatsTypedDict,
         SearchLivecrawlTypedDict,
-        SearchMetadata,
-        SearchMetadataTypedDict,
         SearchRequest,
         SearchRequestTypedDict,
         SearchResponse,
@@ -152,7 +151,7 @@ __all__ = [
     "AgentsRunsResponseTypedDict",
     "ComputeTool",
     "ComputeToolTypedDict",
-    "ContentsFormat",
+    "ContentsFormats",
     "ContentsMetadata",
     "ContentsMetadataTypedDict",
     "ContentsRequest",
@@ -176,6 +175,8 @@ __all__ = [
     "LiveCrawlFormats",
     "Loc",
     "LocTypedDict",
+    "Metadata",
+    "MetadataTypedDict",
     "News",
     "NewsTypedDict",
     "ReportVerbosity",
@@ -221,8 +222,6 @@ __all__ = [
     "SearchLivecrawlFormats",
     "SearchLivecrawlFormatsTypedDict",
     "SearchLivecrawlTypedDict",
-    "SearchMetadata",
-    "SearchMetadataTypedDict",
     "SearchRequest",
     "SearchRequestTypedDict",
     "SearchResponse",
@@ -275,9 +274,9 @@ _dynamic_imports: dict[str, str] = {
     "AgentsRunsResponseTypedDict": ".agentsrunsop",
     "ComputeTool": ".computetool",
     "ComputeToolTypedDict": ".computetool",
-    "ContentsFormat": ".contentsformat",
-    "ContentsMetadata": ".contentsop",
-    "ContentsMetadataTypedDict": ".contentsop",
+    "ContentsFormats": ".contentsformats",
+    "ContentsMetadata": ".contentsmetadata",
+    "ContentsMetadataTypedDict": ".contentsmetadata",
     "ContentsRequest": ".contentsop",
     "ContentsRequestTypedDict": ".contentsop",
     "ContentsResponse": ".contentsop",
@@ -320,6 +319,8 @@ _dynamic_imports: dict[str, str] = {
     "ResponseStartingTypedDict": ".response_starting",
     "SafeSearch": ".safesearch",
     "SearchEffort": ".searcheffort",
+    "Metadata": ".searchop",
+    "MetadataTypedDict": ".searchop",
     "News": ".searchop",
     "NewsTypedDict": ".searchop",
     "Results": ".searchop",
@@ -335,8 +336,6 @@ _dynamic_imports: dict[str, str] = {
     "SearchLivecrawlFormats": ".searchop",
     "SearchLivecrawlFormatsTypedDict": ".searchop",
     "SearchLivecrawlTypedDict": ".searchop",
-    "SearchMetadata": ".searchop",
-    "SearchMetadataTypedDict": ".searchop",
     "SearchRequest": ".searchop",
     "SearchRequestTypedDict": ".searchop",
     "SearchResponse": ".searchop",

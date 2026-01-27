@@ -5,11 +5,11 @@ from .computetool import ComputeTool, ComputeToolTypedDict
 from .researchtool import ResearchTool, ResearchToolTypedDict
 from .verbosity import Verbosity
 import pydantic
-from pydantic import Field
+from pydantic import Field, model_serializer
 from pydantic.functional_validators import AfterValidator
 from typing import List, Literal, Optional, Union
 from typing_extensions import Annotated, NotRequired, TypeAliasType, TypedDict
-from youdotcom.types import BaseModel
+from youdotcom.types import BaseModel, UNSET_SENTINEL
 from youdotcom.utils import validate_const
 
 
@@ -31,6 +31,22 @@ class WorkflowConfig(BaseModel):
     r"""Defines the maximum number of steps the agent uses in its workflow plan to answer your query. Higher values allow for more tool calls, but it takes longer for the agent to provide the response. For instance, setting max_workflow_steps=5 could allow the agent to call the research tool 3 times and the compute tool 2 times."""
 
     max_workflow_steps: Optional[int] = 10
+
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        optional_fields = set(["max_workflow_steps"])
+        serialized = handler(self)
+        m = {}
+
+        for n, f in type(self).model_fields.items():
+            k = f.alias or n
+            val = serialized.get(k)
+
+            if val != UNSET_SENTINEL:
+                if val is not None or k not in optional_fields:
+                    m[k] = val
+
+        return m
 
 
 class AdvancedAgentRunsRequestTypedDict(TypedDict):
@@ -69,3 +85,19 @@ class AdvancedAgentRunsRequest(BaseModel):
 
     workflow_config: Optional[WorkflowConfig] = None
     r"""Defines the maximum number of steps the agent uses in its workflow plan to answer your query. Higher values allow for more tool calls, but it takes longer for the agent to provide the response. For instance, setting max_workflow_steps=5 could allow the agent to call the research tool 3 times and the compute tool 2 times."""
+
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        optional_fields = set(["stream", "tools", "verbosity", "workflow_config"])
+        serialized = handler(self)
+        m = {}
+
+        for n, f in type(self).model_fields.items():
+            k = f.alias or n
+            val = serialized.get(k)
+
+            if val != UNSET_SENTINEL:
+                if val is not None or k not in optional_fields:
+                    m[k] = val
+
+        return m

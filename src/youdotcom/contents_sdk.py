@@ -14,7 +14,8 @@ class ContentsSDK(BaseSDK):
         self,
         *,
         urls: Optional[List[str]] = None,
-        format_: Optional[models.ContentsFormat] = None,
+        formats: Optional[List[models.ContentsFormats]] = None,
+        crawl_timeout: Optional[float] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -23,7 +24,8 @@ class ContentsSDK(BaseSDK):
         r"""Returns the content of the web pages
 
         :param urls: Array of URLs to fetch the contents from.
-        :param format_: The format of the content to be returned.
+        :param formats: The formats of the content to be returned. Can include 'html', 'markdown', and/or 'metadata'.
+        :param crawl_timeout: The timeout in seconds for crawling each URL. Must be between 1 and 60 seconds.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -41,7 +43,8 @@ class ContentsSDK(BaseSDK):
 
         request = models.ContentsRequest(
             urls=urls,
-            format_=format_,
+            formats=formats,
+            crawl_timeout=crawl_timeout,
         )
 
         req = self._build_request(
@@ -118,7 +121,8 @@ class ContentsSDK(BaseSDK):
         self,
         *,
         urls: Optional[List[str]] = None,
-        format_: Optional[models.ContentsFormat] = None,
+        formats: Optional[List[models.ContentsFormats]] = None,
+        crawl_timeout: Optional[float] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -127,7 +131,8 @@ class ContentsSDK(BaseSDK):
         r"""Returns the content of the web pages
 
         :param urls: Array of URLs to fetch the contents from.
-        :param format_: The format of the content to be returned.
+        :param formats: The formats of the content to be returned. Can include 'html', 'markdown', and/or 'metadata'.
+        :param crawl_timeout: The timeout in seconds for crawling each URL. Must be between 1 and 60 seconds.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -145,7 +150,8 @@ class ContentsSDK(BaseSDK):
 
         request = models.ContentsRequest(
             urls=urls,
-            format_=format_,
+            formats=formats,
+            crawl_timeout=crawl_timeout,
         )
 
         req = self._build_request_async(

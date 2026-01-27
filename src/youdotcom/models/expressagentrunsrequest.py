@@ -3,10 +3,11 @@
 from __future__ import annotations
 from .websearchtool import WebSearchTool, WebSearchToolTypedDict
 import pydantic
+from pydantic import model_serializer
 from pydantic.functional_validators import AfterValidator
 from typing import List, Literal, Optional
 from typing_extensions import Annotated, NotRequired, TypedDict
-from youdotcom.types import BaseModel
+from youdotcom.types import BaseModel, UNSET_SENTINEL
 from youdotcom.utils import validate_const
 
 
@@ -36,3 +37,19 @@ class ExpressAgentRunsRequest(BaseModel):
 
     tools: Optional[List[WebSearchTool]] = None
     r"""You can optionally ground the express agent response using results fetched from the web (max 1 web search)"""
+
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        optional_fields = set(["stream", "tools"])
+        serialized = handler(self)
+        m = {}
+
+        for n, f in type(self).model_fields.items():
+            k = f.alias or n
+            val = serialized.get(k)
+
+            if val != UNSET_SENTINEL:
+                if val is not None or k not in optional_fields:
+                    m[k] = val
+
+        return m

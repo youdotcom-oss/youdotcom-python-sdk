@@ -1,6 +1,4 @@
-# ContentsFormat
-
-The format of the content to be returned.
+# ContentsFormats
 
 
 ## Values
@@ -9,3 +7,4 @@ The format of the content to be returned.
 | ---------- | ---------- |
 | `HTML`     | html       |
 | `MARKDOWN` | markdown   |
+| `METADATA` | metadata   |
