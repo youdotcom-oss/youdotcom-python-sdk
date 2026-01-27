@@ -11,7 +11,8 @@ This guide helps you upgrade your code from You.com Python SDK 1.x to 2.0.
 | Advanced agent | `agent=AgentType.ADVANCED` | `request=AdvancedAgentRunsRequest(...)` |
 | Custom agent | `agent="uuid-string"` | `request=CustomAgentRunsRequest(agent="uuid-string", ...)` |
 | Verbosity enum | `Verbosity` | `ReportVerbosity` |
-| Format enum | `Format` | `ContentsFormat` |
+| Format enum | `Format` | `ContentsFormats` |
+| Contents format param | `format_=ContentsFormat.X` | `formats=[ContentsFormats.X]` |
 
 ## Step-by-Step Migration
 
@@ -45,7 +46,7 @@ from youdotcom.models import (
     Country,
     Freshness,
     LiveCrawl,
-    ContentsFormat,
+    ContentsFormats,  # Note: Now plural (formats array)
     AgentRunsBatchResponse,
     # For streaming:
     ResponseCreated,
@@ -184,7 +185,12 @@ with res as stream:
 
 ### Step 4: Update Contents API
 
-**Before:**
+The Contents API has significant changes in 2.0.0:
+- **`format_`** parameter is replaced by **`formats`** (an array)
+- New **`metadata`** format option returns json+ld and OpenGraph information
+- New **`crawl_timeout`** parameter (1-60 seconds) for controlling crawl duration
+
+**Before (1.x):**
 ```python
 from youdotcom.types.typesafe_models import Format, print_contents
 
@@ -195,15 +201,30 @@ res = you.contents.generate(
 print_contents(res)
 ```
 
-**After:**
+**After (2.0):**
 ```python
-from youdotcom.models import ContentsFormat
+from youdotcom.models import ContentsFormats
 
+# Single format
 res = you.contents.generate(
     urls=["https://example.com"],
-    format_=ContentsFormat.MARKDOWN,
+    formats=[ContentsFormats.MARKDOWN],
 )
-print(res)
+
+# Multiple formats at once (new in 2.0.0)
+res = you.contents.generate(
+    urls=["https://example.com"],
+    formats=[ContentsFormats.HTML, ContentsFormats.MARKDOWN, ContentsFormats.METADATA],
+    crawl_timeout=30,  # Optional: 1-60 seconds
+)
+
+# Access metadata (json+ld, OpenGraph info)
+for item in res:
+    print(f"URL: {item.url}")
+    print(f"Title: {item.title}")
+    if item.metadata:
+        print(f"Site Name: {item.metadata.site_name}")
+        print(f"Favicon: {item.metadata.favicon_url}")
 ```
 
 ### Step 5: Update Error Handling
@@ -226,10 +247,13 @@ from youdotcom.errors import (
 
 ## Search and Contents APIs
 
-The Search and Contents APIs remain largely unchanged. The main differences are:
+The Search API remains largely unchanged. The Contents API has significant changes:
 
 1. **Import path**: Use `from youdotcom.models import` instead of `typesafe_models`
-2. **Format enum**: Use `ContentsFormat` instead of `Format`
+2. **Format parameter**: Changed from `format_` (single value) to `formats` (array)
+3. **Format enum**: Use `ContentsFormats` instead of `Format` (note the 's')
+4. **New metadata format**: Request `ContentsFormats.METADATA` to get json+ld and OpenGraph info
+5. **New crawl_timeout**: Optional parameter (1-60 seconds) to control crawl duration
 
 ```python
 # Search API (unchanged usage)
@@ -240,11 +264,22 @@ res = you.search.unified(
     country=Country.US,
 )
 
-# Contents API (updated enum name)
+# Contents API (updated to use formats array)
 res = you.contents.generate(
     urls=["https://example.com"],
-    format_=ContentsFormat.MARKDOWN,  # Was: Format.MARKDOWN
+    formats=[ContentsFormats.MARKDOWN],  # Was: format_=Format.MARKDOWN
 )
+
+# Contents API with multiple formats and metadata (new in 2.0.0)
+res = you.contents.generate(
+    urls=["https://example.com"],
+    formats=[ContentsFormats.HTML, ContentsFormats.METADATA],
+    crawl_timeout=30,  # Optional: 1-60 seconds
+)
+# Access metadata
+if res[0].metadata:
+    print(res[0].metadata.site_name)
+    print(res[0].metadata.favicon_url)
 ```
 
 ## Need Help?

@@ -38,7 +38,7 @@ from youdotcom.models import (
     ResponseDone,
     AgentRunsBatchResponse,
     AgentRunsStreamingResponse,
-    ContentsFormat,
+    ContentsFormats,
     WebSearchTool
 )
 from youdotcom.utils import eventstreaming
@@ -225,17 +225,46 @@ def search_request():
 def content_request():
     """
     Contents API endpoint to fetch page content
+    
+    In 2.0.0, the Contents API now uses:
+    - formats: Array of format types ('html', 'markdown', 'metadata')
+    - crawl_timeout: Optional timeout between 1-60 seconds
     """
     print("\n🚀 Running Content Request...\n")
 
     assert you is not None, "SDK client not initialized"
 
+    # Example 1: Get markdown content
+    print("Example 1: Fetching markdown content...")
     results = you.contents.generate(
         urls=["https://you.com"],
-        format_=ContentsFormat.MARKDOWN
+        formats=[ContentsFormats.MARKDOWN]
     )
-
-    print(results)
+    print(f"Received {len(results)} result(s)")
+    for result in results:
+        print(f"  URL: {result.url}")
+        print(f"  Title: {result.title}")
+        if result.markdown:
+            print(f"  Markdown preview: {result.markdown[:100]}...")
+    
+    print("\n" + "-" * 40 + "\n")
+    
+    # Example 2: Get multiple formats including metadata (json+ld, opengraph info)
+    print("Example 2: Fetching HTML + metadata...")
+    results = you.contents.generate(
+        urls=["https://you.com"],
+        formats=[ContentsFormats.HTML, ContentsFormats.METADATA],
+        crawl_timeout=30  # Optional: set custom timeout (1-60 seconds)
+    )
+    print(f"Received {len(results)} result(s)")
+    for result in results:
+        print(f"  URL: {result.url}")
+        print(f"  Title: {result.title}")
+        if result.metadata:
+            print(f"  Metadata - Site Name: {result.metadata.site_name}")
+            print(f"  Metadata - Favicon: {result.metadata.favicon_url}")
+    
+    print()
 
 
 # Available functions menu

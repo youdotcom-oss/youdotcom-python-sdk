@@ -36,7 +36,7 @@ from youdotcom.models import (
     ResearchTool,
     WebSearchTool,
     Country,
-    ContentsFormat,
+    ContentsFormats,
     Freshness,
     Language,
     LiveCrawl,
@@ -46,7 +46,6 @@ from youdotcom.models import (
     ReportVerbosity,
     ExpressAgentRunsRequest,
     AdvancedAgentRunsRequest,
-    Verbosity,
 )
 
 
@@ -822,7 +821,7 @@ class TestContentsPerformance:
             def call():
                 you.contents.generate(
                     urls=["https://www.python.org"],
-                    format_=ContentsFormat.HTML,
+                    formats=[ContentsFormats.HTML],
                     server_url=server_url,
                 )
             
@@ -839,11 +838,63 @@ class TestContentsPerformance:
             def call():
                 you.contents.generate(
                     urls=["https://www.python.org"],
-                    format_=ContentsFormat.MARKDOWN,
+                    formats=[ContentsFormats.MARKDOWN],
                     server_url=server_url,
                 )
             
             metrics = measure_sdk_call(call, client, iterations, "Contents: single URL, Markdown")
+            ALL_METRICS.append(metrics)
+            if show_detailed:
+                print_detailed_metrics(metrics)
+    
+    def test_contents_single_url_metadata(self, server_url, api_key, iterations, show_detailed):
+        """Fetch single URL with metadata format (json+ld, OpenGraph)."""
+        client = create_timing_client("post_/v1/contents")
+        
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            def call():
+                you.contents.generate(
+                    urls=["https://www.python.org"],
+                    formats=[ContentsFormats.METADATA],
+                    server_url=server_url,
+                )
+            
+            metrics = measure_sdk_call(call, client, iterations, "Contents: single URL, Metadata")
+            ALL_METRICS.append(metrics)
+            if show_detailed:
+                print_detailed_metrics(metrics)
+    
+    def test_contents_multiple_formats(self, server_url, api_key, iterations, show_detailed):
+        """Fetch single URL with multiple formats (HTML, Markdown, Metadata)."""
+        client = create_timing_client("post_/v1/contents")
+        
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            def call():
+                you.contents.generate(
+                    urls=["https://www.python.org"],
+                    formats=[ContentsFormats.HTML, ContentsFormats.MARKDOWN, ContentsFormats.METADATA],
+                    server_url=server_url,
+                )
+            
+            metrics = measure_sdk_call(call, client, iterations, "Contents: single URL, all formats")
+            ALL_METRICS.append(metrics)
+            if show_detailed:
+                print_detailed_metrics(metrics)
+    
+    def test_contents_with_crawl_timeout(self, server_url, api_key, iterations, show_detailed):
+        """Fetch URL with custom crawl timeout."""
+        client = create_timing_client("post_/v1/contents")
+        
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            def call():
+                you.contents.generate(
+                    urls=["https://www.python.org"],
+                    formats=[ContentsFormats.HTML],
+                    crawl_timeout=30,
+                    server_url=server_url,
+                )
+            
+            metrics = measure_sdk_call(call, client, iterations, "Contents: single URL, with crawl_timeout")
             ALL_METRICS.append(metrics)
             if show_detailed:
                 print_detailed_metrics(metrics)
@@ -860,7 +911,7 @@ class TestContentsPerformance:
                         "https://www.github.com",
                         "https://www.example.com",
                     ],
-                    format_=ContentsFormat.HTML,
+                    formats=[ContentsFormats.HTML],
                     server_url=server_url,
                 )
             
@@ -881,7 +932,7 @@ class TestContentsPerformance:
                         "https://www.github.com",
                         "https://www.example.com",
                     ],
-                    format_=ContentsFormat.MARKDOWN,
+                    formats=[ContentsFormats.MARKDOWN],
                     server_url=server_url,
                 )
             
@@ -904,7 +955,7 @@ class TestContentsPerformance:
                         "https://www.you.com",
                         "https://www.wikipedia.org",
                     ],
-                    format_=ContentsFormat.HTML,
+                    formats=[ContentsFormats.HTML],
                     server_url=server_url,
                 )
             

@@ -123,8 +123,76 @@ from youdotcom.models import (
 | Old Name (1.x) | New Name (2.0) | Reason |
 |----------------|----------------|--------|
 | `Verbosity` | `ReportVerbosity` | More specific—clarifies it controls research report verbosity |
-| `Format` | `ContentsFormat` | Avoids collision with Python's built-in `format()` |
+| `Format` | `ContentsFormats` | Avoids collision with Python's built-in `format()`, plural indicates array usage |
 | `AgentType` | *Removed* | Replaced by typed request classes |
+
+---
+
+#### Contents API: New Formats Array Pattern
+
+The Contents API now uses a `formats` array instead of a single `format_` parameter, allowing you to request multiple content types in a single call.
+
+**Before (1.x):**
+```python
+res = you.contents.generate(
+    urls=["https://example.com"],
+    format_=Format.MARKDOWN,
+)
+```
+
+**After (2.0):**
+```python
+from youdotcom.models import ContentsFormats
+
+# Request single format
+res = you.contents.generate(
+    urls=["https://example.com"],
+    formats=[ContentsFormats.MARKDOWN],
+)
+
+# Request multiple formats at once
+res = you.contents.generate(
+    urls=["https://example.com"],
+    formats=[ContentsFormats.HTML, ContentsFormats.MARKDOWN, ContentsFormats.METADATA],
+)
+```
+
+**Why this is better:**
+- **Multiple formats**: Request HTML, Markdown, and Metadata in a single API call
+- **Metadata support**: New `METADATA` format returns json+ld and OpenGraph information
+- **Flexibility**: Get exactly the content types you need
+
+---
+
+#### Contents API: New Metadata Format
+
+The new `METADATA` format returns structured metadata about web pages including json+ld and OpenGraph information.
+
+```python
+res = you.contents.generate(
+    urls=["https://example.com"],
+    formats=[ContentsFormats.METADATA],
+)
+
+for item in res:
+    if item.metadata:
+        print(f"Site Name: {item.metadata.site_name}")
+        print(f"Favicon: {item.metadata.favicon_url}")
+```
+
+---
+
+#### Contents API: New crawl_timeout Parameter
+
+A new optional `crawl_timeout` parameter allows you to control the maximum time (1-60 seconds) spent crawling each URL.
+
+```python
+res = you.contents.generate(
+    urls=["https://example.com"],
+    formats=[ContentsFormats.HTML],
+    crawl_timeout=30,  # Wait up to 30 seconds per URL
+)
+```
 
 ---
 
@@ -224,14 +292,19 @@ Error classes have been renamed for consistency and clarity:
 - **`AgentRunsStreamingResponse`**: Typed response wrapper for streaming
 - **Streaming event types**: `ResponseCreated`, `ResponseStarting`, `ResponseOutputItemAdded`, `ResponseOutputContentFull`, `ResponseOutputTextDelta`, `ResponseOutputItemDone`, `ResponseDone`
 - **`ReportVerbosity`**: Enum for research tool report detail level
-- **`ContentsFormat`**: Enum for contents API format selection
+- **`ContentsFormats`**: Enum for contents API format selection (html, markdown, metadata)
+- **`ContentsMetadata`**: Model for metadata response (site_name, favicon_url)
+- **Contents API `formats` parameter**: Array of formats to request (replaces single `format_`)
+- **Contents API `crawl_timeout` parameter**: Optional timeout (1-60 seconds) for URL crawling
+- **Contents API `METADATA` format**: Returns json+ld and OpenGraph information
 
 ### Removed
 
 - **`youdotcom.types.typesafe_models`** module - all models now in `youdotcom.models`
 - **`AgentType`** enum - replaced by typed request classes
 - **`Verbosity`** - renamed to `ReportVerbosity`
-- **`Format`** - renamed to `ContentsFormat`
+- **`Format`** - renamed to `ContentsFormats` (note the 's')
+- **`format_` parameter** in Contents API - replaced by `formats` array
 - **Helper functions**: `get_text_tokens()`, `stream_text_tokens()`, `print_search()`, `print_contents()`
 
 ---
