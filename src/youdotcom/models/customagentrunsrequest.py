@@ -9,7 +9,7 @@ from youdotcom.types import BaseModel, UNSET_SENTINEL
 
 class CustomAgentRunsRequestTypedDict(TypedDict):
     agent: str
-    r"""Set the value to a Custom Agent's ID. Learn how to obtain an agent ID here [Create Custom Agents](/agents/custom/create-agents)."""
+    r"""Set the value to a Custom Agent's ID. Learn how to obtain an agent ID here [Create Custom Agents](https://docs.you.com/agents/custom/create-agents)."""
     input: str
     r"""The question you'd like to ask the agent"""
     stream: NotRequired[bool]
@@ -18,7 +18,7 @@ class CustomAgentRunsRequestTypedDict(TypedDict):
 
 class CustomAgentRunsRequest(BaseModel):
     agent: str
-    r"""Set the value to a Custom Agent's ID. Learn how to obtain an agent ID here [Create Custom Agents](/agents/custom/create-agents)."""
+    r"""Set the value to a Custom Agent's ID. Learn how to obtain an agent ID here [Create Custom Agents](https://docs.you.com/agents/custom/create-agents)."""
 
     input: str
     r"""The question you'd like to ask the agent"""

@@ -113,6 +113,55 @@ class TestSearchFilters:
                     if hasattr(result, "contents") and result.contents:
                         assert result.contents.html is not None
 
+    def test_search_news_with_livecrawl(self, server_url, api_key):
+        """Test that news results can have contents when livecrawl is enabled (new in 2.2.0)."""
+        client = create_test_http_client("get_/v1/search")
+        
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            res = you.search.unified(
+                query="technology news",
+                count=5,
+                livecrawl=LiveCrawl.NEWS,
+                livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                server_url=server_url,
+            )
+            
+            assert res.results is not None
+            
+            # News results can now have contents field when livecrawl is enabled
+            if res.results.news:
+                for news_item in res.results.news:
+                    # Contents field is optional but should be accessible
+                    if hasattr(news_item, "contents") and news_item.contents:
+                        # If contents exists, it should have markdown when requested
+                        assert news_item.contents.markdown is not None or news_item.contents.html is not None
+
+    def test_search_livecrawl_all_with_news_contents(self, server_url, api_key):
+        """Test livecrawl=ALL returns contents for both web and news results."""
+        client = create_test_http_client("get_/v1/search")
+        
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            res = you.search.unified(
+                query="breaking tech news",
+                count=3,
+                livecrawl=LiveCrawl.ALL,
+                livecrawl_formats=LiveCrawlFormats.HTML,
+                server_url=server_url,
+            )
+            
+            assert res.results is not None
+            
+            # Both web and news can have contents with livecrawl=ALL
+            if res.results.web:
+                for result in res.results.web:
+                    if hasattr(result, "contents") and result.contents:
+                        assert result.contents.html is not None
+            
+            if res.results.news:
+                for news_item in res.results.news:
+                    if hasattr(news_item, "contents") and news_item.contents:
+                        assert news_item.contents.html is not None
+
 
 class TestSearchErrors:
     def test_unauthorized(self, server_url):

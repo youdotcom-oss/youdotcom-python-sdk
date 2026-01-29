@@ -456,6 +456,44 @@ class TestSearchPerformance:
             ALL_METRICS.append(metrics)
             if show_detailed:
                 print_detailed_metrics(metrics)
+    
+    def test_search_with_news_livecrawl(self, server_url, api_key, iterations, show_detailed):
+        """Search with livecrawl for news results (news now supports contents)."""
+        client = create_timing_client("get_/v1/search")
+        
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            def call():
+                you.search.unified(
+                    query="technology news",
+                    count=5,
+                    livecrawl=LiveCrawl.NEWS,
+                    livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                    server_url=server_url,
+                )
+            
+            metrics = measure_sdk_call(call, client, iterations, "Search: livecrawl=NEWS (with contents)")
+            ALL_METRICS.append(metrics)
+            if show_detailed:
+                print_detailed_metrics(metrics)
+    
+    def test_search_with_livecrawl_all_news_contents(self, server_url, api_key, iterations, show_detailed):
+        """Search with livecrawl=ALL for both web and news contents."""
+        client = create_timing_client("get_/v1/search")
+        
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            def call():
+                you.search.unified(
+                    query="breaking tech news",
+                    count=3,
+                    livecrawl=LiveCrawl.ALL,
+                    livecrawl_formats=LiveCrawlFormats.HTML,
+                    server_url=server_url,
+                )
+            
+            metrics = measure_sdk_call(call, client, iterations, "Search: livecrawl=ALL (web+news contents)")
+            ALL_METRICS.append(metrics)
+            if show_detailed:
+                print_detailed_metrics(metrics)
 
 
 # ============================================================================

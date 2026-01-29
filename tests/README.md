@@ -55,15 +55,18 @@ pytest tests/ -v
 - `test_search.py` - Tests for the Search API (`/v1/search`)
 - `test_contents.py` - Tests for the Contents API (`/v1/contents`)
 - `test_runs.py` - Tests for the Agents/Runs API (`/v1/agents/runs`)
+- `test_performance.py` - Performance/instrumentation tests measuring SDK overhead
+- `test_live.py` - Live API tests that run against the real You.com API (requires API key)
 
 ### Test Organization
 
 Tests are organized into logical classes using pytest:
 
-**Search API** (7 tests):
+**Search API** (9 tests):
 - Basic search functionality
 - Search with filters (freshness, country, safesearch)
 - Pagination and livecrawl
+- News livecrawl with contents (new in 2.2.0)
 - Error handling (unauthorized, forbidden)
 
 **Contents API** (8 tests):
@@ -78,6 +81,18 @@ Tests are organized into logical classes using pytest:
 - Custom agents (UUID-based)
 - Tool configurations and verbosity
 - Error handling (unauthorized, forbidden, empty input)
+
+### Running Live Tests
+
+The `test_live.py` file contains tests that run against the real You.com API. These are skipped by default unless an API key is provided:
+
+```bash
+# Run live tests with your API key
+YOU_API_KEY_AUTH="your-api-key" pytest tests/test_live.py -v
+
+# Run all tests except live tests
+pytest tests/ --ignore=tests/test_live.py -v
+```
 
 ## Test Coverage
 

@@ -1,9 +1,9 @@
-speakeasyVersion: 1.698.0
+speakeasyVersion: 1.700.2
 sources:
     You.com API:
         sourceNamespace: you-com-search-api
-        sourceRevisionDigest: sha256:9a34e89224c2520c7fad1d3501f616c22e481083538ad39646dcfeb3294dc7b4
-        sourceBlobDigest: sha256:b51123c2cbc568dfa06eb6c762c8466401df935482ba59591901667bb580ab68
+        sourceRevisionDigest: sha256:e3c94436fd3002c31990ab21146f126bc6ab86e4b5f0f97449b8cf3dba72c23d
+        sourceBlobDigest: sha256:0d5b7b460a6e3aae27141ac5678258fadbccb3133081106441de0eed8e629f59
         tags:
             - latest
             - 1.0.0
@@ -11,10 +11,10 @@ targets:
     you:
         source: You.com API
         sourceNamespace: you-com-search-api
-        sourceRevisionDigest: sha256:9a34e89224c2520c7fad1d3501f616c22e481083538ad39646dcfeb3294dc7b4
-        sourceBlobDigest: sha256:b51123c2cbc568dfa06eb6c762c8466401df935482ba59591901667bb580ab68
+        sourceRevisionDigest: sha256:e3c94436fd3002c31990ab21146f126bc6ab86e4b5f0f97449b8cf3dba72c23d
+        sourceBlobDigest: sha256:0d5b7b460a6e3aae27141ac5678258fadbccb3133081106441de0eed8e629f59
         codeSamplesNamespace: you-com-search-api-code-samples
-        codeSamplesRevisionDigest: sha256:44958d5cc129145431ec25286505e73065d0e64aade09797b12c9819759443b6
+        codeSamplesRevisionDigest: sha256:19322950f0dbf18cb2174131380b92626cd09e4b7e1f0b87a8769f031a1df0d5
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest
@@ -22,8 +22,8 @@ workflow:
         You.com API:
             inputs:
                 - location: https://you.com/specs/openapi_unified_agents.yaml
-                - location: https://you.com/specs/openapi_search_v1.yaml
-                - location: https://youdotcom-pr-11667.vercel.app/specs/openapi_contents.yaml
+                - location: https://raw.githubusercontent.com/Su-Sea/youdotcom-frontend/8b2343769b0cb30f5a50851979bbe414404d4614/public/specs/openapi_search_v1.yaml?token=GHSAT0AAAAAADSREVEUXQ6IIHAHVE2YZBDY2L3WB3A
+                - location: https://youdotcom-ceb3k6nx2-susea.vercel.app/specs/openapi_contents.yaml
                 - location: https://you.com/specs/openapi_base.yaml
             overlays:
                 - location: ./overlays/python_overlay.yaml
