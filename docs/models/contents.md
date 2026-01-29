@@ -1,4 +1,4 @@
-# SearchContents
+# Contents
 
 Contents of the page if livecrawl was enabled.
 

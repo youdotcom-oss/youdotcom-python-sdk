@@ -5,6 +5,37 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-01-29
+
+### Changed
+
+- **Renamed `SearchContents` to `Contents`**: The `SearchContents` model has been renamed to `Contents` and moved to its own module (`youdotcom.models.contents`). The interface remains the same with `html` and `markdown` fields.
+
+### Added
+
+- **News results now support `contents` field**: When using `livecrawl=NEWS` or `livecrawl=ALL`, news results can now include crawled page contents (HTML and/or Markdown), just like web results. This enables richer news content retrieval.
+
+```python
+from youdotcom.models import LiveCrawl, LiveCrawlFormats
+
+# Get news with crawled contents
+res = you.search.unified(
+    query="technology news",
+    livecrawl=LiveCrawl.NEWS,
+    livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+)
+
+for news_item in res.results.news:
+    if news_item.contents:
+        print(news_item.contents.markdown)
+```
+
+### Removed
+
+- **`SearchContents`**: Replaced by `Contents`. If you were importing `SearchContents` directly, update your imports to use `Contents`.
+
+---
+
 ## [2.0.0] - 2026-01-09
 
 ### Breaking Changes

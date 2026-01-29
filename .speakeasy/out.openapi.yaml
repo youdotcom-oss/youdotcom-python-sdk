@@ -126,7 +126,7 @@ paths:
       parameters:
         - name: query
           in: query
-          description: The search query used to retrieve relevant results from the web. You can also include [search operators](#search-operators) to refine your search.
+          description: The search query used to retrieve relevant results from the web. You can also include [search operators](https://docs.you.com/search/search-operators) to refine your search.
           required: true
           schema:
             type: string
@@ -236,15 +236,7 @@ paths:
                               description: The age of the search result.
                               example: "2025-06-25T11:41:00"
                             contents:
-                              type: object
-                              properties:
-                                html:
-                                  type: string
-                                  description: The HTML content of the page.
-                                markdown:
-                                  type: string
-                                  description: The Markdown content of the page.
-                              description: Contents of the page if livecrawl was enabled.
+                              $ref: '#/components/schemas/Contents'
                             authors:
                               type: array
                               items:
@@ -281,6 +273,8 @@ paths:
                               type: string
                               description: The URL of the news result.
                               example: "https://www.you.com/news/eu-ai-strategy-youcom"
+                            contents:
+                              $ref: '#/components/schemas/Contents'
                   metadata:
                     type: object
                     properties:
@@ -558,7 +552,7 @@ components:
         agent:
           type: string
           description: >-
-            Set the value to a Custom Agent's ID. Learn how to obtain an agent ID here [Create Custom Agents](/agents/custom/create-agents).
+            Set the value to a Custom Agent's ID. Learn how to obtain an agent ID here [Create Custom Agents](https://docs.you.com/agents/custom/create-agents).
           example: 63773261-b4de-4d8f-9dfd-cff206a5cb51
         input:
           type: string
@@ -985,98 +979,98 @@ components:
     Country:
       type: string
       enum:
-        - 'AR'
-        - 'AU'
-        - 'AT'
-        - 'BE'
-        - 'BR'
-        - 'CA'
-        - 'CL'
-        - 'DK'
-        - 'FI'
-        - 'FR'
-        - 'DE'
-        - 'HK'
-        - 'IN'
-        - 'ID'
-        - 'IT'
-        - 'JP'
-        - 'KR'
-        - 'MY'
-        - 'MX'
-        - 'NL'
-        - 'NZ'
-        - 'NO'
-        - 'CN'
-        - 'PL'
-        - 'PT'
-        - 'PH'
-        - 'RU'
-        - 'SA'
-        - 'ZA'
-        - 'ES'
-        - 'SE'
-        - 'CH'
-        - 'TW'
-        - 'TR'
-        - 'GB'
-        - 'US'
+        - "AR"
+        - "AU"
+        - "AT"
+        - "BE"
+        - "BR"
+        - "CA"
+        - "CL"
+        - "DK"
+        - "FI"
+        - "FR"
+        - "DE"
+        - "HK"
+        - "IN"
+        - "ID"
+        - "IT"
+        - "JP"
+        - "KR"
+        - "MY"
+        - "MX"
+        - "NL"
+        - "NZ"
+        - "NO"
+        - "CN"
+        - "PL"
+        - "PT"
+        - "PH"
+        - "RU"
+        - "SA"
+        - "ZA"
+        - "ES"
+        - "SE"
+        - "CH"
+        - "TW"
+        - "TR"
+        - "GB"
+        - "US"
       description: The country code that determines the geographical focus of the web results.
     Language:
       type: string
       enum:
-        - 'AR'
-        - 'EU'
-        - 'BN'
-        - 'BG'
-        - 'CA'
-        - 'ZH-HANS'
-        - 'ZH-HANT'
-        - 'HR'
-        - 'CS'
-        - 'DA'
-        - 'NL'
-        - 'EN'
-        - 'EN-GB'
-        - 'ET'
-        - 'FI'
-        - 'FR'
-        - 'GL'
-        - 'DE'
-        - 'EL'
-        - 'GU'
-        - 'HE'
-        - 'HI'
-        - 'HU'
-        - 'IS'
-        - 'IT'
-        - 'JP'
-        - 'KN'
-        - 'KO'
-        - 'LV'
-        - 'LT'
-        - 'MS'
-        - 'ML'
-        - 'MR'
-        - 'NB'
-        - 'PL'
-        - 'PT-BR'
-        - 'PT-PT'
-        - 'PA'
-        - 'RO'
-        - 'RU'
-        - 'SR'
-        - 'SK'
-        - 'SL'
-        - 'ES'
-        - 'SV'
-        - 'TA'
-        - 'TE'
-        - 'TH'
-        - 'TR'
-        - 'UK'
-        - 'VI'
-      default: 'EN'
+        - "AR"
+        - "EU"
+        - "BN"
+        - "BG"
+        - "CA"
+        - "ZH-HANS"
+        - "ZH-HANT"
+        - "HR"
+        - "CS"
+        - "DA"
+        - "NL"
+        - "EN"
+        - "EN-GB"
+        - "ET"
+        - "FI"
+        - "FR"
+        - "GL"
+        - "DE"
+        - "EL"
+        - "GU"
+        - "HE"
+        - "HI"
+        - "HU"
+        - "IS"
+        - "IT"
+        - "JP"
+        - "KN"
+        - "KO"
+        - "LV"
+        - "LT"
+        - "MS"
+        - "ML"
+        - "MR"
+        - "NB"
+        - "PL"
+        - "PT-BR"
+        - "PT-PT"
+        - "PA"
+        - "RO"
+        - "RU"
+        - "SR"
+        - "SK"
+        - "SL"
+        - "ES"
+        - "SV"
+        - "TA"
+        - "TE"
+        - "TH"
+        - "TR"
+        - "UK"
+        - "VI"
+      default: "EN"
     SafeSearch:
       type: string
       enum:
@@ -1097,6 +1091,16 @@ components:
         - html
         - markdown
       description: Indicates the format of the livecrawled content.
+    Contents:
+      type: object
+      properties:
+        html:
+          type: string
+          description: The HTML content of the page.
+        markdown:
+          type: string
+          description: The Markdown content of the page.
+      description: Contents of the page if livecrawl was enabled.
     ContentsFormats:
       type: array
       items:

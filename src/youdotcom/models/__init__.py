@@ -45,6 +45,7 @@ if TYPE_CHECKING:
         AgentsRunsResponseTypedDict,
     )
     from .computetool import ComputeTool, ComputeToolTypedDict
+    from .contents import Contents, ContentsTypedDict
     from .contentsformats import ContentsFormats
     from .contentsmetadata import ContentsMetadata, ContentsMetadataTypedDict
     from .contentsop import (
@@ -110,8 +111,6 @@ if TYPE_CHECKING:
         Results,
         ResultsTypedDict,
         SEARCH_OP_SERVERS,
-        SearchContents,
-        SearchContentsTypedDict,
         SearchCountry,
         SearchCountryTypedDict,
         SearchFreshness,
@@ -151,6 +150,7 @@ __all__ = [
     "AgentsRunsResponseTypedDict",
     "ComputeTool",
     "ComputeToolTypedDict",
+    "Contents",
     "ContentsFormats",
     "ContentsMetadata",
     "ContentsMetadataTypedDict",
@@ -158,6 +158,7 @@ __all__ = [
     "ContentsRequestTypedDict",
     "ContentsResponse",
     "ContentsResponseTypedDict",
+    "ContentsTypedDict",
     "Country",
     "CustomAgentRunsRequest",
     "CustomAgentRunsRequestTypedDict",
@@ -211,8 +212,6 @@ __all__ = [
     "Role",
     "SEARCH_OP_SERVERS",
     "SafeSearch",
-    "SearchContents",
-    "SearchContentsTypedDict",
     "SearchCountry",
     "SearchCountryTypedDict",
     "SearchEffort",
@@ -274,6 +273,8 @@ _dynamic_imports: dict[str, str] = {
     "AgentsRunsResponseTypedDict": ".agentsrunsop",
     "ComputeTool": ".computetool",
     "ComputeToolTypedDict": ".computetool",
+    "Contents": ".contents",
+    "ContentsTypedDict": ".contents",
     "ContentsFormats": ".contentsformats",
     "ContentsMetadata": ".contentsmetadata",
     "ContentsMetadataTypedDict": ".contentsmetadata",
@@ -326,8 +327,6 @@ _dynamic_imports: dict[str, str] = {
     "Results": ".searchop",
     "ResultsTypedDict": ".searchop",
     "SEARCH_OP_SERVERS": ".searchop",
-    "SearchContents": ".searchop",
-    "SearchContentsTypedDict": ".searchop",
     "SearchCountry": ".searchop",
     "SearchCountryTypedDict": ".searchop",
     "SearchFreshness": ".searchop",
