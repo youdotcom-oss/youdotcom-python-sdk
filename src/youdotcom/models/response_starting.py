@@ -28,3 +28,9 @@ class ResponseStarting(BaseModel):
         ],
         pydantic.Field(alias="type"),
     ] = "response.starting"
+
+
+try:
+    ResponseStarting.model_rebuild()
+except NameError:
+    pass

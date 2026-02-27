@@ -26,11 +26,6 @@ from typing_extensions import TypeAliasType
 from youdotcom.utils import eventstreaming
 
 
-AGENTS_RUNS_OP_SERVERS = [
-    "https://api.you.com",
-]
-
-
 AgentsRunsRequestTypedDict = TypeAliasType(
     "AgentsRunsRequestTypedDict",
     Union[

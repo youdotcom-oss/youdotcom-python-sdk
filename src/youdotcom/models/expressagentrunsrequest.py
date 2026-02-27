@@ -53,3 +53,9 @@ class ExpressAgentRunsRequest(BaseModel):
                     m[k] = val
 
         return m
+
+
+try:
+    ExpressAgentRunsRequest.model_rebuild()
+except NameError:
+    pass

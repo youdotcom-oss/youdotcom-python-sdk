@@ -53,3 +53,13 @@ class ResponseOutputContentFull(BaseModel):
         ],
         pydantic.Field(alias="type"),
     ] = "response.output_content.full"
+
+
+try:
+    ResponseOutputContentFullResponse.model_rebuild()
+except NameError:
+    pass
+try:
+    ResponseOutputContentFull.model_rebuild()
+except NameError:
+    pass

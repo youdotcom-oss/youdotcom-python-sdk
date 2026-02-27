@@ -24,11 +24,17 @@ SEARCH_OP_SERVERS = [
 SearchFreshnessTypedDict = TypeAliasType(
     "SearchFreshnessTypedDict", Union[Freshness, str]
 )
-r"""Specifies the freshness of the results to return."""
+r"""Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
+
+When your search query includes a temporal keyword and you also set a freshness parameter, the search will use the broader (i.e., less restrictive) of the two timeframes. For example, if you use `query=news+this+week&freshness=month`, the results will use a freshness of month.
+"""
 
 
 SearchFreshness = TypeAliasType("SearchFreshness", Union[Freshness, str])
-r"""Specifies the freshness of the results to return."""
+r"""Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
+
+When your search query includes a temporal keyword and you also set a freshness parameter, the search will use the broader (i.e., less restrictive) of the two timeframes. For example, if you use `query=news+this+week&freshness=month`, the results will use a freshness of month.
+"""
 
 
 SearchCountryTypedDict = TypeAliasType("SearchCountryTypedDict", Union[Country, str])
@@ -77,7 +83,10 @@ class SearchRequestTypedDict(TypedDict):
     count: NotRequired[int]
     r"""Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them)."""
     freshness: NotRequired[SearchFreshnessTypedDict]
-    r"""Specifies the freshness of the results to return."""
+    r"""Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
+
+    When your search query includes a temporal keyword and you also set a freshness parameter, the search will use the broader (i.e., less restrictive) of the two timeframes. For example, if you use `query=news+this+week&freshness=month`, the results will use a freshness of month.
+    """
     offset: NotRequired[int]
     r"""Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`."""
     country: NotRequired[SearchCountryTypedDict]
@@ -101,14 +110,17 @@ class SearchRequest(BaseModel):
     count: Annotated[
         Optional[int],
         FieldMetadata(query=QueryParamMetadata(style="form", explode=True)),
-    ] = None
+    ] = 10
     r"""Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them)."""
 
     freshness: Annotated[
         Optional[SearchFreshness],
         FieldMetadata(query=QueryParamMetadata(style="form", explode=True)),
     ] = None
-    r"""Specifies the freshness of the results to return."""
+    r"""Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
+
+    When your search query includes a temporal keyword and you also set a freshness parameter, the search will use the broader (i.e., less restrictive) of the two timeframes. For example, if you use `query=news+this+week&freshness=month`, the results will use a freshness of month.
+    """
 
     offset: Annotated[
         Optional[int],

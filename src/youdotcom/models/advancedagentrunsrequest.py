@@ -101,3 +101,9 @@ class AdvancedAgentRunsRequest(BaseModel):
                     m[k] = val
 
         return m
+
+
+try:
+    AdvancedAgentRunsRequest.model_rebuild()
+except NameError:
+    pass

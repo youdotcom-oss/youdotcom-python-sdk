@@ -3,24 +3,25 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 import httpx
-from typing import Optional
+from typing import List, Optional
 from youdotcom.errors import YouError
+from youdotcom.models import researchop as models_researchop
 from youdotcom.types import BaseModel
 
 
-class ContentsInternalServerErrorData(BaseModel):
+class ResearchInternalServerErrorData(BaseModel):
     detail: Optional[str] = None
 
 
 @dataclass(unsafe_hash=True)
-class ContentsInternalServerError(YouError):
+class ResearchInternalServerError(YouError):
     r"""Internal Server Error during authentication/authorization middleware."""
 
-    data: ContentsInternalServerErrorData = field(hash=False)
+    data: ResearchInternalServerErrorData = field(hash=False)
 
     def __init__(
         self,
-        data: ContentsInternalServerErrorData,
+        data: ResearchInternalServerErrorData,
         raw_response: httpx.Response,
         body: Optional[str] = None,
     ):
@@ -29,19 +30,40 @@ class ContentsInternalServerError(YouError):
         object.__setattr__(self, "data", data)
 
 
-class ContentsForbiddenErrorData(BaseModel):
+class UnprocessableEntityErrorData(BaseModel):
+    detail: Optional[List[models_researchop.ResearchDetail]] = None
+
+
+@dataclass(unsafe_hash=True)
+class UnprocessableEntityError(YouError):
+    r"""Unprocessable Entity. Request validation failed."""
+
+    data: UnprocessableEntityErrorData = field(hash=False)
+
+    def __init__(
+        self,
+        data: UnprocessableEntityErrorData,
+        raw_response: httpx.Response,
+        body: Optional[str] = None,
+    ):
+        message = body or raw_response.text
+        super().__init__(message, raw_response, body)
+        object.__setattr__(self, "data", data)
+
+
+class ResearchForbiddenErrorData(BaseModel):
     detail: Optional[str] = None
 
 
 @dataclass(unsafe_hash=True)
-class ContentsForbiddenError(YouError):
+class ResearchForbiddenError(YouError):
     r"""Forbidden. API key lacks scope for this path."""
 
-    data: ContentsForbiddenErrorData = field(hash=False)
+    data: ResearchForbiddenErrorData = field(hash=False)
 
     def __init__(
         self,
-        data: ContentsForbiddenErrorData,
+        data: ResearchForbiddenErrorData,
         raw_response: httpx.Response,
         body: Optional[str] = None,
     ):
@@ -50,20 +72,20 @@ class ContentsForbiddenError(YouError):
         object.__setattr__(self, "data", data)
 
 
-class ContentsUnauthorizedErrorData(BaseModel):
+class ResearchUnauthorizedErrorData(BaseModel):
     detail: Optional[str] = None
     r"""Error detail message."""
 
 
 @dataclass(unsafe_hash=True)
-class ContentsUnauthorizedError(YouError):
+class ResearchUnauthorizedError(YouError):
     r"""Unauthorized. Problems with API key."""
 
-    data: ContentsUnauthorizedErrorData = field(hash=False)
+    data: ResearchUnauthorizedErrorData = field(hash=False)
 
     def __init__(
         self,
-        data: ContentsUnauthorizedErrorData,
+        data: ResearchUnauthorizedErrorData,
         raw_response: httpx.Response,
         body: Optional[str] = None,
     ):

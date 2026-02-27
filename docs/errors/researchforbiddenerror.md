@@ -1,4 +1,4 @@
-# ContentsForbiddenError
+# ResearchForbiddenError
 
 Forbidden. API key lacks scope for this path.
 

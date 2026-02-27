@@ -41,3 +41,9 @@ class ResponseDone(BaseModel):
         ],
         pydantic.Field(alias="type"),
     ] = "response.done"
+
+
+try:
+    ResponseDone.model_rebuild()
+except NameError:
+    pass

@@ -1,6 +1,6 @@
-# ContentsForbiddenError
+# ResearchInternalServerError
 
-Forbidden. API key lacks scope for this path.
+Internal Server Error during authentication/authorization middleware.
 
 
 ## Fields

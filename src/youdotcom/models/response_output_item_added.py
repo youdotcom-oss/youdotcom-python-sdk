@@ -41,3 +41,9 @@ class ResponseOutputItemAdded(BaseModel):
         ],
         pydantic.Field(alias="type"),
     ] = "response.output_item.added"
+
+
+try:
+    ResponseOutputItemAdded.model_rebuild()
+except NameError:
+    pass

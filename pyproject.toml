@@ -1,10 +1,10 @@
 [project]
 name = "youdotcom"
-version = "2.2.0"
+version = "2.3.0"
 description = "The official You.com Python SDK."
 authors = [{ name = "You.com" },]
 readme = "README.md"
-requires-python = ">=3.9.2"
+requires-python = ">=3.10"
 dependencies = [
     "httpcore >=1.0.9",
     "httpx >=0.28.1",

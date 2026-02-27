@@ -1,6 +1,6 @@
 # ContentsInternalServerError
 
-Internal Server Error
+Internal Server Error during authentication/authorization middleware.
 
 
 ## Fields

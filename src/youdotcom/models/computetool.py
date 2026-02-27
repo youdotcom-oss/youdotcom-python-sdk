@@ -20,3 +20,9 @@ class ComputeTool(BaseModel):
         pydantic.Field(alias="type"),
     ] = "compute"
     r"""Setting this value to \"compute\" is mandatory to use the compute agent."""
+
+
+try:
+    ComputeTool.model_rebuild()
+except NameError:
+    pass

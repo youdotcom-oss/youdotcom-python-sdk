@@ -1,4 +1,4 @@
-# ContentsUnauthorizedError
+# ResearchUnauthorizedError
 
 Unauthorized. Problems with API key.
 
