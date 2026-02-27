@@ -1,0 +1,64 @@
+name: SDK Release
+description: Trigger an SDK release with optional custom OpenAPI specs
+labels: ['sdk-release']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## SDK Release
+
+        Use this form to trigger the SDK generation workflow.
+
+        - Fill in the version you want to release
+        - Only fill in the spec textareas for specs you want to override
+        - Leave a textarea blank to use the remote spec from `https://you.com/specs/` for that source
+        - Submitting this form automatically triggers the SDK generation workflow
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The version to release (semver)
+      placeholder: '2.4.0'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: specs-to-override
+    attributes:
+      label: Which specs to override
+      description: Select which specs you are providing custom YAML for below. Leave unselected to use all remote specs.
+      multiple: true
+      options:
+        - openapi_unified_agents
+        - openapi_search_v1
+        - openapi_contents
+        - openapi_base
+
+  - type: textarea
+    id: custom-unified-agents
+    attributes:
+      label: 'Custom spec: unified agents'
+      description: Paste the full OpenAPI YAML for the unified agents spec. Leave blank to use the remote spec.
+      render: yaml
+
+  - type: textarea
+    id: custom-search-v1
+    attributes:
+      label: 'Custom spec: search v1'
+      description: Paste the full OpenAPI YAML for the search v1 spec. Leave blank to use the remote spec.
+      render: yaml
+
+  - type: textarea
+    id: custom-contents
+    attributes:
+      label: 'Custom spec: contents'
+      description: Paste the full OpenAPI YAML for the contents spec. Leave blank to use the remote spec.
+      render: yaml
+
+  - type: textarea
+    id: custom-base
+    attributes:
+      label: 'Custom spec: base'
+      description: Paste the full OpenAPI YAML for the base spec. Leave blank to use the remote spec.
+      render: yaml
