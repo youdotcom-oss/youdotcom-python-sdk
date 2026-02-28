@@ -96,10 +96,10 @@ def express_streaming_request():
 
     # Type narrow to ensure we have a streaming response
     assert isinstance(response, eventstreaming.EventStream), "Expected streaming response"
-    with response as AgentRunsStreamingResponse:
+    with response as stream:
         # Iterate through the stream and handle each event type
         # Each chunk is an AgentRunsStreamingResponse with a 'data' field
-        for chunk in response:
+        for chunk in stream:
             # The data field contains the actual event (discriminated by TYPE)
             event_data = chunk.data
 
@@ -289,7 +289,7 @@ def research_request():
     if res.output.sources:
         print(f"\nSources ({len(res.output.sources)}):")
         for source in res.output.sources:
-            print(f"  - {source.title}: {source.url}")
+            print(f"  - {source.title or 'Untitled'}: {source.url}")
 
 
 # Available functions menu

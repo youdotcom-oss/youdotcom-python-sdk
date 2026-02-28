@@ -12,7 +12,7 @@ This guide helps you upgrade your code from You.com Python SDK 1.x to 2.0.
 | Custom agent | `agent="uuid-string"` | `request=CustomAgentRunsRequest(agent="uuid-string", ...)` |
 | Verbosity enum | `Verbosity` | `ReportVerbosity` |
 | Format enum | `Format` | `ContentsFormats` |
-| Contents format param | `format_=ContentsFormat.X` | `formats=[ContentsFormats.X]` |
+| Contents format param | `format_=Format.X` | `formats=[ContentsFormats.X]` |
 
 ## Step-by-Step Migration
 

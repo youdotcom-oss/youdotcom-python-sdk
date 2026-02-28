@@ -22,7 +22,7 @@ res = you.research(
 )
 print(res.output.content)
 for source in res.output.sources:
-    print(f"  - {source.title}: {source.url}")
+    print(f"  - {source.title or 'Untitled'}: {source.url}")
 ```
 
 - **`ResearchEffort` enum**: Controls depth of research (`lite`, `standard`, `deep`, `exhaustive`)

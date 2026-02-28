@@ -1,6 +1,8 @@
 import os
+import uuid
 import pytest
-import pytest_asyncio
+
+import httpx
 
 from tests.test_client import create_test_http_client
 from youdotcom import You
@@ -76,9 +78,15 @@ class TestResearchBasic:
 class TestResearchAsync:
     @pytest.mark.asyncio
     async def test_basic_research_async(self, server_url, api_key):
-        client = create_test_http_client("post_/v1/research")
+        async_client = httpx.AsyncClient(
+            headers={
+                "x-speakeasy-test-name": "post_/v1/research",
+                "x-speakeasy-test-instance-id": str(uuid.uuid4()),
+            },
+            follow_redirects=True,
+        )
 
-        async with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        async with You(server_url=server_url, async_client=async_client, api_key_auth=api_key) as you:
             res = await you.research_async(
                 input="What are the latest advances in quantum computing?",
                 research_effort=ResearchEffort.STANDARD,
