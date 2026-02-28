@@ -28,6 +28,7 @@ for source in res.output.sources:
 - **`ResearchEffort` enum**: Controls depth of research (`lite`, `standard`, `deep`, `exhaustive`)
 - **Research models**: `ResearchRequest`, `ResearchResponse`, `Output`, `Source`, `ContentType`
 - **Research errors**: `ResearchUnauthorizedError`, `ResearchForbiddenError`, `ResearchInternalServerError`, `UnprocessableEntityError`
+- **`AgentRuns400ResponseError`**: New error class for 400 Bad Request responses from the Agents API
 
 ### Changed
 
@@ -336,7 +337,7 @@ Error classes have been renamed for consistency and clarity:
 | Old Name (1.x) | New Name (2.0) |
 |----------------|----------------|
 | `PostV1AgentsRunsUnauthorizedError` | `AgentRuns401ResponseError` |
-| `PostV1AgentsRunsForbiddenError` | `AgentRuns422ResponseError` |
+| `PostV1AgentsRunsForbiddenError` | Removed (403 now handled by `YouDefaultError`) |
 | `GetV1SearchUnauthorizedError` | `SearchUnauthorizedError` |
 | `GetV1SearchForbiddenError` | `SearchForbiddenError` |
 | `PostV1ContentsUnauthorizedError` | `ContentsUnauthorizedError` |

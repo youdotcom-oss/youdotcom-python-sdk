@@ -245,53 +245,53 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-response = you.agents.runs.create(request=ExpressAgentRunsRequest(
-    input="Restaurants in San Francisco",
-    stream=True,
-    tools=[
-        WebSearchTool()
-    ]
-))
+    response = you.agents.runs.create(request=ExpressAgentRunsRequest(
+        input="Restaurants in San Francisco",
+        stream=True,
+        tools=[
+            WebSearchTool()
+        ]
+    ))
 
-# Type narrow to ensure we have a streaming response
-assert isinstance(response, eventstreaming.EventStream), "Expected streaming response"
-with response as AgentRunsStreamingResponse:
-    # Iterate through the stream and handle each event type
-    # Each chunk is an AgentRunsStreamingResponse with a 'data' field
-    for chunk in response:
-        # The data field contains the actual event (discriminated by TYPE)
-        event_data = chunk.data
+    # Type narrow to ensure we have a streaming response
+    assert isinstance(response, eventstreaming.EventStream), "Expected streaming response"
+    with response as AgentRunsStreamingResponse:
+        # Iterate through the stream and handle each event type
+        # Each chunk is an AgentRunsStreamingResponse with a 'data' field
+        for chunk in response:
+            # The data field contains the actual event (discriminated by TYPE)
+            event_data = chunk.data
 
-        # Use isinstance() to narrow the type and handle each event
-        if isinstance(event_data, ResponseCreated):
-            print(f"✨ Response created (seq: {event_data.seq_id})")
+            # Use isinstance() to narrow the type and handle each event
+            if isinstance(event_data, ResponseCreated):
+                print(f"✨ Response created (seq: {event_data.seq_id})")
 
-        elif isinstance(event_data, ResponseStarting):
-            print(f"🚀 Response starting (seq: {event_data.seq_id})")
+            elif isinstance(event_data, ResponseStarting):
+                print(f"🚀 Response starting (seq: {event_data.seq_id})")
 
-        elif isinstance(event_data, ResponseOutputItemAdded):
-            print(f"➕ Output item added: {event_data.seq_id}")
+            elif isinstance(event_data, ResponseOutputItemAdded):
+                print(f"➕ Output item added: {event_data.seq_id}")
 
-        elif isinstance(event_data, ResponseOutputContentFull):
-            print("\n🔍 Web Search Results:")
-            if event_data.response.full:
-                for idx, result in enumerate(event_data.response.full, 1):
-                    print(f"  {idx}. {result.title} - {result.url}")
+            elif isinstance(event_data, ResponseOutputContentFull):
+                print("\n🔍 Web Search Results:")
+                if event_data.response.full:
+                    for idx, result in enumerate(event_data.response.full, 1):
+                        print(f"  {idx}. {result.title} - {result.url}")
 
-        elif isinstance(event_data, ResponseOutputTextDelta):
-            # Print the delta text as it streams in (without newline)
-            print(event_data.response.delta, end='', flush=True)
+            elif isinstance(event_data, ResponseOutputTextDelta):
+                # Print the delta text as it streams in (without newline)
+                print(event_data.response.delta, end='', flush=True)
 
-        elif isinstance(event_data, ResponseOutputItemDone):
-            print(f"\n✅ Output item done (index: {event_data.response.output_index})")
+            elif isinstance(event_data, ResponseOutputItemDone):
+                print(f"\n✅ Output item done (index: {event_data.response.output_index})")
 
-        elif isinstance(event_data, ResponseDone):
-            print("\n🎉 Response completed!")
-            print(f"   Runtime: {event_data.response.run_time_ms} seconds")
-            print(f"   Finished: {event_data.response.finished}")
+            elif isinstance(event_data, ResponseDone):
+                print("\n🎉 Response completed!")
+                print(f"   Runtime: {event_data.response.run_time_ms} seconds")
+                print(f"   Finished: {event_data.response.finished}")
 
-        else:
-            print(f"⚠️  Unknown event type: {type(event_data).__name__}")
+            else:
+                print(f"⚠️  Unknown event type: {type(event_data).__name__}")
 ```
 
 [mdn-sse]: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
@@ -315,8 +315,11 @@ with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.research(input="Which global cities improved air quality the most over the past 10 years, and what measurable actions contributed?", research_effort=models.ResearchEffort.LITE,
-        RetryConfig("backoff", BackoffStrategy(1, 50, 1.1, 100), False))
+    res = you.research(
+        input="Which global cities improved air quality the most over the past 10 years, and what measurable actions contributed?",
+        research_effort=models.ResearchEffort.LITE,
+        retries=RetryConfig("backoff", BackoffStrategy(1, 50, 1.1, 100), False),
+    )
 
     # Handle response
     print(res)

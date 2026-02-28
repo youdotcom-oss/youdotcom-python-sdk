@@ -39,7 +39,9 @@ from youdotcom.models import (
     AgentRunsBatchResponse,
     AgentRunsStreamingResponse,
     ContentsFormats,
-    WebSearchTool
+    WebSearchTool,
+    ResearchEffort,
+    ResearchResponse,
 )
 from youdotcom.utils import eventstreaming
 
@@ -267,6 +269,29 @@ def content_request():
     print()
 
 
+def research_request():
+    """
+    Research API endpoint for comprehensive, multi-step research answers
+    """
+    print("\n🚀 Running Research Request...\n")
+
+    assert you is not None, "SDK client not initialized"
+
+    res = you.research(
+        input="Which global cities improved air quality the most over the past 10 years, and what measurable actions contributed?",
+        research_effort=ResearchEffort.STANDARD,
+    )
+
+    assert isinstance(res, ResearchResponse)
+    print("Research Answer:")
+    print(res.output.content[:500] + "..." if len(res.output.content) > 500 else res.output.content)
+
+    if res.output.sources:
+        print(f"\nSources ({len(res.output.sources)}):")
+        for source in res.output.sources:
+            print(f"  - {source.title}: {source.url}")
+
+
 # Available functions menu
 FUNCTIONS = [
     {"name": "Express Batch Request", "fn": express_batch_request},
@@ -275,6 +300,7 @@ FUNCTIONS = [
     {"name": "Custom Batch Request", "fn": custom_batch_request},
     {"name": "Search Request", "fn": search_request},
     {"name": "Content Request", "fn": content_request},
+    {"name": "Research Request", "fn": research_request},
 ]
 
 
