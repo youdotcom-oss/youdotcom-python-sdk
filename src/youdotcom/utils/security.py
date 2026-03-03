@@ -144,7 +144,7 @@ def _parse_security_scheme_value(
         elif sub_type == "query":
             query_params[header_name] = [value]
         else:
-            raise ValueError("sub type {sub_type} not supported")
+            raise ValueError(f"sub type {sub_type} not supported")
     elif scheme_type == "openIdConnect":
         headers[header_name] = _apply_bearer(value)
     elif scheme_type == "oauth2":
@@ -158,9 +158,9 @@ def _parse_security_scheme_value(
         elif sub_type == "custom":
             return
         else:
-            raise ValueError("sub type {sub_type} not supported")
+            raise ValueError(f"sub type {sub_type} not supported")
     else:
-        raise ValueError("scheme type {scheme_type} not supported")
+        raise ValueError(f"scheme type {scheme_type} not supported")
 
 
 def _apply_bearer(token: str) -> str:

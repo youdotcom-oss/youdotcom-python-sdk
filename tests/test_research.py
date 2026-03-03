@@ -70,9 +70,10 @@ class TestResearchBasic:
 
             assert isinstance(res, ResearchResponse)
             assert res.output is not None
-            if res.output.sources:
-                for source in res.output.sources:
-                    assert source.url is not None
+            assert res.output.sources is not None
+            assert len(res.output.sources) > 0
+            for source in res.output.sources:
+                assert source.url is not None
 
 
 class TestResearchAsync:
@@ -96,6 +97,7 @@ class TestResearchAsync:
             assert isinstance(res, ResearchResponse)
             assert res.output is not None
             assert res.output.content is not None
+            assert len(res.output.content) > 0
 
 
 class TestResearchErrors:

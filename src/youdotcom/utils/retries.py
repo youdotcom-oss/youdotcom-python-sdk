@@ -145,10 +145,10 @@ def retry(func, retries: Retries):
                         if res.status_code == parsed_code:
                             raise TemporaryError(res)
             except (httpx.NetworkError, httpx.TimeoutException) as exception:
-                if retries.config.retry_connection_errors:
-                    raise
+                if not retries.config.retry_connection_errors:
+                    raise PermanentError(exception) from exception
 
-                raise PermanentError(exception) from exception
+                raise
             except TemporaryError:
                 raise
             except Exception as exception:
@@ -189,10 +189,10 @@ async def retry_async(func, retries: Retries):
                         if res.status_code == parsed_code:
                             raise TemporaryError(res)
             except (httpx.NetworkError, httpx.TimeoutException) as exception:
-                if retries.config.retry_connection_errors:
-                    raise
+                if not retries.config.retry_connection_errors:
+                    raise PermanentError(exception) from exception
 
-                raise PermanentError(exception) from exception
+                raise
             except TemporaryError:
                 raise
             except Exception as exception:
@@ -229,9 +229,6 @@ def retry_with_backoff(
         except Exception as exception:  # pylint: disable=broad-exception-caught
             now = round(time.time() * 1000)
             if now - start > max_elapsed_time:
-                if isinstance(exception, TemporaryError):
-                    return exception.response
-
                 raise
 
             sleep = _get_sleep_interval(
@@ -259,9 +256,6 @@ async def retry_with_backoff_async(
         except Exception as exception:  # pylint: disable=broad-exception-caught
             now = round(time.time() * 1000)
             if now - start > max_elapsed_time:
-                if isinstance(exception, TemporaryError):
-                    return exception.response
-
                 raise
 
             sleep = _get_sleep_interval(
