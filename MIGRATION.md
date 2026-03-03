@@ -1,4 +1,47 @@
-# Migration Guide: 1.x to 2.0
+# Migration Guide
+
+## 1.x → 2.3.0 (Latest)
+
+This guide covers breaking changes introduced in 2.3.0. If you are upgrading from 1.x, also read the [1.x → 2.0](#1x-to-20) section below.
+
+### Breaking Changes in 2.3.0
+
+#### Python 3.10 now required
+
+The minimum supported Python version has been raised from `>=3.9.2` to `>=3.10`. If you are running Python 3.9, you must upgrade before installing this version.
+
+```bash
+python --version   # must be 3.10 or later
+pip install "youdotcom>=2.3.0"
+```
+
+#### Search API: `count` default changed
+
+`you.search.unified()` now defaults `count` to `10` (previously `None`/no default). If your code omits `count` and relies on the API-server default, you will now always receive 10 results.
+
+```python
+# Before (2.x < 2.3.0): count was unset, server decided
+res = you.search.unified(query="AI news")
+
+# After (2.3.0+): equivalent explicit call
+res = you.search.unified(query="AI news", count=10)
+```
+
+#### Contents API: `crawl_timeout` type changed
+
+`crawl_timeout` has changed from `float` to `int`. Passing a float (e.g., `crawl_timeout=5.5`) will now raise a validation error.
+
+```python
+# Before: float was accepted
+res = you.contents.generate(urls=["https://example.com"], crawl_timeout=5.5)
+
+# After: use int
+res = you.contents.generate(urls=["https://example.com"], crawl_timeout=5)
+```
+
+---
+
+## 1.x to 2.0
 
 This guide helps you upgrade your code from You.com Python SDK 1.x to 2.0.
 

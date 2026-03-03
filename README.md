@@ -239,6 +239,18 @@ underlying connection when the context is exited.
 ```python
 import os
 from youdotcom import You
+from youdotcom.models import (
+    ExpressAgentRunsRequest,
+    WebSearchTool,
+    ResponseCreated,
+    ResponseStarting,
+    ResponseOutputItemAdded,
+    ResponseOutputContentFull,
+    ResponseOutputTextDelta,
+    ResponseOutputItemDone,
+    ResponseDone,
+)
+from youdotcom.utils import eventstreaming
 
 
 with You(
@@ -287,7 +299,7 @@ with You(
 
             elif isinstance(event_data, ResponseDone):
                 print("\n🎉 Response completed!")
-                print(f"   Runtime: {event_data.response.run_time_ms} seconds")
+                print(f"   Runtime: {event_data.response.run_time_ms} ms")
                 print(f"   Finished: {event_data.response.finished}")
 
             else:
