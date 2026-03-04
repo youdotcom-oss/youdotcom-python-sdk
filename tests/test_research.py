@@ -58,6 +58,36 @@ class TestResearchBasic:
             assert isinstance(res, ResearchResponse)
             assert res.output is not None
 
+    def test_research_deep_effort(self, server_url, api_key):
+        client = create_test_http_client("post_/v1/research")
+
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            res = you.research(
+                input="Explain the tradeoffs between transformer and SSM architectures",
+                research_effort=ResearchEffort.DEEP,
+                server_url=server_url,
+            )
+
+            assert isinstance(res, ResearchResponse)
+            assert res.output is not None
+            assert res.output.content is not None
+            assert len(res.output.content) > 0
+
+    def test_research_exhaustive_effort(self, server_url, api_key):
+        client = create_test_http_client("post_/v1/research")
+
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            res = you.research(
+                input="Compare global approaches to AI regulation across the US, EU, and China",
+                research_effort=ResearchEffort.EXHAUSTIVE,
+                server_url=server_url,
+            )
+
+            assert isinstance(res, ResearchResponse)
+            assert res.output is not None
+            assert res.output.content is not None
+            assert len(res.output.content) > 0
+
     def test_research_with_sources(self, server_url, api_key):
         client = create_test_http_client("post_/v1/research")
 
