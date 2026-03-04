@@ -21,6 +21,7 @@ Returns the HTML or Markdown of a target webpage
 Multi-step reasoning with comprehensive research capabilities
 Comprehensive API for You.com services:
 - **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
+- **Research API**: In-depth, multi-step research with citations and sources
 - **Search API**: Get search results from web and news sources
 - **Contents API**: Retrieve and process web page content
 <!-- End Summary [summary] -->
