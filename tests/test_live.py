@@ -258,6 +258,32 @@ class TestLiveResearch:
             assert res.output.content is not None
             assert len(res.output.content) > 0
 
+    def test_research_deep_effort(self, you_client):
+        """Test research with deep effort level."""
+        with you_client as you:
+            res = you.research(
+                input="Explain the tradeoffs between transformer and SSM architectures",
+                research_effort=ResearchEffort.DEEP,
+            )
+
+            assert isinstance(res, ResearchResponse)
+            assert res.output is not None
+            assert res.output.content is not None
+            assert len(res.output.content) > 0
+
+    def test_research_exhaustive_effort(self, you_client):
+        """Test research with exhaustive effort level."""
+        with you_client as you:
+            res = you.research(
+                input="Compare global approaches to AI regulation across the US, EU, and China",
+                research_effort=ResearchEffort.EXHAUSTIVE,
+            )
+
+            assert isinstance(res, ResearchResponse)
+            assert res.output is not None
+            assert res.output.content is not None
+            assert len(res.output.content) > 0
+
     def test_research_with_sources(self, you_client):
         """Test research query returns sources."""
         with you_client as you:
