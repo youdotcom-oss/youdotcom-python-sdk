@@ -71,3 +71,9 @@ class AgentRunsResponseWebSearchResult(BaseModel):
                     m[k] = val
 
         return m
+
+
+try:
+    AgentRunsResponseWebSearchResult.model_rebuild()
+except NameError:
+    pass

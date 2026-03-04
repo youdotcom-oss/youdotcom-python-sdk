@@ -4,8 +4,9 @@ import pytest
 from tests.test_client import create_test_http_client
 from youdotcom import You
 from youdotcom.errors import (
+    AgentRuns400ResponseError,
     AgentRuns401ResponseError,
-    AgentRuns422ResponseError,
+    YouDefaultError,
 )
 from youdotcom.models import (
     ComputeTool,
@@ -218,7 +219,20 @@ class TestRunsErrors:
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             # Mock server returns 403 which gets caught as a default error
             # In production API, this would be a more specific error type
-            with pytest.raises(Exception):  # Accept any exception for mock server
+            with pytest.raises(YouDefaultError):
+                you.agents.runs.create(
+                    request=ExpressAgentRunsRequest(
+                        input="test",
+                        stream=False,
+                    ),
+                    server_url=server_url,
+                )
+
+    def test_bad_request(self, server_url, api_key):
+        client = create_test_http_client("post_/v1/agents/runs-bad-request")
+
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            with pytest.raises((AgentRuns400ResponseError, YouDefaultError)):
                 you.agents.runs.create(
                     request=ExpressAgentRunsRequest(
                         input="test",

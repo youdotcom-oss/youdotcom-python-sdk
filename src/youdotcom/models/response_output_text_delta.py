@@ -48,3 +48,13 @@ class ResponseOutputTextDelta(BaseModel):
         ],
         pydantic.Field(alias="type"),
     ] = "response.output_text.delta"
+
+
+try:
+    ResponseOutputTextDeltaResponse.model_rebuild()
+except NameError:
+    pass
+try:
+    ResponseOutputTextDelta.model_rebuild()
+except NameError:
+    pass

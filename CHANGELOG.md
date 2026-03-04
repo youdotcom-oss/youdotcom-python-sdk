@@ -5,6 +5,41 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-02-27
+
+### Added
+
+- **Research API**: New `research()` and `research_async()` methods on the main `You` client for comprehensive, multi-step research answers with citations. The Research API goes beyond a single web search by running multiple searches, reading sources, and synthesizing thorough, well-cited answers.
+
+```python
+from youdotcom import You
+from youdotcom.models import ResearchEffort
+
+you = You()
+res = you.research(
+    input="What are the latest advances in quantum computing?",
+    research_effort=ResearchEffort.DEEP,
+)
+print(res.output.content)
+for source in res.output.sources:
+    print(f"  - {source.title or 'Untitled'}: {source.url}")
+```
+
+- **`ResearchEffort` enum**: Controls depth of research (`lite`, `standard`, `deep`, `exhaustive`)
+- **Research models**: `ResearchRequest`, `ResearchResponse`, `Output`, `Source`, `ContentType`
+- **Research errors**: `ResearchUnauthorizedError`, `ResearchForbiddenError`, `ResearchInternalServerError`, `UnprocessableEntityError`
+- **`AgentRuns400ResponseError`**: New error class for 400 Bad Request responses from the Agents API
+
+### Changed
+
+- **Default server URL**: Changed from `https://ydc-index.io` to `https://api.you.com`. If you were relying on the default, no action needed as both resolve to the same API.
+- **Python version requirement**: Now requires Python >=3.10 (previously >=3.9.2)
+- **Search API `count` parameter**: Now defaults to `10` instead of `None`
+- **Contents API `crawl_timeout`**: Type changed from `float` to `int`, default is now `10` seconds
+- **Speakeasy generator**: Updated from v2.801.2 to v2.845.12
+
+---
+
 ## [2.2.0] - 2026-01-29
 
 ### Changed
@@ -302,7 +337,7 @@ Error classes have been renamed for consistency and clarity:
 | Old Name (1.x) | New Name (2.0) |
 |----------------|----------------|
 | `PostV1AgentsRunsUnauthorizedError` | `AgentRuns401ResponseError` |
-| `PostV1AgentsRunsForbiddenError` | `AgentRuns422ResponseError` |
+| `PostV1AgentsRunsForbiddenError` | Removed (403 now handled by `YouDefaultError`) |
 | `GetV1SearchUnauthorizedError` | `SearchUnauthorizedError` |
 | `GetV1SearchForbiddenError` | `SearchForbiddenError` |
 | `PostV1ContentsUnauthorizedError` | `ContentsUnauthorizedError` |

@@ -27,6 +27,8 @@ from youdotcom.models import (
     SearchEffort,
     ReportVerbosity,
     AgentRunsBatchResponse,
+    ResearchEffort,
+    ResearchResponse,
 )
 
 
@@ -238,6 +240,65 @@ class TestLiveAgents:
             
             assert isinstance(res, AgentRunsBatchResponse)
             assert res.output is not None
+
+
+class TestLiveResearch:
+    """Live tests for the Research API (new in 2.3.0)."""
+
+    def test_research_basic(self, you_client):
+        """Test basic research query."""
+        with you_client as you:
+            res = you.research(
+                input="What is the capital of France?",
+                research_effort=ResearchEffort.LITE,
+            )
+
+            assert isinstance(res, ResearchResponse)
+            assert res.output is not None
+            assert res.output.content is not None
+            assert len(res.output.content) > 0
+
+    def test_research_deep_effort(self, you_client):
+        """Test research with deep effort level."""
+        with you_client as you:
+            res = you.research(
+                input="Explain the tradeoffs between transformer and SSM architectures",
+                research_effort=ResearchEffort.DEEP,
+            )
+
+            assert isinstance(res, ResearchResponse)
+            assert res.output is not None
+            assert res.output.content is not None
+            assert len(res.output.content) > 0
+
+    def test_research_exhaustive_effort(self, you_client):
+        """Test research with exhaustive effort level."""
+        with you_client as you:
+            res = you.research(
+                input="Compare global approaches to AI regulation across the US, EU, and China",
+                research_effort=ResearchEffort.EXHAUSTIVE,
+            )
+
+            assert isinstance(res, ResearchResponse)
+            assert res.output is not None
+            assert res.output.content is not None
+            assert len(res.output.content) > 0
+
+    def test_research_with_sources(self, you_client):
+        """Test research query returns sources."""
+        with you_client as you:
+            res = you.research(
+                input="What are the benefits of renewable energy?",
+                research_effort=ResearchEffort.STANDARD,
+            )
+
+            assert isinstance(res, ResearchResponse)
+            assert res.output is not None
+            assert res.output.content is not None
+            assert res.output.sources is not None
+            assert len(res.output.sources) > 0
+            for source in res.output.sources:
+                assert source.url is not None
 
 
 if __name__ == "__main__":

@@ -20,3 +20,9 @@ class WebSearchTool(BaseModel):
         pydantic.Field(alias="type"),
     ] = "web_search"
     r"""Setting this value to \"web_search\" is mandatory to use the web_search tool."""
+
+
+try:
+    WebSearchTool.model_rebuild()
+except NameError:
+    pass

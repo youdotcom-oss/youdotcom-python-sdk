@@ -1,6 +1,6 @@
 # ContentsUnauthorizedError
 
-Unauthorized
+Unauthorized. Problems with API key.
 
 
 ## Fields

@@ -14,7 +14,7 @@ class Search(BaseSDK):
         self,
         *,
         query: str = "Your query",
-        count: Optional[int] = None,
+        count: Optional[int] = 10,
         freshness: Optional[
             Union[models.SearchFreshness, models.SearchFreshnessTypedDict]
         ] = None,
@@ -39,9 +39,13 @@ class Search(BaseSDK):
     ) -> models.SearchResponse:
         r"""Returns a list of unified search results from web and news sources
 
+        This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
+
         :param query: The search query used to retrieve relevant results from the web. You can also include [search operators](https://docs.you.com/search/search-operators) to refine your search.
         :param count: Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them).
-        :param freshness: Specifies the freshness of the results to return.
+        :param freshness: Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
+
+            When your search query includes a temporal keyword and you also set a freshness parameter, the search will use the broader (i.e., less restrictive) of the two timeframes. For example, if you use `query=news+this+week&freshness=month`, the results will use a freshness of month.
         :param offset: Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`.
         :param country: The country code that determines the geographical focus of the web results.
         :param language: The language of the web results that will be returned (BCP 47 format).
@@ -146,7 +150,7 @@ class Search(BaseSDK):
         self,
         *,
         query: str = "Your query",
-        count: Optional[int] = None,
+        count: Optional[int] = 10,
         freshness: Optional[
             Union[models.SearchFreshness, models.SearchFreshnessTypedDict]
         ] = None,
@@ -171,9 +175,13 @@ class Search(BaseSDK):
     ) -> models.SearchResponse:
         r"""Returns a list of unified search results from web and news sources
 
+        This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
+
         :param query: The search query used to retrieve relevant results from the web. You can also include [search operators](https://docs.you.com/search/search-operators) to refine your search.
         :param count: Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them).
-        :param freshness: Specifies the freshness of the results to return.
+        :param freshness: Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
+
+            When your search query includes a temporal keyword and you also set a freshness parameter, the search will use the broader (i.e., less restrictive) of the two timeframes. For example, if you use `query=news+this+week&freshness=month`, the results will use a freshness of month.
         :param offset: Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`.
         :param country: The country code that determines the geographical focus of the web results.
         :param language: The language of the web results that will be returned (BCP 47 format).

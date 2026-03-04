@@ -28,3 +28,9 @@ class ResponseCreated(BaseModel):
         ],
         pydantic.Field(alias="type"),
     ] = "response.created"
+
+
+try:
+    ResponseCreated.model_rebuild()
+except NameError:
+    pass

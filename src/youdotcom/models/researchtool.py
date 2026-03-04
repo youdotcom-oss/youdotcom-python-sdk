@@ -38,3 +38,9 @@ class ResearchTool(BaseModel):
         pydantic.Field(alias="type"),
     ] = "research"
     r"""Setting this value to \"research\" is mandatory to use the research agent."""
+
+
+try:
+    ResearchTool.model_rebuild()
+except NameError:
+    pass

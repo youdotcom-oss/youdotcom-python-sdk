@@ -15,7 +15,7 @@ class ContentsSDK(BaseSDK):
         *,
         urls: Optional[List[str]] = None,
         formats: Optional[List[models.ContentsFormats]] = None,
-        crawl_timeout: Optional[float] = None,
+        crawl_timeout: Optional[int] = 10,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -23,9 +23,11 @@ class ContentsSDK(BaseSDK):
     ) -> List[models.ContentsResponse]:
         r"""Returns the content of the web pages
 
+        Returns the HTML or Markdown of a target webpage.
+
         :param urls: Array of URLs to fetch the contents from.
-        :param formats: The formats of the content to be returned. Can include 'html', 'markdown', and/or 'metadata'.
-        :param crawl_timeout: The timeout in seconds for crawling each URL. Must be between 1 and 60 seconds.
+        :param formats: Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available.
+        :param crawl_timeout: Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -39,7 +41,7 @@ class ContentsSDK(BaseSDK):
         if server_url is not None:
             base_url = server_url
         else:
-            base_url = self._get_url(base_url, url_variables)
+            base_url = models.CONTENTS_OP_SERVERS[0]
 
         request = models.ContentsRequest(
             urls=urls,
@@ -122,7 +124,7 @@ class ContentsSDK(BaseSDK):
         *,
         urls: Optional[List[str]] = None,
         formats: Optional[List[models.ContentsFormats]] = None,
-        crawl_timeout: Optional[float] = None,
+        crawl_timeout: Optional[int] = 10,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -130,9 +132,11 @@ class ContentsSDK(BaseSDK):
     ) -> List[models.ContentsResponse]:
         r"""Returns the content of the web pages
 
+        Returns the HTML or Markdown of a target webpage.
+
         :param urls: Array of URLs to fetch the contents from.
-        :param formats: The formats of the content to be returned. Can include 'html', 'markdown', and/or 'metadata'.
-        :param crawl_timeout: The timeout in seconds for crawling each URL. Must be between 1 and 60 seconds.
+        :param formats: Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available.
+        :param crawl_timeout: Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -146,7 +150,7 @@ class ContentsSDK(BaseSDK):
         if server_url is not None:
             base_url = server_url
         else:
-            base_url = self._get_url(base_url, url_variables)
+            base_url = models.CONTENTS_OP_SERVERS[0]
 
         request = models.ContentsRequest(
             urls=urls,

@@ -1,6 +1,6 @@
 # ContentsForbiddenError
 
-Forbidden
+Forbidden. API key lacks scope for this path.
 
 
 ## Fields

@@ -14,7 +14,7 @@ class ContentsInternalServerErrorData(BaseModel):
 
 @dataclass(unsafe_hash=True)
 class ContentsInternalServerError(YouError):
-    r"""Internal Server Error"""
+    r"""Internal Server Error during authentication/authorization middleware."""
 
     data: ContentsInternalServerErrorData = field(hash=False)
 
@@ -35,7 +35,7 @@ class ContentsForbiddenErrorData(BaseModel):
 
 @dataclass(unsafe_hash=True)
 class ContentsForbiddenError(YouError):
-    r"""Forbidden"""
+    r"""Forbidden. API key lacks scope for this path."""
 
     data: ContentsForbiddenErrorData = field(hash=False)
 
@@ -57,7 +57,7 @@ class ContentsUnauthorizedErrorData(BaseModel):
 
 @dataclass(unsafe_hash=True)
 class ContentsUnauthorizedError(YouError):
-    r"""Unauthorized"""
+    r"""Unauthorized. Problems with API key."""
 
     data: ContentsUnauthorizedErrorData = field(hash=False)
 

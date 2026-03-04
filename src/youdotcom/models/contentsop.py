@@ -9,13 +9,18 @@ from typing_extensions import NotRequired, TypedDict
 from youdotcom.types import BaseModel, Nullable, OptionalNullable, UNSET, UNSET_SENTINEL
 
 
+CONTENTS_OP_SERVERS = [
+    "https://ydc-index.io",
+]
+
+
 class ContentsRequestTypedDict(TypedDict):
     urls: NotRequired[List[str]]
     r"""Array of URLs to fetch the contents from."""
     formats: NotRequired[List[ContentsFormats]]
-    r"""The formats of the content to be returned. Can include 'html', 'markdown', and/or 'metadata'."""
-    crawl_timeout: NotRequired[float]
-    r"""The timeout in seconds for crawling each URL. Must be between 1 and 60 seconds."""
+    r"""Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available."""
+    crawl_timeout: NotRequired[int]
+    r"""Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds."""
 
 
 class ContentsRequest(BaseModel):
@@ -23,10 +28,10 @@ class ContentsRequest(BaseModel):
     r"""Array of URLs to fetch the contents from."""
 
     formats: Optional[List[ContentsFormats]] = None
-    r"""The formats of the content to be returned. Can include 'html', 'markdown', and/or 'metadata'."""
+    r"""Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available."""
 
-    crawl_timeout: Optional[float] = None
-    r"""The timeout in seconds for crawling each URL. Must be between 1 and 60 seconds."""
+    crawl_timeout: Optional[int] = 10
+    r"""Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds."""
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):

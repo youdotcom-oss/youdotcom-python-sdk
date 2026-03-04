@@ -27,6 +27,8 @@ func pathPostV1AgentsRuns(dir *logging.HTTPFileDirectory, rt *tracking.RequestTr
 		testPostV1AgentsRunsUnauthorized(w, req)
 	case "post_/v1/agents/runs-forbidden[0]":
 		testPostV1AgentsRunsForbidden(w, req)
+	case "post_/v1/agents/runs-bad-request[0]":
+		testPostV1AgentsRunsBadRequest(w, req)
 	default:
 		dir.HandlerFunc("post_/v1/agents/runs", testPostV1AgentsRunsPostV1AgentsRuns0)(w, req)
 	}
@@ -43,6 +45,12 @@ func testPostV1AgentsRunsForbidden(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusForbidden)
 	_, _ = w.Write([]byte(`{"errors":[{"status":"403","code":"forbidden","title":"Forbidden","detail":"API key lacks scope for this path"}]}`))
+}
+
+func testPostV1AgentsRunsBadRequest(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+	_, _ = w.Write([]byte(`{"detail":"Bad request"}`))
 }
 
 func testPostV1AgentsRunsPostV1AgentsRuns0(w http.ResponseWriter, req *http.Request) {

@@ -35,3 +35,9 @@ class ResponseOutputItemDone(BaseModel):
         ],
         pydantic.Field(alias="type"),
     ] = "response.output_item.done"
+
+
+try:
+    ResponseOutputItemDone.model_rebuild()
+except NameError:
+    pass
