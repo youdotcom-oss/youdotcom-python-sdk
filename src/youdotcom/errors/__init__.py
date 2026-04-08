@@ -27,16 +27,6 @@ if TYPE_CHECKING:
         ContentsUnauthorizedErrorData,
     )
     from .no_response_error import NoResponseError
-    from .researchop import (
-        ResearchForbiddenError,
-        ResearchForbiddenErrorData,
-        ResearchInternalServerError,
-        ResearchInternalServerErrorData,
-        ResearchUnauthorizedError,
-        ResearchUnauthorizedErrorData,
-        UnprocessableEntityError,
-        UnprocessableEntityErrorData,
-    )
     from .responsevalidationerror import ResponseValidationError
     from .searchop import (
         SearchForbiddenError,
@@ -62,12 +52,6 @@ __all__ = [
     "ContentsUnauthorizedError",
     "ContentsUnauthorizedErrorData",
     "NoResponseError",
-    "ResearchForbiddenError",
-    "ResearchForbiddenErrorData",
-    "ResearchInternalServerError",
-    "ResearchInternalServerErrorData",
-    "ResearchUnauthorizedError",
-    "ResearchUnauthorizedErrorData",
     "ResponseValidationError",
     "SearchForbiddenError",
     "SearchForbiddenErrorData",
@@ -75,8 +59,6 @@ __all__ = [
     "SearchInternalServerErrorData",
     "SearchUnauthorizedError",
     "SearchUnauthorizedErrorData",
-    "UnprocessableEntityError",
-    "UnprocessableEntityErrorData",
     "YouDefaultError",
     "YouError",
 ]
@@ -95,14 +77,6 @@ _dynamic_imports: dict[str, str] = {
     "ContentsUnauthorizedError": ".contentsop",
     "ContentsUnauthorizedErrorData": ".contentsop",
     "NoResponseError": ".no_response_error",
-    "ResearchForbiddenError": ".researchop",
-    "ResearchForbiddenErrorData": ".researchop",
-    "ResearchInternalServerError": ".researchop",
-    "ResearchInternalServerErrorData": ".researchop",
-    "ResearchUnauthorizedError": ".researchop",
-    "ResearchUnauthorizedErrorData": ".researchop",
-    "UnprocessableEntityError": ".researchop",
-    "UnprocessableEntityErrorData": ".researchop",
     "ResponseValidationError": ".responsevalidationerror",
     "SearchForbiddenError": ".searchop",
     "SearchForbiddenErrorData": ".searchop",

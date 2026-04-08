@@ -227,7 +227,7 @@ def search_request():
 def content_request():
     """
     Contents API endpoint to fetch page content
-    
+
     In 2.0.0, the Contents API now uses:
     - formats: Array of format types ('html', 'markdown', 'metadata')
     - crawl_timeout: Optional timeout between 1-60 seconds
@@ -248,9 +248,9 @@ def content_request():
         print(f"  Title: {result.title}")
         if result.markdown:
             print(f"  Markdown preview: {result.markdown[:100]}...")
-    
+
     print("\n" + "-" * 40 + "\n")
-    
+
     # Example 2: Get multiple formats including metadata (json+ld, opengraph info)
     print("Example 2: Fetching HTML + metadata...")
     results = you.contents.generate(
@@ -265,7 +265,7 @@ def content_request():
         if result.metadata:
             print(f"  Metadata - Site Name: {result.metadata.site_name}")
             print(f"  Metadata - Favicon: {result.metadata.favicon_url}")
-    
+
     print()
 
 

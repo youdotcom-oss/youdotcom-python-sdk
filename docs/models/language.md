@@ -1,5 +1,13 @@
 # Language
 
+## Example Usage
+
+```python
+from youdotcom.models import Language
+
+value = Language.AR
+```
+
 
 ## Values
 

@@ -32,6 +32,7 @@ class Search(BaseSDK):
         livecrawl_formats: Optional[
             Union[models.SearchLivecrawlFormats, models.SearchLivecrawlFormatsTypedDict]
         ] = None,
+        crawl_timeout: Optional[int] = 10,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -52,6 +53,7 @@ class Search(BaseSDK):
         :param safesearch: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
         :param livecrawl: Indicates which section(s) of search results to livecrawl and return full page content.
         :param livecrawl_formats: Indicates the format of the livecrawled content.
+        :param crawl_timeout: Maximum time in seconds to wait for page content when livecrawl is enabled. Must be between 1 and 60 seconds. Default is 10 seconds.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -77,6 +79,7 @@ class Search(BaseSDK):
             safesearch=safesearch,
             livecrawl=livecrawl,
             livecrawl_formats=livecrawl_formats,
+            crawl_timeout=crawl_timeout,
         )
 
         req = self._build_request(
@@ -168,6 +171,7 @@ class Search(BaseSDK):
         livecrawl_formats: Optional[
             Union[models.SearchLivecrawlFormats, models.SearchLivecrawlFormatsTypedDict]
         ] = None,
+        crawl_timeout: Optional[int] = 10,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -188,6 +192,7 @@ class Search(BaseSDK):
         :param safesearch: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
         :param livecrawl: Indicates which section(s) of search results to livecrawl and return full page content.
         :param livecrawl_formats: Indicates the format of the livecrawled content.
+        :param crawl_timeout: Maximum time in seconds to wait for page content when livecrawl is enabled. Must be between 1 and 60 seconds. Default is 10 seconds.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -213,6 +218,7 @@ class Search(BaseSDK):
             safesearch=safesearch,
             livecrawl=livecrawl,
             livecrawl_formats=livecrawl_formats,
+            crawl_timeout=crawl_timeout,
         )
 
         req = self._build_request_async(

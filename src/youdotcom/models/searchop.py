@@ -99,6 +99,8 @@ class SearchRequestTypedDict(TypedDict):
     r"""Indicates which section(s) of search results to livecrawl and return full page content."""
     livecrawl_formats: NotRequired[SearchLivecrawlFormatsTypedDict]
     r"""Indicates the format of the livecrawled content."""
+    crawl_timeout: NotRequired[int]
+    r"""Maximum time in seconds to wait for page content when livecrawl is enabled. Must be between 1 and 60 seconds. Default is 10 seconds."""
 
 
 class SearchRequest(BaseModel):
@@ -158,6 +160,12 @@ class SearchRequest(BaseModel):
     ] = None
     r"""Indicates the format of the livecrawled content."""
 
+    crawl_timeout: Annotated[
+        Optional[int],
+        FieldMetadata(query=QueryParamMetadata(style="form", explode=True)),
+    ] = 10
+    r"""Maximum time in seconds to wait for page content when livecrawl is enabled. Must be between 1 and 60 seconds. Default is 10 seconds."""
+
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
         optional_fields = set(
@@ -170,6 +178,7 @@ class SearchRequest(BaseModel):
                 "safesearch",
                 "livecrawl",
                 "livecrawl_formats",
+                "crawl_timeout",
             ]
         )
         serialized = handler(self)
@@ -177,7 +186,7 @@ class SearchRequest(BaseModel):
 
         for n, f in type(self).model_fields.items():
             k = f.alias or n
-            val = serialized.get(k)
+            val = serialized.get(k, serialized.get(n))
 
             if val != UNSET_SENTINEL:
                 if val is not None or k not in optional_fields:
@@ -255,7 +264,7 @@ class Web(BaseModel):
 
         for n, f in type(self).model_fields.items():
             k = f.alias or n
-            val = serialized.get(k)
+            val = serialized.get(k, serialized.get(n))
 
             if val != UNSET_SENTINEL:
                 if val is not None or k not in optional_fields:
@@ -308,7 +317,7 @@ class News(BaseModel):
 
         for n, f in type(self).model_fields.items():
             k = f.alias or n
-            val = serialized.get(k)
+            val = serialized.get(k, serialized.get(n))
 
             if val != UNSET_SENTINEL:
                 if val is not None or k not in optional_fields:
@@ -335,7 +344,7 @@ class Results(BaseModel):
 
         for n, f in type(self).model_fields.items():
             k = f.alias or n
-            val = serialized.get(k)
+            val = serialized.get(k, serialized.get(n))
 
             if val != UNSET_SENTINEL:
                 if val is not None or k not in optional_fields:
@@ -367,7 +376,7 @@ class Metadata(BaseModel):
 
         for n, f in type(self).model_fields.items():
             k = f.alias or n
-            val = serialized.get(k)
+            val = serialized.get(k, serialized.get(n))
 
             if val != UNSET_SENTINEL:
                 if val is not None or k not in optional_fields:
@@ -398,7 +407,7 @@ class SearchResponse(BaseModel):
 
         for n, f in type(self).model_fields.items():
             k = f.alias or n
-            val = serialized.get(k)
+            val = serialized.get(k, serialized.get(n))
 
             if val != UNSET_SENTINEL:
                 if val is not None or k not in optional_fields:

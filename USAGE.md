@@ -2,17 +2,23 @@
 ```python
 # Synchronous Example
 import os
-from youdotcom import You, models
+from youdotcom import You
 
 
 with You(
     api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
-    res = you.research(input="Which global cities improved air quality the most over the past 10 years, and what measurable actions contributed?", research_effort=models.ResearchEffort.LITE)
+    res = you.agents.runs.create(request={
+        "agent": "express",
+        "input": "What is the capital of France?",
+        "stream": False,
+    })
 
-    # Handle response
-    print(res)
+    with res as event_stream:
+        for event in event_stream:
+            # handle event
+            print(event, flush=True)
 ```
 
 </br>
@@ -23,7 +29,7 @@ The same SDK client can also be used to make asynchronous requests by importing 
 # Asynchronous Example
 import asyncio
 import os
-from youdotcom import You, models
+from youdotcom import You
 
 async def main():
 
@@ -31,10 +37,16 @@ async def main():
         api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
     ) as you:
 
-        res = await you.research_async(input="Which global cities improved air quality the most over the past 10 years, and what measurable actions contributed?", research_effort=models.ResearchEffort.LITE)
+        res = await you.agents.runs.create_async(request={
+            "agent": "express",
+            "input": "What is the capital of France?",
+            "stream": False,
+        })
 
-        # Handle response
-        print(res)
+        async with res as event_stream:
+            async for event in event_stream:
+                # handle event
+                print(event, flush=True)
 
 asyncio.run(main())
 ```

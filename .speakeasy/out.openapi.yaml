@@ -5,15 +5,14 @@ info:
     Unified API for Express, Advanced, and Custom Agents from You.com
     Get the best search results from web and news sources
     Returns the HTML or Markdown of a target webpage
-    Multi-step reasoning with comprehensive research capabilities
     Comprehensive API for You.com services:
     - **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
+    - **Research API**: In-depth, multi-step research with citations and sources
     - **Search API**: Get search results from web and news sources
     - **Contents API**: Retrieve and process web page content
   version: 1.0.0
 servers:
   - url: https://api.you.com
-    x-fern-server-name: Production
 paths:
   /v1/agents/runs:
     post:
@@ -198,6 +197,16 @@ paths:
             oneOf:
               - $ref: '#/components/schemas/LiveCrawlFormats'
               - type: string
+        - name: crawl_timeout
+          in: query
+          description: Maximum time in seconds to wait for page content when livecrawl is enabled. Must be between 1 and 60 seconds. Default is 10 seconds.
+          required: false
+          schema:
+            type: integer
+            maximum: 60
+            minimum: 1
+            default: 10
+            example: 10
       responses:
         "200":
           description: A JSON object containing unified search results from web and news sources
@@ -360,6 +369,8 @@ paths:
       operationId: contents
       summary: Returns the content of the web pages
       description: Returns the HTML or Markdown of a target webpage.
+      security:
+        - ApiKeyAuth: []
       requestBody:
         content:
           application/json:
@@ -472,283 +483,6 @@ paths:
       x-speakeasy-name-override: generate
     servers:
       - url: https://ydc-index.io
-  /v1/research:
-    post:
-      operationId: research
-      summary: Returns comprehensive research-grade answers with multi-step reasoning
-      description: Research goes beyond a single web search. In response to your question, it runs multiple searches, reads through the sources, and synthesizes everything into a thorough, well-cited answer. Use it when a question is too complex for a simple lookup, and when you need a response you can actually trust and verify.
-      security:
-        - ApiKeyAuth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                input:
-                  type: string
-                  maxLength: 40000
-                  description: |-
-                    The research question or complex query requiring in-depth investigation and multi-step reasoning.
-
-                    Note: The maximum length of the input is 40,000 characters.
-                research_effort:
-                  type: string
-                  enum:
-                    - lite
-                    - standard
-                    - deep
-                    - exhaustive
-                  description: |-
-                    Controls how much time and effort the Research API spends on your question. Higher effort levels run more searches and dig deeper into sources, at the cost of a longer response time.
-
-                    Available levels:
-                    - `lite`: Returns answers quickly. Good for straightforward questions that just need a fast, reliable answer.
-                    - `standard`: The default. Balances speed and depth, a good fit for most questions.
-                    - `deep`: Spends more time researching and cross-referencing sources. Use this when accuracy and thoroughness matter more than speed.
-                    - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex research tasks where you want the highest quality result.
-                  default: standard
-              required:
-                - input
-            example:
-              input: Which global cities improved air quality the most over the past 10 years, and what measurable actions contributed?
-              research_effort: lite
-        required: true
-      responses:
-        "200":
-          description: A JSON object containing a comprehensive answer with citations and supporting search results
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  output:
-                    type: object
-                    properties:
-                      content:
-                        type: string
-                        description: The comprehensive response with inline citations. The content is formatted in Markdown and includes numbered citations that reference the items in the sources array.
-                      content_type:
-                        type: string
-                        enum:
-                          - text
-                        description: The format of the content field.
-                      sources:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            url:
-                              type: string
-                              description: The URL of the source webpage.
-                            title:
-                              type: string
-                              description: The title of the source webpage.
-                            snippets:
-                              type: array
-                              items:
-                                type: string
-                              description: Relevant excerpts from the source page that were used in generating the answer.
-                          required:
-                            - url
-                        description: A list of web sources used to generate the answer.
-                    required:
-                      - content
-                      - content_type
-                      - sources
-                    description: The research output containing the answer and sources.
-                required:
-                  - output
-              example:
-                output:
-                  content: |-
-                    Over the past decade, some global cities have shown improvements in air quality due to specific actions. Beijing, for example, made significant strides in improving its air quality through coordinated control measures with surrounding areas, collaborative planning, unified standards, joint emergency responses, and information sharing [[1]]. These efforts, including a five-year action plan for air pollution prevention and control, have helped to substantially improve air quality in the Jing-Jin-Ji region [[2]].
-
-                    Paris has also seen improvements, with a 50% reduction in Nitrogen dioxide pollution and a 55% decrease in particulate matter citywide since 2005. This was achieved through its climate strategy, which included adding more bike lanes and increasing cycling networks [[3]]. Wellington, New Zealand, improved air quality in one of its busiest districts by increasing the percentage of electric buses from 5% to over 50% between 2022 and 2023, leading to a 50% reduction in black carbon and a 29% drop in nitrogen dioxide levels [[3]]. Mexico City, once known as the world's most polluted city in the early 1990s, has vastly improved its air quality, with the daily concentration of SO2 declining significantly by 2018 [[2]].
-
-                    While many cities globally have experienced persistently high or even rising levels of air pollution, especially concerning PM2.5 concentrations, NO2 exposures have shown an encouraging trend, with 211 more cities meeting the WHO guideline in 2019 compared to 2010 [[4]]. Local policies have been instrumental in these improvements [[4]].
-                  content_type: text
-                  sources:
-                    - url: https://sustainablemobility.iclei.org/air-pollution-beijing/
-                      title: "Clearing the skies: how Beijing tackled air pollution & what lies ..."
-                      snippets:
-                        - >-
-                          However, Beijing has made remarkable strides in recent years to improve its air quality, setting an example for other cities grappling with similar challenges. The root causes Comparing the past 20 years of its development to the 20 before, Beijing's GDP, population, and vehicles sharply increased by 1078%, 74%, and 335% respectively (UNEP, 2019).
-                        - >-
-                          The city actively coordinated air pollution control measures with surrounding areas, such as the Beijing-Tianjin-Hebei region. Collaborative planning, unified standards, joint emergency responses, and information sharing significantly improved the air quality in this broader region.
-                        - >-
-                          While Beijing has made significant strides, challenges remain. The average PM2.5 level is still six times higher than the World Health Organization's (WHO) guideline, and the 2021-22 improvement may be partially attributed to measures taken for the Winter Olympics.
-                        - >-
-                          As China emerged as the world's largest automobile producer and consumer, it grappled with the detrimental impacts of increased oil consumption. Furthermore, the high level of coal consumption, especially during the winter heating season, contributed to the city's deteriorating air quality, reaching an average of 101.56 micrograms of PM2.5 particles per cubic meter in 2013 (Statista, 2023).
-                    - url: https://blogs.worldbank.org/en/voices/tackling-poor-air-quality-lessons-three-cities
-                      title: "Tackling poor air quality: Lessons from three cities"
-                      snippets:
-                        - >-
-                          The latest World Bank report, Clearing the Air: A Tale of Three Cities, chose Beijing, New Delhi and Mexico City to assess how current and past efforts improved air quality. In the early 1990s, Mexico City was known as the world's most polluted city and while there are still challenges, air quality has vastly improved. Daily concentration of SO2 – a contributor to PM2.5 concentrations – declined from 300 µg/m3 in the 1990s to less than 100 µg/m3 in 2018.
-                        - >-
-                          In China, the ministries of Environmental Protection (now the Ministry of Ecology and Environment), Industry and Information Technology, Finance, Housing and Rural Development, along with the National Development and Reform Commission and National Energy Administration, worked together to issue a five-year action plan for air pollution prevention and control for the entire Jing-Jin-Ji region that surrounds Beijing and includes the municipality of Beijing, municipality of Tianjin, the province of Hebei, and small parts of Henan, Shanxi, inner Mongolia, and Shandong. What's encouraging about this new work is that it shows that with the right policies, incentives and information, air quality can be improved substantially, particularly as countries work to grow back cleaner after the pandemic.
-                        - >-
-                          Failure to provide such incentives in India in the late 1990s resulted in the government developing plans but not implementing them. This led to India's Supreme Court stepping in to force the government to implement policy measures. A recent government of India program to provide performance-based grants to cities to reward improvements in air quality is a step in the right direction.
-                        - >-
-                          The cost associated with health impacts of outdoor PM2.5 air pollution is estimated to be US$5.7 trillion, equivalent to 4.8 percent of global GDP, according to World Bank research. The COVID-19 pandemic further highlights why addressing air pollution is so important, with early research pointing to links between air pollution, illness and death due to the virus. On the flip side, the economic lockdowns caused by the pandemic, while devastating for communities, did result in some noticeable improvements in air quality but these improvements were inconsistent, particularly when it came to PM2.5.
-                    - url: https://www.weforum.org/stories/2025/06/urban-mobility-improving-cities-air-quality/
-                      title: "Boosting clean air strategies in cities around the world | World ..."
-                      snippets:
-                        - >-
-                          Comprehensive cycling networks improve air quality while also transforming urban mobility. Paris has added more bike lanes to its cityscape in recent years. Between 2022 and 2023 alone, bike path usage doubled during rush hour and cyclists now outnumber cars on many of the city's streets. The results of Paris' growing cycling network are promising. Alongside other elements of Paris's climate strategy, cycling has contributed to a 50% reduction in Nitrogen dioxide pollution and 55% decrease in particulate matter citywide since 2005.
-                        - >-
-                          In 2025, the alliance and members of the Global New Mobility Coalition will launch a new workstream on Transport and Urbanism that aims to speed up cross-sector collaboration on implementing proven mobility options to improve air quality and drive sustainable growth.
-                        - >-
-                          Air pollution has been estimated to cause 4.2 million premature deaths worldwide per year, according to the World Health Organization, and nearly half of urban airborne contamination comes from city transport. While vehicles are essential to the vitality of cities, without the right policies in place, transport will continue to be a major contributor to harmful air pollution.
-                        - >-
-                          In Wellington, New Zealand, the percentage of electric buses travelling across the city's heavily trafficked Golden Mile corridor rose from 5% to over 50% between 2022 and 2023. This shift led to a 50% reduction in black carbon and a 29% drop in nitrogen dioxide levels throughout the district. This has significantly improved air quality in one of the busiest parts of Wellington, as well as lowering noise pollution.
-                    - url: https://www.stateofglobalair.org/resources/health-in-cities
-                      title: "Air Pollution and Health in Cities | State of Global Air"
-                      snippets:
-                        - >-
-                          Globally, NO2 exposures are heading in an encouraging direction as 211 more cities met the WHO guideline of 10 µg/m3 in 2019 compared to 2010. However, NO2 pollution is worsening in some other regions. Percentage of cities by population-weighted annual average pollutant concentration in 2010 and 2019. However, interventions targeting pollution at the local scale have successfully improved air quality in some cities.
-                        - >-
-                          Local policies have improved air quality in some cities, while pollution has worsened in others. Overall, many cities have seen persistently high — and even rising — levels of air pollution over the past decade. PM2.5 exposures remained stagnant in many cities from 2010 to 2019.
-                        - >-
-                          Cities are often hotspots for poor air quality. As rapid urbanization increases the number of people breathing dangerously polluted air, city-level data can help inform targeted efforts to curb urban air pollution and improve public health.
-                        - >-
-                          Explore air quality and health data for your city using our new interactive app here. Most cities have polluted air, but the type of pollution varies from place to place. Local policies have improved air quality in some cities, while pollution has worsened in others.
-        "422":
-          description: Unprocessable Entity. Request validation failed.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  detail:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        type:
-                          type: string
-                          description: The validation error type.
-                          example: missing
-                        loc:
-                          type: array
-                          items:
-                            oneOf:
-                              - type: string
-                              - type: integer
-                          description: The location of the error as a path of segments (strings for field names, integers for byte offsets).
-                          example: ["body", "input"]
-                        msg:
-                          type: string
-                          description: A human-readable description of the error.
-                          example: Field required
-                        input:
-                          oneOf:
-                            - type: string
-                            - type: object
-                          description: The input value that caused the error.
-                        ctx:
-                          type: object
-                          additionalProperties: true
-                          description: Additional context about the error.
-                      required:
-                        - type
-                        - loc
-                        - msg
-                        - input
-              examples:
-                missingField:
-                  summary: Required field missing
-                  value:
-                    detail:
-                      - type: missing
-                        loc: ["body", "input"]
-                        msg: Field required
-                        input: {}
-                invalidEnum:
-                  summary: Invalid enum value for research_effort
-                  value:
-                    detail:
-                      - type: enum
-                        loc: ["body", "research_effort"]
-                        msg: "Input should be 'lite', 'standard', 'deep' or 'exhaustive'"
-                        input: invalid_value
-                        ctx:
-                          expected: "'lite', 'standard', 'deep' or 'exhaustive'"
-                stringTooLong:
-                  summary: Input exceeds maximum length
-                  value:
-                    detail:
-                      - type: string_too_long
-                        loc: ["body", "input"]
-                        msg: String should have at most 40000 characters
-                        input: <truncated>
-                        ctx:
-                          max_length: 40000
-                invalidJson:
-                  summary: Invalid JSON body
-                  value:
-                    detail:
-                      - type: json_invalid
-                        loc: ["body", 115]
-                        msg: JSON decode error
-                        input: {}
-                        ctx:
-                          error: Invalid control character at
-        "401":
-          description: Unauthorized. Problems with API key.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  detail:
-                    type: string
-                    description: Error detail message.
-              examples:
-                missingApiKey:
-                  summary: Missing API key
-                  value:
-                    detail: API key is required
-                invalidOrExpired:
-                  summary: Invalid/expired API key
-                  value:
-                    detail: Invalid or expired API key
-                otherAuthParsing:
-                  summary: Other auth parsing errors
-                  value:
-                    detail: <error message>
-        "403":
-          description: Forbidden. API key lacks scope for this path.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  detail:
-                    type: string
-              examples:
-                missingScopes:
-                  summary: Missing required scopes
-                  value:
-                    detail: Missing required scopes
-        "500":
-          description: Internal Server Error during authentication/authorization middleware.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  detail:
-                    type: string
-              examples:
-                authFailure:
-                  summary: Authentication failure
-                  value:
-                    detail: Internal authentication error
-                authorizationFailure:
-                  summary: Authorization failure
-                  value:
-                    detail: Internal authorization error
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -1414,5 +1148,3 @@ components:
           example: "https://api.ydc-index.io/favicon?domain=you.com&size=128"
       description: Metadata about the web page. Only returned when 'metadata' is included in the formats array.
       nullable: true
-security:
-  - ApiKeyAuth: []

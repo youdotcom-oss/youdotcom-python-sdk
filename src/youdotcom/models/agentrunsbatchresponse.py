@@ -18,14 +18,14 @@ class Role(str, Enum):
     USER = "user"
 
 
-class Input1TypedDict(TypedDict):
+class InputTypedDict(TypedDict):
     role: Role
     r"""The access based role of the user"""
     content: str
     r"""The question populated in the request payload"""
 
 
-class Input1(BaseModel):
+class Input(BaseModel):
     role: Role
     r"""The access based role of the user"""
 
@@ -36,7 +36,7 @@ class Input1(BaseModel):
 class AgentRunsBatchResponseTypedDict(TypedDict):
     agent: str
     r"""The id of the agent populated in the request."""
-    input: List[Input1TypedDict]
+    input: List[InputTypedDict]
     r"""The users access role and question you asked the agent"""
     output: List[AgentRunsResponseOutputTypedDict]
     r"""Array of response outputs from the agent"""
@@ -48,7 +48,7 @@ class AgentRunsBatchResponse(BaseModel):
     agent: str
     r"""The id of the agent populated in the request."""
 
-    input: List[Input1]
+    input: List[Input]
     r"""The users access role and question you asked the agent"""
 
     output: List[AgentRunsResponseOutput]
@@ -65,7 +65,7 @@ class AgentRunsBatchResponse(BaseModel):
 
         for n, f in type(self).model_fields.items():
             k = f.alias or n
-            val = serialized.get(k)
+            val = serialized.get(k, serialized.get(n))
 
             if val != UNSET_SENTINEL:
                 if val is not None or k not in optional_fields:

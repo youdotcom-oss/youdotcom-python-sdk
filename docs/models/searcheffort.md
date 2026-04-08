@@ -4,6 +4,14 @@ This parameter maps to different configurations regarding the depth of research 
 
 Alternatively, use `auto` mode for a more dynamic search approach, allowing the tool the freedom to adjust its subparameters.
 
+## Example Usage
+
+```python
+from youdotcom.models import SearchEffort
+
+value = SearchEffort.AUTO
+```
+
 
 ## Values
 

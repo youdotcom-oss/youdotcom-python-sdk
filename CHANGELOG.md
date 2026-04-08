@@ -5,6 +5,37 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-04-08
+
+### Added
+
+- **`crawl_timeout` parameter** on `search()` and `search_async()`: Controls the maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Defaults to `10`.
+
+```python
+from youdotcom import You
+from youdotcom.models import LiveCrawl
+
+you = You()
+res = you.search.search(
+    query="Python async programming",
+    livecrawl=LiveCrawl.ALWAYS,
+    crawl_timeout=30,
+)
+```
+
+### Changed
+
+- **Research API moved to `Agents` namespace**: The `research()` method has been refactored and is no longer directly on the `You` client. The Research API is now available through the Agents namespace. Refer to the updated `USAGE.md` and `README.md` for the new calling convention.
+- **Removed standalone research models**: `ResearchRequest`, `ResearchResponse`, `ResearchEffort`, `ResearchInput`, `ResearchLoc`, `ResearchDetail`, `ContentType`, `Output`, `Source`, `Input1`, `Input2` are no longer exported from `youdotcom.models`.
+- **Removed research error types**: `ResearchUnauthorizedError`, `ResearchForbiddenError`, `ResearchInternalServerError`, `UnprocessableEntityError` are no longer exported from `youdotcom.errors`.
+- **Renamed `Input1` → `Input`** in `AgentRunsBatchResponse`: The ambiguous `Input1` type is now exported as `Input`.
+- Internal SDK improvements to event streaming, security handling, and serialization utilities.
+
+### Removed
+
+- `You.research()` and `You.research_async()` top-level methods removed from the `You` client.
+- `src/youdotcom/models/researchop.py` and `src/youdotcom/errors/researchop.py` deleted.
+
 ## [2.3.0] - 2026-02-27
 
 ### Added

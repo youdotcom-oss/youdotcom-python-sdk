@@ -18,9 +18,9 @@ Release a new version of the `youdotcom` Python SDK to PyPI and GitHub.
 Speakeasy generates the SDK from OpenAPI specs defined in `.speakeasy/workflow.yaml`. The current source specs are:
 
 - `https://you.com/specs/openapi_unified_agents.yaml`
-- `https://you.com/specs/openapi_search_v1.yaml`
-- `https://you.com/specs/openapi_contents.yaml`
-- `https://you.com/specs/openapi_base.yaml`
+- `https://docs.you.com/openapi.yaml?api=0ae53c1f-dd53-449d-b75a-e9fbf5e5186c`
+- `https://docs.you.com/openapi.yaml?api=60daa6c3-d1a4-4c7c-aaed-b62159bd2235`
+- `https://docs.you.com/openapi.yaml?api=0c71bd0e-12a6-4c2d-b778-f0d91a718866`
 
 These are merged with the overlay at `overlays/python_overlay.yaml` and output to `.speakeasy/out.openapi.yaml`.
 
@@ -32,9 +32,9 @@ Use `AskUserQuestion` to ask:
 The SDK is generated from these OpenAPI specs:
 
 1. https://you.com/specs/openapi_unified_agents.yaml
-2. https://you.com/specs/openapi_search_v1.yaml
-3. https://you.com/specs/openapi_contents.yaml
-4. https://you.com/specs/openapi_base.yaml
+2. https://docs.you.com/openapi.yaml?api=0ae53c1f-dd53-449d-b75a-e9fbf5e5186c
+3. https://docs.you.com/openapi.yaml?api=60daa6c3-d1a4-4c7c-aaed-b62159bd2235
+4. https://docs.you.com/openapi.yaml?api=0c71bd0e-12a6-4c2d-b778-f0d91a718866
 
 Are the updates for this release already reflected in these specs, or do you have custom specs to use?
 ```
