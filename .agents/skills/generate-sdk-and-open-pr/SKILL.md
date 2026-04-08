@@ -21,6 +21,7 @@ Speakeasy generates the SDK from OpenAPI specs defined in `.speakeasy/workflow.y
 - `https://you.com/specs/openapi_search_v1.yaml`
 - `https://you.com/specs/openapi_contents.yaml`
 - `https://you.com/specs/openapi_base.yaml`
+- `https://you.com/specs/openapi_research.yaml`
 
 These are merged with the overlay at `overlays/python_overlay.yaml` and output to `.speakeasy/out.openapi.yaml`.
 
@@ -35,6 +36,7 @@ The SDK is generated from these OpenAPI specs:
 2. https://you.com/specs/openapi_search_v1.yaml
 3. https://you.com/specs/openapi_contents.yaml
 4. https://you.com/specs/openapi_base.yaml
+5. https://you.com/specs/openapi_research.yaml
 
 Are the updates for this release already reflected in these specs, or do you have custom specs to use?
 ```
