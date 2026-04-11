@@ -7,161 +7,54 @@ on:
         description: 'Version to release (e.g. 2.4.0)'
         required: true
         type: string
-  issues:
-    types: [labeled]
 
 permissions:
   contents: write
   pull-requests: write
-  issues: write
-  id-token: write
 
 jobs:
   generate-sdk:
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'issues' && github.event.label.name == 'sdk-release')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Parse inputs
-        id: parse
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          DISPATCH_VERSION: ${{ inputs.version }}
-          ISSUE_BODY: ${{ github.event.issue.body }}
-        run: |
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            echo "version=$DISPATCH_VERSION" >> "$GITHUB_OUTPUT"
-            echo "use_custom_specs=false" >> "$GITHUB_OUTPUT"
-            echo "custom_unified_agents=" >> "$GITHUB_OUTPUT"
-            echo "custom_search_v1=" >> "$GITHUB_OUTPUT"
-            echo "custom_contents=" >> "$GITHUB_OUTPUT"
-            echo "custom_base=" >> "$GITHUB_OUTPUT"
-          else
-            # Parse version from issue body (### Version section)
-            version=$(echo "$ISSUE_BODY" | sed -n '/### Version/{n;/^$/d;p;}' | head -1 | xargs)
-            echo "version=$version" >> "$GITHUB_OUTPUT"
-
-            # Parse which specs to override from the dropdown
-            overrides=$(echo "$ISSUE_BODY" | sed -n '/### Which specs to override/,/### /{/### Which specs to override/d;/### /d;p;}' | grep -v '^$' | head -1)
-
-            # Parse each custom spec textarea
-            has_custom=false
-
-            unified=$(echo "$ISSUE_BODY" | sed -n '/### Custom spec: unified agents/,/### /{/### Custom spec: unified agents/d;/### /d;p;}' | sed '/^$/d')
-            if [ -n "$unified" ] && [ "$unified" != "_No response_" ]; then
-              has_custom=true
-              # Write to file for multiline support
-              echo "$unified" > /tmp/custom_unified_agents.yaml
-              echo "custom_unified_agents=/tmp/custom_unified_agents.yaml" >> "$GITHUB_OUTPUT"
-            else
-              echo "custom_unified_agents=" >> "$GITHUB_OUTPUT"
-            fi
-
-            search=$(echo "$ISSUE_BODY" | sed -n '/### Custom spec: search v1/,/### /{/### Custom spec: search v1/d;/### /d;p;}' | sed '/^$/d')
-            if [ -n "$search" ] && [ "$search" != "_No response_" ]; then
-              has_custom=true
-              echo "$search" > /tmp/custom_search_v1.yaml
-              echo "custom_search_v1=/tmp/custom_search_v1.yaml" >> "$GITHUB_OUTPUT"
-            else
-              echo "custom_search_v1=" >> "$GITHUB_OUTPUT"
-            fi
-
-            contents=$(echo "$ISSUE_BODY" | sed -n '/### Custom spec: contents/,/### /{/### Custom spec: contents/d;/### /d;p;}' | sed '/^$/d')
-            if [ -n "$contents" ] && [ "$contents" != "_No response_" ]; then
-              has_custom=true
-              echo "$contents" > /tmp/custom_contents.yaml
-              echo "custom_contents=/tmp/custom_contents.yaml" >> "$GITHUB_OUTPUT"
-            else
-              echo "custom_contents=" >> "$GITHUB_OUTPUT"
-            fi
-
-            base=$(echo "$ISSUE_BODY" | sed -n '/### Custom spec: base/,/### \|$/{/### Custom spec: base/d;/### /d;p;}' | sed '/^$/d')
-            if [ -n "$base" ] && [ "$base" != "_No response_" ]; then
-              has_custom=true
-              echo "$base" > /tmp/custom_base.yaml
-              echo "custom_base=/tmp/custom_base.yaml" >> "$GITHUB_OUTPUT"
-            else
-              echo "custom_base=" >> "$GITHUB_OUTPUT"
-            fi
-
-            echo "use_custom_specs=$has_custom" >> "$GITHUB_OUTPUT"
-          fi
-
       - uses: anthropics/claude-code-action@v1
-        id: claude
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_tools: 'Bash,Read,Write,Edit,Glob,Grep'
           prompt: |
-            You are running a non-interactive SDK release workflow. All inputs have been provided — do NOT use AskUserQuestion at any point.
+            You are running a non-interactive SDK release workflow. Do NOT use AskUserQuestion at any point.
 
             ## Inputs
 
-            - **Version**: ${{ steps.parse.outputs.version }}
-            - **Use custom specs**: ${{ steps.parse.outputs.use_custom_specs }}
-            - **Custom spec file (unified agents)**: ${{ steps.parse.outputs.custom_unified_agents }}
-            - **Custom spec file (search v1)**: ${{ steps.parse.outputs.custom_search_v1 }}
-            - **Custom spec file (contents)**: ${{ steps.parse.outputs.custom_contents }}
-            - **Custom spec file (base)**: ${{ steps.parse.outputs.custom_base }}
+            - **Version**: ${{ inputs.version }}
 
             ## Instructions
 
-            Follow the generate-sdk-and-open-pr skill in `.agents/skills/generate-sdk-and-open-pr/SKILL.md`, but skip all `AskUserQuestion` steps — the inputs above replace those interactions. Specifically:
+            Follow the generate-sdk-and-open-pr skill in `.agents/skills/generate-sdk-and-open-pr/SKILL.md`, skipping all interactive steps. Specifically:
 
-            ### Step 1: Handle custom specs
+            ### Step 1: Check current versions
 
-            If "Use custom specs" is `true`, check which custom spec file paths are non-empty. For each non-empty path, read the file and update `.speakeasy/workflow.yaml` to point to that local file instead of the remote URL. Map:
-            - `custom_unified_agents` → replaces `https://you.com/specs/openapi_unified_agents.yaml`
-            - `custom_search_v1` → replaces `https://you.com/specs/openapi_search_v1.yaml`
-            - `custom_contents` → replaces `https://you.com/specs/openapi_contents.yaml`
-            - `custom_base` → replaces `https://you.com/specs/openapi_base.yaml`
+            Run the version checks (git tags, gh release, PyPI, local files). Log the findings but do not ask for confirmation — proceed automatically.
 
-            Leave specs with empty paths unchanged (they keep the remote URL).
+            ### Step 2: Use the provided version
 
-            ### Step 2: Check current versions
+            The version is `${{ inputs.version }}`. Use this version directly.
 
-            Run the version checks from the skill (git tags, gh release, PyPI, local files). Log the findings but do not ask for confirmation — proceed automatically.
+            ### Step 3: Generate and release
 
-            ### Step 3: Use the provided version
-
-            The version is `${{ steps.parse.outputs.version }}`. Do not suggest alternatives — use this version directly.
-
-            ### Step 4: Generate and release
-
-            Follow steps 4b through 4j from the skill exactly:
-            - `speakeasy bump -v ${{ steps.parse.outputs.version }} -t you`
+            Follow steps 3a through 3i from the skill exactly:
+            - `speakeasy bump -v ${{ inputs.version }} -t you`
             - `speakeasy run`
-            - Revert `.speakeasy/workflow.yaml` if custom specs were used
-            - Create branch `release/${{ steps.parse.outputs.version }}`
-            - Update versions in pyproject.toml and _version.py
+            - Create branch `release/${{ inputs.version }}`
+            - Update versions in pyproject.toml and _version.py if not already updated by Speakeasy
             - Update CHANGELOG.md, MIGRATION.md (if major), verify USAGE.md and README.md
             - Update and run tests: `pytest tests/ --ignore=tests/test_live.py --ignore=tests/test_performance.py -v`
             - Fix any test failures and re-run until clean
-            - Commit: `git add -A && git commit -m "feat: Python SDK ${{ steps.parse.outputs.version }}"`
-            - Push: `git push -u origin release/${{ steps.parse.outputs.version }}`
-            - Open PR: `gh pr create --title "Python SDK ${{ steps.parse.outputs.version }}" --base main`
+            - Commit: `git add -A && git commit -m "feat: Python SDK ${{ inputs.version }}"`
+            - Push: `git push -u origin release/${{ inputs.version }}`
+            - Open PR: `gh pr create --title "Python SDK ${{ inputs.version }}" --base main`
 
             Include a structured PR body with Summary, Changes (from changelog), and Checklist.
-
-      - name: Comment on issue and close
-        if: github.event_name == 'issues'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          VERSION: ${{ steps.parse.outputs.version }}
-        run: |
-          # Find the PR that was just created
-          pr_url=$(gh pr list --head "release/$VERSION" --json url --jq '.[0].url' 2>/dev/null || echo "")
-
-          if [ -n "$pr_url" ]; then
-            gh issue comment "$ISSUE_NUMBER" --body "SDK release workflow completed. PR opened: $pr_url"
-          else
-            gh issue comment "$ISSUE_NUMBER" --body "SDK release workflow completed for version $VERSION. Check the Actions tab for details."
-          fi
-
-          gh issue close "$ISSUE_NUMBER"

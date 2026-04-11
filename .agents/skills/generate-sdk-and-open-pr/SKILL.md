@@ -4,7 +4,7 @@ description: Generate the Speakeasy SDK for a new version and open a release PR
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 metadata:
   author: youdotcom-oss
-  version: "1.0.0"
+  version: "1.1.0"
   category: release
   keywords: release, version, publish, pypi
 ---
@@ -13,49 +13,9 @@ metadata:
 
 Release a new version of the `youdotcom` Python SDK to PyPI and GitHub.
 
-## Step 1: Verify OpenAPI specs
+The SDK is generated from remote OpenAPI specs defined in `.speakeasy/workflow.yaml`. These are merged with the overlay at `overlays/python_overlay.yaml` and output to `.speakeasy/out.openapi.yaml`. No local spec overrides are supported — if specs need changes, update them at the source URLs before running this skill.
 
-Speakeasy generates the SDK from OpenAPI specs defined in `.speakeasy/workflow.yaml`. The current source specs are:
-
-- `https://you.com/specs/openapi_unified_agents.yaml`
-- `https://docs.you.com/openapi.yaml?api=0ae53c1f-dd53-449d-b75a-e9fbf5e5186c`
-- `https://docs.you.com/openapi.yaml?api=60daa6c3-d1a4-4c7c-aaed-b62159bd2235`
-- `https://docs.you.com/openapi.yaml?api=0c71bd0e-12a6-4c2d-b778-f0d91a718866`
-
-These are merged with the overlay at `overlays/python_overlay.yaml` and output to `.speakeasy/out.openapi.yaml`.
-
-### 1a. Ask the user about spec sources
-
-Use `AskUserQuestion` to ask:
-
-```
-The SDK is generated from these OpenAPI specs:
-
-1. https://you.com/specs/openapi_unified_agents.yaml
-2. https://docs.you.com/openapi.yaml?api=0ae53c1f-dd53-449d-b75a-e9fbf5e5186c
-3. https://docs.you.com/openapi.yaml?api=60daa6c3-d1a4-4c7c-aaed-b62159bd2235
-4. https://docs.you.com/openapi.yaml?api=0c71bd0e-12a6-4c2d-b778-f0d91a718866
-
-Are the updates for this release already reflected in these specs, or do you have custom specs to use?
-```
-
-Options:
-- **Use existing specs** (the remote URLs already have the changes)
-- **Use custom specs** (user will provide spec content or file paths)
-
-### 1b. If custom specs
-
-If the user provides custom specs:
-
-1. Ask which spec(s) they want to replace and get the new content or file path
-2. Update the `inputs` locations in `.speakeasy/workflow.yaml` to point to the custom spec files (e.g. change the remote URL to a local path)
-3. **IMPORTANT**: Do NOT commit changes to `.speakeasy/workflow.yaml`. These are temporary overrides for generation only. Remind the user that these changes should be reverted or excluded from the release commit.
-
-If using existing specs, move on to step 2.
-
-## Step 2: Check current versions and fetch latest changes
-
-Before anything else, gather the current state of the world.
+## Step 1: Check current versions and fetch latest changes
 
 ### 1a. Fetch all remote changes
 
@@ -89,7 +49,7 @@ Present a summary to the user:
 
 If any versions are out of sync, warn the user before proceeding.
 
-## Step 3: Confirm the next version with the user
+## Step 2: Confirm the next version with the user
 
 Analyze the unreleased commits from step 1e to determine the appropriate semver bump:
 - **patch** (X.Y.Z+1): bug fixes, dependency updates, docs changes only
@@ -114,27 +74,9 @@ Offer the suggested version as the recommended option, plus the other two semver
 
 Do NOT proceed until the user confirms.
 
-## Step 4: Generate the SDK and open a release PR
+## Step 3: Generate the SDK and open a release PR
 
-### 4a. Confirm SDK generation
-
-Use `AskUserQuestion` to confirm:
-
-```
-Ready to run Speakeasy SDK generation for version X.Y.Z. This will regenerate the SDK source code from the OpenAPI specs.
-
-Proceed with generation?
-```
-
-Options:
-- **Yes, generate** (recommended)
-- **No, cancel**
-
-Do NOT proceed if the user cancels.
-
-### 4b. Bump version via Speakeasy
-
-Use `speakeasy bump` to set the version in `.speakeasy/gen.yaml`. This is the canonical way to update the Speakeasy target version.
+### 3a. Bump version via Speakeasy
 
 ```bash
 speakeasy bump -v X.Y.Z -t you
@@ -142,14 +84,14 @@ speakeasy bump -v X.Y.Z -t you
 
 This updates `python.version` in `.speakeasy/gen.yaml` to the confirmed version.
 
-### 4c. Run Speakeasy generation
+### 3b. Run Speakeasy generation
 
 ```bash
 speakeasy run
 ```
 
 This will:
-- Fetch the OpenAPI specs (remote URLs or local overrides from step 1)
+- Fetch the OpenAPI specs from the remote URLs in `.speakeasy/workflow.yaml`
 - Apply the overlay from `overlays/python_overlay.yaml`
 - Regenerate all SDK source files under `src/`
 - Regenerate `USAGE.md` and auto-generated sections in `README.md` (the `<!-- Start/End -->` blocks)
@@ -157,27 +99,19 @@ This will:
 
 Wait for the command to complete and check for errors. If it fails, report the error to the user and stop.
 
-### 4d. Revert temporary workflow changes
-
-If custom specs were used in step 1, revert `.speakeasy/workflow.yaml` back to the original remote URLs:
-
-```bash
-git checkout -- .speakeasy/workflow.yaml
-```
-
-### 4e. Create a release branch
+### 3c. Create a release branch
 
 ```bash
 git checkout -b release/X.Y.Z
 ```
 
-### 4f. Update version in all locations
+### 3d. Update version in all locations
 
 Update the version string in these files (if not already updated by Speakeasy):
 - `pyproject.toml` — `version = "X.Y.Z"`
 - `src/youdotcom/_version.py` — `__version__: str = "X.Y.Z"` and the `__user_agent__` string
 
-### 4g. Update markdown documentation
+### 3e. Update markdown documentation
 
 #### CHANGELOG.md
 Add a new section at the top (below the header), following the existing Keep a Changelog format:
@@ -219,15 +153,15 @@ After generation and doc updates, ensure the test suite is compatible with the n
 - **Integration tests** (`tests/test_live.py`): Run against the real You.com API. Require `YOU_API_KEY_AUTH` env var.
 - **Client tests** (`tests/test_client.py`): Test HTTP client setup helpers.
 
-#### 4h-1. Update tests for new/changed APIs
+#### 3f-1. Update tests for new/changed APIs
 
-Review the generated diff from step 4c. If Speakeasy added, removed, or changed any models, endpoints, or parameters:
+Review the generated diff from step 3b. If Speakeasy added, removed, or changed any models, endpoints, or parameters:
 
 1. Update unit tests to reflect the new request/response shapes
 2. Update integration tests (`test_live.py`) if endpoints or model imports changed
 3. Add new test cases for any new endpoints or features
 
-#### 4h-2. Run unit tests
+#### 3f-2. Run unit tests
 
 ```bash
 pytest tests/ --ignore=tests/test_live.py --ignore=tests/test_performance.py -v
@@ -235,7 +169,7 @@ pytest tests/ --ignore=tests/test_live.py --ignore=tests/test_performance.py -v
 
 If tests fail, fix the test code (or SDK issues if applicable) and re-run.
 
-#### 4h-3. Run integration tests (if API key is available)
+#### 3f-3. Run integration tests (if API key is available)
 
 ```bash
 pytest tests/test_live.py -v
@@ -243,7 +177,7 @@ pytest tests/test_live.py -v
 
 If `YOU_API_KEY_AUTH` is not set, skip this step and note it in the PR description.
 
-#### 4h-4. Validate tests line by line
+#### 3f-4. Validate tests line by line
 
 After all tests pass, read through every changed test file line by line. Check for:
 - Incorrect model imports that no longer exist
@@ -252,20 +186,16 @@ After all tests pass, read through every changed test file line by line. Check f
 - Dead test cases for removed endpoints
 - Inconsistencies between test expectations and the actual generated SDK code
 
-If this review surfaces any changes needed, make the fixes and go back to step 4h-2. Repeat this loop until a full line-by-line review finds no additional changes needed.
+If this review surfaces any changes needed, make the fixes and go back to step 3f-2. Repeat until a full line-by-line review finds no additional changes needed.
 
-### 4i. Commit all changes
-
-Stage and commit all generated and manually updated files to the release branch:
+### 3g. Commit all changes
 
 ```bash
 git add -A
 git commit -m "feat: Python SDK X.Y.Z"
 ```
 
-Do NOT commit `.speakeasy/workflow.yaml` if it still contains local spec overrides — it should have been reverted in step 4d.
-
-### 4j. Push and open a PR
+### 3h. Push and open a PR
 
 ```bash
 git push -u origin release/X.Y.Z
