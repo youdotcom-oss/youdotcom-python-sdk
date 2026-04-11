@@ -5,7 +5,6 @@ from typing import Any, List, Mapping, Optional
 from youdotcom import errors, models, utils
 from youdotcom._hooks import HookContext
 from youdotcom.types import OptionalNullable, UNSET
-from youdotcom.utils import get_security_from_env
 from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
 
 
@@ -13,18 +12,20 @@ class ContentsSDK(BaseSDK):
     def generate(
         self,
         *,
+        x_api_key: str,
         urls: Optional[List[str]] = None,
-        formats: Optional[List[models.ContentsFormats]] = None,
+        formats: Optional[List[models.ContentsFormatsItems]] = None,
         crawl_timeout: Optional[int] = 10,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
-    ) -> List[models.ContentsResponse]:
+    ) -> List[models.V1ContentsPostResponsesContentApplicationJSONSchemaItems]:
         r"""Returns the content of the web pages
 
         Returns the HTML or Markdown of a target webpage.
 
+        :param x_api_key: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
         :param urls: Array of URLs to fetch the contents from.
         :param formats: Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available.
         :param crawl_timeout: Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds.
@@ -44,9 +45,12 @@ class ContentsSDK(BaseSDK):
             base_url = models.CONTENTS_OP_SERVERS[0]
 
         request = models.ContentsRequest(
-            urls=urls,
-            formats=formats,
-            crawl_timeout=crawl_timeout,
+            x_api_key=x_api_key,
+            body=models.ContentsRequestBody(
+                urls=urls,
+                formats=formats,
+                crawl_timeout=crawl_timeout,
+            ),
         )
 
         req = self._build_request(
@@ -55,15 +59,18 @@ class ContentsSDK(BaseSDK):
             base_url=base_url,
             url_variables=url_variables,
             request=request,
-            request_body_required=True,
+            request_body_required=False,
             request_has_path_params=False,
-            request_has_query_params=True,
+            request_has_query_params=False,
             user_agent_header="user-agent",
             accept_header_value="application/json",
             http_headers=http_headers,
-            security=self.sdk_configuration.security,
             get_serialized_body=lambda: utils.serialize_request_body(
-                request, False, False, "json", models.ContentsRequest
+                request.body if request is not None else None,
+                False,
+                True,
+                "json",
+                Optional[models.ContentsRequestBody],
             ),
             allow_empty_value=None,
             timeout_ms=timeout_ms,
@@ -83,9 +90,7 @@ class ContentsSDK(BaseSDK):
                 base_url=base_url or "",
                 operation_id="contents",
                 oauth2_scopes=None,
-                security_source=get_security_from_env(
-                    self.sdk_configuration.security, models.Security
-                ),
+                security_source=None,
             ),
             request=req,
             error_status_codes=["401", "403", "4XX", "500", "5XX"],
@@ -94,22 +99,25 @@ class ContentsSDK(BaseSDK):
 
         response_data: Any = None
         if utils.match_response(http_res, "200", "application/json"):
-            return unmarshal_json_response(List[models.ContentsResponse], http_res)
+            return unmarshal_json_response(
+                List[models.V1ContentsPostResponsesContentApplicationJSONSchemaItems],
+                http_res,
+            )
         if utils.match_response(http_res, "401", "application/json"):
             response_data = unmarshal_json_response(
-                errors.ContentsUnauthorizedErrorData, http_res
+                errors.ContentsRequestUnauthorizedErrorData, http_res
             )
-            raise errors.ContentsUnauthorizedError(response_data, http_res)
+            raise errors.ContentsRequestUnauthorizedError(response_data, http_res)
         if utils.match_response(http_res, "403", "application/json"):
             response_data = unmarshal_json_response(
-                errors.ContentsForbiddenErrorData, http_res
+                errors.ContentsRequestForbiddenErrorData, http_res
             )
-            raise errors.ContentsForbiddenError(response_data, http_res)
+            raise errors.ContentsRequestForbiddenError(response_data, http_res)
         if utils.match_response(http_res, "500", "application/json"):
             response_data = unmarshal_json_response(
-                errors.ContentsInternalServerErrorData, http_res
+                errors.ContentsRequestInternalServerErrorData, http_res
             )
-            raise errors.ContentsInternalServerError(response_data, http_res)
+            raise errors.ContentsRequestInternalServerError(response_data, http_res)
         if utils.match_response(http_res, "4XX", "*"):
             http_res_text = utils.stream_to_text(http_res)
             raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
@@ -122,18 +130,20 @@ class ContentsSDK(BaseSDK):
     async def generate_async(
         self,
         *,
+        x_api_key: str,
         urls: Optional[List[str]] = None,
-        formats: Optional[List[models.ContentsFormats]] = None,
+        formats: Optional[List[models.ContentsFormatsItems]] = None,
         crawl_timeout: Optional[int] = 10,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
-    ) -> List[models.ContentsResponse]:
+    ) -> List[models.V1ContentsPostResponsesContentApplicationJSONSchemaItems]:
         r"""Returns the content of the web pages
 
         Returns the HTML or Markdown of a target webpage.
 
+        :param x_api_key: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
         :param urls: Array of URLs to fetch the contents from.
         :param formats: Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available.
         :param crawl_timeout: Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds.
@@ -153,9 +163,12 @@ class ContentsSDK(BaseSDK):
             base_url = models.CONTENTS_OP_SERVERS[0]
 
         request = models.ContentsRequest(
-            urls=urls,
-            formats=formats,
-            crawl_timeout=crawl_timeout,
+            x_api_key=x_api_key,
+            body=models.ContentsRequestBody(
+                urls=urls,
+                formats=formats,
+                crawl_timeout=crawl_timeout,
+            ),
         )
 
         req = self._build_request_async(
@@ -164,15 +177,18 @@ class ContentsSDK(BaseSDK):
             base_url=base_url,
             url_variables=url_variables,
             request=request,
-            request_body_required=True,
+            request_body_required=False,
             request_has_path_params=False,
-            request_has_query_params=True,
+            request_has_query_params=False,
             user_agent_header="user-agent",
             accept_header_value="application/json",
             http_headers=http_headers,
-            security=self.sdk_configuration.security,
             get_serialized_body=lambda: utils.serialize_request_body(
-                request, False, False, "json", models.ContentsRequest
+                request.body if request is not None else None,
+                False,
+                True,
+                "json",
+                Optional[models.ContentsRequestBody],
             ),
             allow_empty_value=None,
             timeout_ms=timeout_ms,
@@ -192,9 +208,7 @@ class ContentsSDK(BaseSDK):
                 base_url=base_url or "",
                 operation_id="contents",
                 oauth2_scopes=None,
-                security_source=get_security_from_env(
-                    self.sdk_configuration.security, models.Security
-                ),
+                security_source=None,
             ),
             request=req,
             error_status_codes=["401", "403", "4XX", "500", "5XX"],
@@ -203,22 +217,25 @@ class ContentsSDK(BaseSDK):
 
         response_data: Any = None
         if utils.match_response(http_res, "200", "application/json"):
-            return unmarshal_json_response(List[models.ContentsResponse], http_res)
+            return unmarshal_json_response(
+                List[models.V1ContentsPostResponsesContentApplicationJSONSchemaItems],
+                http_res,
+            )
         if utils.match_response(http_res, "401", "application/json"):
             response_data = unmarshal_json_response(
-                errors.ContentsUnauthorizedErrorData, http_res
+                errors.ContentsRequestUnauthorizedErrorData, http_res
             )
-            raise errors.ContentsUnauthorizedError(response_data, http_res)
+            raise errors.ContentsRequestUnauthorizedError(response_data, http_res)
         if utils.match_response(http_res, "403", "application/json"):
             response_data = unmarshal_json_response(
-                errors.ContentsForbiddenErrorData, http_res
+                errors.ContentsRequestForbiddenErrorData, http_res
             )
-            raise errors.ContentsForbiddenError(response_data, http_res)
+            raise errors.ContentsRequestForbiddenError(response_data, http_res)
         if utils.match_response(http_res, "500", "application/json"):
             response_data = unmarshal_json_response(
-                errors.ContentsInternalServerErrorData, http_res
+                errors.ContentsRequestInternalServerErrorData, http_res
             )
-            raise errors.ContentsInternalServerError(response_data, http_res)
+            raise errors.ContentsRequestInternalServerError(response_data, http_res)
         if utils.match_response(http_res, "4XX", "*"):
             http_res_text = await utils.stream_to_text_async(http_res)
             raise errors.YouDefaultError("API error occurred", http_res, http_res_text)

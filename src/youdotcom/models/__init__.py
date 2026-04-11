@@ -37,6 +37,7 @@ if TYPE_CHECKING:
         DataTypedDict,
     )
     from .agentsrunsop import (
+        AGENTS_RUNS_OP_SERVERS,
         AgentsRunsRequest,
         AgentsRunsRequestTypedDict,
         AgentsRunsResponse,
@@ -44,14 +45,14 @@ if TYPE_CHECKING:
     )
     from .computetool import ComputeTool, ComputeToolTypedDict
     from .contents import Contents, ContentsTypedDict
-    from .contentsformats import ContentsFormats
+    from .contentsformatsitems import ContentsFormatsItems
     from .contentsmetadata import ContentsMetadata, ContentsMetadataTypedDict
     from .contentsop import (
         CONTENTS_OP_SERVERS,
         ContentsRequest,
+        ContentsRequestBody,
+        ContentsRequestBodyTypedDict,
         ContentsRequestTypedDict,
-        ContentsResponse,
-        ContentsResponseTypedDict,
     )
     from .country import Country
     from .customagentrunsrequest import (
@@ -63,10 +64,20 @@ if TYPE_CHECKING:
         ExpressAgentRunsRequestTypedDict,
     )
     from .freshness import Freshness
+    from .freshnessvalue import FreshnessValue, FreshnessValueTypedDict
     from .language import Language
     from .livecrawl import LiveCrawl
-    from .livecrawlformats import LiveCrawlFormats
+    from .livecrawlformatsitems import LiveCrawlFormatsItems
+    from .newsresult import NewsResult, NewsResultTypedDict
     from .reportverbosity import ReportVerbosity
+    from .research_response_200 import ResearchResponse200, ResearchResponse200TypedDict
+    from .researchop import (
+        RESEARCH_OP_SERVERS,
+        ResearchRequest,
+        ResearchRequestBody,
+        ResearchRequestBodyTypedDict,
+        ResearchRequestTypedDict,
+    )
     from .researchtool import ResearchTool, ResearchToolTypedDict
     from .response_created import ResponseCreated, ResponseCreatedTypedDict
     from .response_done import (
@@ -101,37 +112,57 @@ if TYPE_CHECKING:
     )
     from .response_starting import ResponseStarting, ResponseStartingTypedDict
     from .safesearch import SafeSearch
+    from .search_postop import (
+        SEARCH_POST_OP_SERVERS,
+        SearchPostRequest,
+        SearchPostRequestTypedDict,
+    )
     from .searcheffort import SearchEffort
-    from .searchop import (
-        Metadata,
-        MetadataTypedDict,
-        News,
-        NewsTypedDict,
-        Results,
-        ResultsTypedDict,
-        SEARCH_OP_SERVERS,
-        SearchCountry,
-        SearchCountryTypedDict,
-        SearchFreshness,
-        SearchFreshnessTypedDict,
-        SearchLivecrawl,
-        SearchLivecrawlFormats,
-        SearchLivecrawlFormatsTypedDict,
-        SearchLivecrawlTypedDict,
-        SearchRequest,
-        SearchRequestTypedDict,
-        SearchResponse,
-        SearchResponseTypedDict,
-        SearchSafesearch,
-        SearchSafesearchTypedDict,
-        Web,
-        WebTypedDict,
+    from .searchmetadata import SearchMetadata, SearchMetadataTypedDict
+    from .searchop import SEARCH_OP_SERVERS, SearchRequest, SearchRequestTypedDict
+    from .searchrequestbody import SearchRequestBody, SearchRequestBodyTypedDict
+    from .searchresponse import SearchResponse, SearchResponseTypedDict
+    from .searchresponseresults import (
+        SearchResponseResults,
+        SearchResponseResultsTypedDict,
     )
     from .security import Security, SecurityTypedDict
+    from .v1contentspostresponsescontentapplicationjsonschemaitems import (
+        V1ContentsPostResponsesContentApplicationJSONSchemaItems,
+        V1ContentsPostResponsesContentApplicationJSONSchemaItemsTypedDict,
+    )
+    from .v1researchpostrequestbodycontentapplicationjsonschemaresearcheffort import (
+        V1ResearchPostRequestBodyContentApplicationJSONSchemaResearchEffort,
+    )
+    from .v1researchpostresponsescontentapplicationjsonschemadetailitems import (
+        V1ResearchPostResponsesContentApplicationJSONSchemaDetailItems,
+        V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsTypedDict,
+    )
+    from .v1researchpostresponsescontentapplicationjsonschemadetailitemsinput import (
+        V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsInput,
+        V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsInputTypedDict,
+    )
+    from .v1researchpostresponsescontentapplicationjsonschemadetailitemslocitems import (
+        V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsLocItems,
+        V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsLocItemsTypedDict,
+    )
+    from .v1researchpostresponsescontentapplicationjsonschemaoutput import (
+        V1ResearchPostResponsesContentApplicationJSONSchemaOutput,
+        V1ResearchPostResponsesContentApplicationJSONSchemaOutputTypedDict,
+    )
+    from .v1researchpostresponsescontentapplicationjsonschemaoutputcontenttype import (
+        V1ResearchPostResponsesContentApplicationJSONSchemaOutputContentType,
+    )
+    from .v1researchpostresponsescontentapplicationjsonschemaoutputsourcesitems import (
+        V1ResearchPostResponsesContentApplicationJSONSchemaOutputSourcesItems,
+        V1ResearchPostResponsesContentApplicationJSONSchemaOutputSourcesItemsTypedDict,
+    )
     from .verbosity import Verbosity
+    from .webresult import WebResult, WebResultTypedDict
     from .websearchtool import WebSearchTool, WebSearchToolTypedDict
 
 __all__ = [
+    "AGENTS_RUNS_OP_SERVERS",
     "AdvancedAgentRunsRequest",
     "AdvancedAgentRunsRequestTypedDict",
     "AgentRunsBatchResponse",
@@ -150,13 +181,13 @@ __all__ = [
     "ComputeTool",
     "ComputeToolTypedDict",
     "Contents",
-    "ContentsFormats",
+    "ContentsFormatsItems",
     "ContentsMetadata",
     "ContentsMetadataTypedDict",
     "ContentsRequest",
+    "ContentsRequestBody",
+    "ContentsRequestBodyTypedDict",
     "ContentsRequestTypedDict",
-    "ContentsResponse",
-    "ContentsResponseTypedDict",
     "ContentsTypedDict",
     "Country",
     "CustomAgentRunsRequest",
@@ -168,18 +199,25 @@ __all__ = [
     "ExpressAgentRunsRequest",
     "ExpressAgentRunsRequestTypedDict",
     "Freshness",
+    "FreshnessValue",
+    "FreshnessValueTypedDict",
     "Input",
     "InputTypedDict",
     "Language",
     "LiveCrawl",
-    "LiveCrawlFormats",
+    "LiveCrawlFormatsItems",
     "Loc",
     "LocTypedDict",
-    "Metadata",
-    "MetadataTypedDict",
-    "News",
-    "NewsTypedDict",
+    "NewsResult",
+    "NewsResultTypedDict",
+    "RESEARCH_OP_SERVERS",
     "ReportVerbosity",
+    "ResearchRequest",
+    "ResearchRequestBody",
+    "ResearchRequestBodyTypedDict",
+    "ResearchRequestTypedDict",
+    "ResearchResponse200",
+    "ResearchResponse200TypedDict",
     "ResearchTool",
     "ResearchToolTypedDict",
     "ResponseCreated",
@@ -206,36 +244,47 @@ __all__ = [
     "ResponseOutputTextDeltaTypedDict",
     "ResponseStarting",
     "ResponseStartingTypedDict",
-    "Results",
-    "ResultsTypedDict",
     "Role",
     "SEARCH_OP_SERVERS",
+    "SEARCH_POST_OP_SERVERS",
     "SafeSearch",
-    "SearchCountry",
-    "SearchCountryTypedDict",
     "SearchEffort",
-    "SearchFreshness",
-    "SearchFreshnessTypedDict",
-    "SearchLivecrawl",
-    "SearchLivecrawlFormats",
-    "SearchLivecrawlFormatsTypedDict",
-    "SearchLivecrawlTypedDict",
+    "SearchMetadata",
+    "SearchMetadataTypedDict",
+    "SearchPostRequest",
+    "SearchPostRequestTypedDict",
     "SearchRequest",
+    "SearchRequestBody",
+    "SearchRequestBodyTypedDict",
     "SearchRequestTypedDict",
     "SearchResponse",
+    "SearchResponseResults",
+    "SearchResponseResultsTypedDict",
     "SearchResponseTypedDict",
-    "SearchSafesearch",
-    "SearchSafesearchTypedDict",
     "Security",
     "SecurityTypedDict",
     "Tool",
     "ToolTypedDict",
     "Type",
+    "V1ContentsPostResponsesContentApplicationJSONSchemaItems",
+    "V1ContentsPostResponsesContentApplicationJSONSchemaItemsTypedDict",
+    "V1ResearchPostRequestBodyContentApplicationJSONSchemaResearchEffort",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaDetailItems",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsInput",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsInputTypedDict",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsLocItems",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsLocItemsTypedDict",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsTypedDict",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaOutput",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaOutputContentType",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaOutputSourcesItems",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaOutputSourcesItemsTypedDict",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaOutputTypedDict",
     "Verbosity",
-    "Web",
+    "WebResult",
+    "WebResultTypedDict",
     "WebSearchTool",
     "WebSearchToolTypedDict",
-    "WebTypedDict",
     "WorkflowConfig",
     "WorkflowConfigTypedDict",
 ]
@@ -265,6 +314,7 @@ _dynamic_imports: dict[str, str] = {
     "AgentRunsStreamingResponseTypedDict": ".agentrunsstreamingresponse",
     "Data": ".agentrunsstreamingresponse",
     "DataTypedDict": ".agentrunsstreamingresponse",
+    "AGENTS_RUNS_OP_SERVERS": ".agentsrunsop",
     "AgentsRunsRequest": ".agentsrunsop",
     "AgentsRunsRequestTypedDict": ".agentsrunsop",
     "AgentsRunsResponse": ".agentsrunsop",
@@ -273,24 +323,35 @@ _dynamic_imports: dict[str, str] = {
     "ComputeToolTypedDict": ".computetool",
     "Contents": ".contents",
     "ContentsTypedDict": ".contents",
-    "ContentsFormats": ".contentsformats",
+    "ContentsFormatsItems": ".contentsformatsitems",
     "ContentsMetadata": ".contentsmetadata",
     "ContentsMetadataTypedDict": ".contentsmetadata",
     "CONTENTS_OP_SERVERS": ".contentsop",
     "ContentsRequest": ".contentsop",
+    "ContentsRequestBody": ".contentsop",
+    "ContentsRequestBodyTypedDict": ".contentsop",
     "ContentsRequestTypedDict": ".contentsop",
-    "ContentsResponse": ".contentsop",
-    "ContentsResponseTypedDict": ".contentsop",
     "Country": ".country",
     "CustomAgentRunsRequest": ".customagentrunsrequest",
     "CustomAgentRunsRequestTypedDict": ".customagentrunsrequest",
     "ExpressAgentRunsRequest": ".expressagentrunsrequest",
     "ExpressAgentRunsRequestTypedDict": ".expressagentrunsrequest",
     "Freshness": ".freshness",
+    "FreshnessValue": ".freshnessvalue",
+    "FreshnessValueTypedDict": ".freshnessvalue",
     "Language": ".language",
     "LiveCrawl": ".livecrawl",
-    "LiveCrawlFormats": ".livecrawlformats",
+    "LiveCrawlFormatsItems": ".livecrawlformatsitems",
+    "NewsResult": ".newsresult",
+    "NewsResultTypedDict": ".newsresult",
     "ReportVerbosity": ".reportverbosity",
+    "ResearchResponse200": ".research_response_200",
+    "ResearchResponse200TypedDict": ".research_response_200",
+    "RESEARCH_OP_SERVERS": ".researchop",
+    "ResearchRequest": ".researchop",
+    "ResearchRequestBody": ".researchop",
+    "ResearchRequestBodyTypedDict": ".researchop",
+    "ResearchRequestTypedDict": ".researchop",
     "ResearchTool": ".researchtool",
     "ResearchToolTypedDict": ".researchtool",
     "ResponseCreated": ".response_created",
@@ -318,33 +379,40 @@ _dynamic_imports: dict[str, str] = {
     "ResponseStarting": ".response_starting",
     "ResponseStartingTypedDict": ".response_starting",
     "SafeSearch": ".safesearch",
+    "SEARCH_POST_OP_SERVERS": ".search_postop",
+    "SearchPostRequest": ".search_postop",
+    "SearchPostRequestTypedDict": ".search_postop",
     "SearchEffort": ".searcheffort",
-    "Metadata": ".searchop",
-    "MetadataTypedDict": ".searchop",
-    "News": ".searchop",
-    "NewsTypedDict": ".searchop",
-    "Results": ".searchop",
-    "ResultsTypedDict": ".searchop",
+    "SearchMetadata": ".searchmetadata",
+    "SearchMetadataTypedDict": ".searchmetadata",
     "SEARCH_OP_SERVERS": ".searchop",
-    "SearchCountry": ".searchop",
-    "SearchCountryTypedDict": ".searchop",
-    "SearchFreshness": ".searchop",
-    "SearchFreshnessTypedDict": ".searchop",
-    "SearchLivecrawl": ".searchop",
-    "SearchLivecrawlFormats": ".searchop",
-    "SearchLivecrawlFormatsTypedDict": ".searchop",
-    "SearchLivecrawlTypedDict": ".searchop",
     "SearchRequest": ".searchop",
     "SearchRequestTypedDict": ".searchop",
-    "SearchResponse": ".searchop",
-    "SearchResponseTypedDict": ".searchop",
-    "SearchSafesearch": ".searchop",
-    "SearchSafesearchTypedDict": ".searchop",
-    "Web": ".searchop",
-    "WebTypedDict": ".searchop",
+    "SearchRequestBody": ".searchrequestbody",
+    "SearchRequestBodyTypedDict": ".searchrequestbody",
+    "SearchResponse": ".searchresponse",
+    "SearchResponseTypedDict": ".searchresponse",
+    "SearchResponseResults": ".searchresponseresults",
+    "SearchResponseResultsTypedDict": ".searchresponseresults",
     "Security": ".security",
     "SecurityTypedDict": ".security",
+    "V1ContentsPostResponsesContentApplicationJSONSchemaItems": ".v1contentspostresponsescontentapplicationjsonschemaitems",
+    "V1ContentsPostResponsesContentApplicationJSONSchemaItemsTypedDict": ".v1contentspostresponsescontentapplicationjsonschemaitems",
+    "V1ResearchPostRequestBodyContentApplicationJSONSchemaResearchEffort": ".v1researchpostrequestbodycontentapplicationjsonschemaresearcheffort",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaDetailItems": ".v1researchpostresponsescontentapplicationjsonschemadetailitems",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsTypedDict": ".v1researchpostresponsescontentapplicationjsonschemadetailitems",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsInput": ".v1researchpostresponsescontentapplicationjsonschemadetailitemsinput",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsInputTypedDict": ".v1researchpostresponsescontentapplicationjsonschemadetailitemsinput",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsLocItems": ".v1researchpostresponsescontentapplicationjsonschemadetailitemslocitems",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaDetailItemsLocItemsTypedDict": ".v1researchpostresponsescontentapplicationjsonschemadetailitemslocitems",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaOutput": ".v1researchpostresponsescontentapplicationjsonschemaoutput",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaOutputTypedDict": ".v1researchpostresponsescontentapplicationjsonschemaoutput",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaOutputContentType": ".v1researchpostresponsescontentapplicationjsonschemaoutputcontenttype",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaOutputSourcesItems": ".v1researchpostresponsescontentapplicationjsonschemaoutputsourcesitems",
+    "V1ResearchPostResponsesContentApplicationJSONSchemaOutputSourcesItemsTypedDict": ".v1researchpostresponsescontentapplicationjsonschemaoutputsourcesitems",
     "Verbosity": ".verbosity",
+    "WebResult": ".webresult",
+    "WebResultTypedDict": ".webresult",
     "WebSearchTool": ".websearchtool",
     "WebSearchToolTypedDict": ".websearchtool",
 }

@@ -1,7 +1,5 @@
 # Freshness
 
-Specifies the freshness of the results to return.
-
 ## Example Usage
 
 ```python

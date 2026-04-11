@@ -37,6 +37,8 @@ class Runs(BaseSDK):
         The response format depends on the `stream` parameter - either a complete JSON payload or Server-Sent Events (SSE).
 
 
+        If set, this operation will use `api_key_auth` from the global security.
+
         :param request: The request object to send.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
@@ -52,7 +54,7 @@ class Runs(BaseSDK):
         if server_url is not None:
             base_url = server_url
         else:
-            base_url = self._get_url(base_url, url_variables)
+            base_url = models.AGENTS_RUNS_OP_SERVERS[0]
 
         if not isinstance(request, BaseModel):
             request = utils.unmarshal(request, models.AgentsRunsRequest)
@@ -77,6 +79,7 @@ class Runs(BaseSDK):
                 request, False, False, "json", models.AgentsRunsRequest
             ),
             allow_empty_value=None,
+            allowed_fields=["api_key_auth"],
             timeout_ms=timeout_ms,
         )
 
@@ -175,6 +178,8 @@ class Runs(BaseSDK):
         The response format depends on the `stream` parameter - either a complete JSON payload or Server-Sent Events (SSE).
 
 
+        If set, this operation will use `api_key_auth` from the global security.
+
         :param request: The request object to send.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
@@ -190,7 +195,7 @@ class Runs(BaseSDK):
         if server_url is not None:
             base_url = server_url
         else:
-            base_url = self._get_url(base_url, url_variables)
+            base_url = models.AGENTS_RUNS_OP_SERVERS[0]
 
         if not isinstance(request, BaseModel):
             request = utils.unmarshal(request, models.AgentsRunsRequest)
@@ -215,6 +220,7 @@ class Runs(BaseSDK):
                 request, False, False, "json", models.AgentsRunsRequest
             ),
             allow_empty_value=None,
+            allowed_fields=["api_key_auth"],
             timeout_ms=timeout_ms,
         )
 

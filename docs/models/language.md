@@ -1,5 +1,7 @@
 # Language
 
+The language of the web results that will be returned (BCP 47 format).
+
 ## Example Usage
 
 ```python

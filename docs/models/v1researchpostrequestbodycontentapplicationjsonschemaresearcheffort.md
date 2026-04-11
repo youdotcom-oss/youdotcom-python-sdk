@@ -1,0 +1,27 @@
+# V1ResearchPostRequestBodyContentApplicationJSONSchemaResearchEffort
+
+Controls how much time and effort the Research API spends on your question. Higher effort levels run more searches and dig deeper into sources, at the cost of a longer response time.
+
+Available levels:
+- `lite`: Returns answers quickly. Good for straightforward questions that just need a fast, reliable answer.
+- `standard`: The default. Balances speed and depth, a good fit for most questions.
+- `deep`: Spends more time researching and cross-referencing sources. Use this when accuracy and thoroughness matter more than speed.
+- `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex research tasks where you want the highest quality result.
+
+## Example Usage
+
+```python
+from youdotcom.models import V1ResearchPostRequestBodyContentApplicationJSONSchemaResearchEffort
+
+value = V1ResearchPostRequestBodyContentApplicationJSONSchemaResearchEffort.LITE
+```
+
+
+## Values
+
+| Name         | Value        |
+| ------------ | ------------ |
+| `LITE`       | lite         |
+| `STANDARD`   | standard     |
+| `DEEP`       | deep         |
+| `EXHAUSTIVE` | exhaustive   |

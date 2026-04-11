@@ -1,24 +1,15 @@
 <!-- Start SDK Example Usage [usage] -->
 ```python
 # Synchronous Example
-import os
-from youdotcom import You
+from youdotcom import You, models
 
 
-with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
-) as you:
+with You() as you:
 
-    res = you.agents.runs.create(request={
-        "agent": "express",
-        "input": "What is the capital of France?",
-        "stream": False,
-    })
+    res = you.unified(query="Your query", x_api_key="<value>", count=10, language=models.Language.EN, crawl_timeout=10)
 
-    with res as event_stream:
-        for event in event_stream:
-            # handle event
-            print(event, flush=True)
+    # Handle response
+    print(res)
 ```
 
 </br>
@@ -28,25 +19,16 @@ The same SDK client can also be used to make asynchronous requests by importing 
 ```python
 # Asynchronous Example
 import asyncio
-import os
-from youdotcom import You
+from youdotcom import You, models
 
 async def main():
 
-    async with You(
-        api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
-    ) as you:
+    async with You() as you:
 
-        res = await you.agents.runs.create_async(request={
-            "agent": "express",
-            "input": "What is the capital of France?",
-            "stream": False,
-        })
+        res = await you.unified_async(query="Your query", x_api_key="<value>", count=10, language=models.Language.EN, crawl_timeout=10)
 
-        async with res as event_stream:
-            async for event in event_stream:
-                # handle event
-                print(event, flush=True)
+        # Handle response
+        print(res)
 
 asyncio.run(main())
 ```

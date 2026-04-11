@@ -5,6 +5,8 @@ from enum import Enum
 
 
 class Language(str, Enum):
+    r"""The language of the web results that will be returned (BCP 47 format)."""
+
     AR = "AR"
     EU = "EU"
     BN = "BN"

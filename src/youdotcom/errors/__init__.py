@@ -18,23 +18,67 @@ if TYPE_CHECKING:
         AgentRuns422ResponseError,
         AgentRuns422ResponseErrorData,
     )
-    from .contentsop import (
-        ContentsForbiddenError,
-        ContentsForbiddenErrorData,
-        ContentsInternalServerError,
-        ContentsInternalServerErrorData,
-        ContentsUnauthorizedError,
-        ContentsUnauthorizedErrorData,
+    from .contentsrequestforbiddenerror import (
+        ContentsRequestForbiddenError,
+        ContentsRequestForbiddenErrorData,
+    )
+    from .contentsrequestinternalservererror import (
+        ContentsRequestInternalServerError,
+        ContentsRequestInternalServerErrorData,
+    )
+    from .contentsrequestunauthorizederror import (
+        ContentsRequestUnauthorizedError,
+        ContentsRequestUnauthorizedErrorData,
     )
     from .no_response_error import NoResponseError
+    from .researchrequestforbiddenerror import (
+        ResearchRequestForbiddenError,
+        ResearchRequestForbiddenErrorData,
+    )
+    from .researchrequestinternalservererror import (
+        ResearchRequestInternalServerError,
+        ResearchRequestInternalServerErrorData,
+    )
+    from .researchrequestunauthorizederror import (
+        ResearchRequestUnauthorizedError,
+        ResearchRequestUnauthorizedErrorData,
+    )
+    from .researchrequestunprocessableentityerror import (
+        ResearchRequestUnprocessableEntityError,
+        ResearchRequestUnprocessableEntityErrorData,
+    )
     from .responsevalidationerror import ResponseValidationError
-    from .searchop import (
-        SearchForbiddenError,
-        SearchForbiddenErrorData,
-        SearchInternalServerError,
-        SearchInternalServerErrorData,
-        SearchUnauthorizedError,
-        SearchUnauthorizedErrorData,
+    from .searchpostrequestforbiddenerror import (
+        SearchPostRequestForbiddenError,
+        SearchPostRequestForbiddenErrorData,
+    )
+    from .searchpostrequestinternalservererror import (
+        SearchPostRequestInternalServerError,
+        SearchPostRequestInternalServerErrorData,
+    )
+    from .searchpostrequestunauthorizederror import (
+        SearchPostRequestUnauthorizedError,
+        SearchPostRequestUnauthorizedErrorData,
+    )
+    from .searchpostrequestunprocessableentityerror import (
+        SearchPostRequestUnprocessableEntityError,
+        SearchPostRequestUnprocessableEntityErrorData,
+    )
+    from .searchrequestforbiddenerror import (
+        SearchRequestForbiddenError,
+        SearchRequestForbiddenErrorData,
+    )
+    from .searchrequestinternalservererror import (
+        SearchRequestInternalServerError,
+        SearchRequestInternalServerErrorData,
+    )
+    from .searchrequestunauthorizederror import (
+        SearchRequestUnauthorizedError,
+        SearchRequestUnauthorizedErrorData,
+    )
+    from .searchrequestunprocessableentityerror import (
+        SearchRequestUnprocessableEntityError,
+        SearchRequestUnprocessableEntityErrorData,
     )
     from .youdefaulterror import YouDefaultError
 
@@ -45,20 +89,38 @@ __all__ = [
     "AgentRuns401ResponseErrorData",
     "AgentRuns422ResponseError",
     "AgentRuns422ResponseErrorData",
-    "ContentsForbiddenError",
-    "ContentsForbiddenErrorData",
-    "ContentsInternalServerError",
-    "ContentsInternalServerErrorData",
-    "ContentsUnauthorizedError",
-    "ContentsUnauthorizedErrorData",
+    "ContentsRequestForbiddenError",
+    "ContentsRequestForbiddenErrorData",
+    "ContentsRequestInternalServerError",
+    "ContentsRequestInternalServerErrorData",
+    "ContentsRequestUnauthorizedError",
+    "ContentsRequestUnauthorizedErrorData",
     "NoResponseError",
+    "ResearchRequestForbiddenError",
+    "ResearchRequestForbiddenErrorData",
+    "ResearchRequestInternalServerError",
+    "ResearchRequestInternalServerErrorData",
+    "ResearchRequestUnauthorizedError",
+    "ResearchRequestUnauthorizedErrorData",
+    "ResearchRequestUnprocessableEntityError",
+    "ResearchRequestUnprocessableEntityErrorData",
     "ResponseValidationError",
-    "SearchForbiddenError",
-    "SearchForbiddenErrorData",
-    "SearchInternalServerError",
-    "SearchInternalServerErrorData",
-    "SearchUnauthorizedError",
-    "SearchUnauthorizedErrorData",
+    "SearchPostRequestForbiddenError",
+    "SearchPostRequestForbiddenErrorData",
+    "SearchPostRequestInternalServerError",
+    "SearchPostRequestInternalServerErrorData",
+    "SearchPostRequestUnauthorizedError",
+    "SearchPostRequestUnauthorizedErrorData",
+    "SearchPostRequestUnprocessableEntityError",
+    "SearchPostRequestUnprocessableEntityErrorData",
+    "SearchRequestForbiddenError",
+    "SearchRequestForbiddenErrorData",
+    "SearchRequestInternalServerError",
+    "SearchRequestInternalServerErrorData",
+    "SearchRequestUnauthorizedError",
+    "SearchRequestUnauthorizedErrorData",
+    "SearchRequestUnprocessableEntityError",
+    "SearchRequestUnprocessableEntityErrorData",
     "YouDefaultError",
     "YouError",
 ]
@@ -70,20 +132,38 @@ _dynamic_imports: dict[str, str] = {
     "AgentRuns401ResponseErrorData": ".agentruns401response_error",
     "AgentRuns422ResponseError": ".agentruns422response_error",
     "AgentRuns422ResponseErrorData": ".agentruns422response_error",
-    "ContentsForbiddenError": ".contentsop",
-    "ContentsForbiddenErrorData": ".contentsop",
-    "ContentsInternalServerError": ".contentsop",
-    "ContentsInternalServerErrorData": ".contentsop",
-    "ContentsUnauthorizedError": ".contentsop",
-    "ContentsUnauthorizedErrorData": ".contentsop",
+    "ContentsRequestForbiddenError": ".contentsrequestforbiddenerror",
+    "ContentsRequestForbiddenErrorData": ".contentsrequestforbiddenerror",
+    "ContentsRequestInternalServerError": ".contentsrequestinternalservererror",
+    "ContentsRequestInternalServerErrorData": ".contentsrequestinternalservererror",
+    "ContentsRequestUnauthorizedError": ".contentsrequestunauthorizederror",
+    "ContentsRequestUnauthorizedErrorData": ".contentsrequestunauthorizederror",
     "NoResponseError": ".no_response_error",
+    "ResearchRequestForbiddenError": ".researchrequestforbiddenerror",
+    "ResearchRequestForbiddenErrorData": ".researchrequestforbiddenerror",
+    "ResearchRequestInternalServerError": ".researchrequestinternalservererror",
+    "ResearchRequestInternalServerErrorData": ".researchrequestinternalservererror",
+    "ResearchRequestUnauthorizedError": ".researchrequestunauthorizederror",
+    "ResearchRequestUnauthorizedErrorData": ".researchrequestunauthorizederror",
+    "ResearchRequestUnprocessableEntityError": ".researchrequestunprocessableentityerror",
+    "ResearchRequestUnprocessableEntityErrorData": ".researchrequestunprocessableentityerror",
     "ResponseValidationError": ".responsevalidationerror",
-    "SearchForbiddenError": ".searchop",
-    "SearchForbiddenErrorData": ".searchop",
-    "SearchInternalServerError": ".searchop",
-    "SearchInternalServerErrorData": ".searchop",
-    "SearchUnauthorizedError": ".searchop",
-    "SearchUnauthorizedErrorData": ".searchop",
+    "SearchPostRequestForbiddenError": ".searchpostrequestforbiddenerror",
+    "SearchPostRequestForbiddenErrorData": ".searchpostrequestforbiddenerror",
+    "SearchPostRequestInternalServerError": ".searchpostrequestinternalservererror",
+    "SearchPostRequestInternalServerErrorData": ".searchpostrequestinternalservererror",
+    "SearchPostRequestUnauthorizedError": ".searchpostrequestunauthorizederror",
+    "SearchPostRequestUnauthorizedErrorData": ".searchpostrequestunauthorizederror",
+    "SearchPostRequestUnprocessableEntityError": ".searchpostrequestunprocessableentityerror",
+    "SearchPostRequestUnprocessableEntityErrorData": ".searchpostrequestunprocessableentityerror",
+    "SearchRequestForbiddenError": ".searchrequestforbiddenerror",
+    "SearchRequestForbiddenErrorData": ".searchrequestforbiddenerror",
+    "SearchRequestInternalServerError": ".searchrequestinternalservererror",
+    "SearchRequestInternalServerErrorData": ".searchrequestinternalservererror",
+    "SearchRequestUnauthorizedError": ".searchrequestunauthorizederror",
+    "SearchRequestUnauthorizedErrorData": ".searchrequestunauthorizederror",
+    "SearchRequestUnprocessableEntityError": ".searchrequestunprocessableentityerror",
+    "SearchRequestUnprocessableEntityErrorData": ".searchrequestunprocessableentityerror",
     "YouDefaultError": ".youdefaulterror",
 }
 

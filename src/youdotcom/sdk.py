@@ -8,11 +8,12 @@ from .utils.retries import RetryConfig
 import httpx
 import importlib
 import sys
-from typing import Any, Callable, Dict, Optional, TYPE_CHECKING, Union, cast
+from typing import Any, Callable, List, Mapping, Optional, TYPE_CHECKING, Union, cast
 import weakref
-from youdotcom import models, utils
-from youdotcom._hooks import SDKHooks
+from youdotcom import errors, models, utils
+from youdotcom._hooks import HookContext, SDKHooks
 from youdotcom.types import OptionalNullable, UNSET
+from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
 
 if TYPE_CHECKING:
     from youdotcom.agents import Agents
@@ -22,8 +23,6 @@ if TYPE_CHECKING:
 
 class You(BaseSDK):
     r"""You.com API: Unified API for Express, Advanced, and Custom Agents from You.com
-    Get the best search results from web and news sources
-    Returns the HTML or Markdown of a target webpage
     Comprehensive API for You.com services:
     - **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
     - **Research API**: In-depth, multi-step research with citations and sources
@@ -45,8 +44,6 @@ class You(BaseSDK):
         api_key_auth: Optional[
             Union[Optional[str], Callable[[], Optional[str]]]
         ] = None,
-        server_idx: Optional[int] = None,
-        url_params: Optional[Dict[str, str]] = None,
         server_url: Optional[str] = None,
         client: Optional[HttpClient] = None,
         async_client: Optional[AsyncHttpClient] = None,
@@ -93,10 +90,6 @@ class You(BaseSDK):
         else:
             security = models.Security(api_key_auth=api_key_auth)
 
-        if server_url is not None:
-            if url_params is not None:
-                server_url = utils.template_url(server_url, url_params)
-
         BaseSDK.__init__(
             self,
             SDKConfiguration(
@@ -106,7 +99,6 @@ class You(BaseSDK):
                 async_client_supplied=async_client_supplied,
                 security=security,
                 server_url=server_url,
-                server_idx=server_idx,
                 retry_config=retry_config,
                 timeout_ms=timeout_ms,
                 debug_logger=debug_logger,
@@ -190,3 +182,1111 @@ class You(BaseSDK):
         ):
             await self.sdk_configuration.async_client.aclose()
         self.sdk_configuration.async_client = None
+
+    def unified(
+        self,
+        *,
+        query: str,
+        x_api_key: str,
+        count: Optional[int] = 10,
+        freshness: Optional[
+            Union[models.FreshnessValue, models.FreshnessValueTypedDict]
+        ] = None,
+        offset: Optional[int] = None,
+        country: Optional[models.Country] = None,
+        language: Optional[models.Language] = models.Language.EN,
+        safesearch: Optional[models.SafeSearch] = None,
+        livecrawl: Optional[models.LiveCrawl] = None,
+        livecrawl_formats: Optional[List[models.LiveCrawlFormatsItems]] = None,
+        include_domains: Optional[str] = None,
+        exclude_domains: Optional[str] = None,
+        crawl_timeout: Optional[int] = 10,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> models.SearchResponse:
+        r"""Returns a list of unified search results from web and news sources
+
+        This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
+
+        `GET` is a good choice for simple queries where HTTP cacheability matters—GET responses can be cached at CDN and proxy layers, whereas POST responses are not cached by default per the HTTP spec. For requests with complex parameters such as `include_domains` or `exclude_domains`, use POST instead - domain lists are passed as comma-separated strings in GET and are limited by URL length.
+
+        :param query:
+        :param x_api_key: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
+        :param count:
+        :param freshness: Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
+
+            When your search query includes a temporal keyword and you also set a freshness parameter, the search will use the broader (i.e., less restrictive) of the two timeframes. For example, if you use `query=news+this+week&freshness=month`, the results will use a freshness of month.
+        :param offset:
+        :param country: The country code that determines the geographical focus of the web results.
+        :param language: The language of the web results that will be returned (BCP 47 format).
+        :param safesearch: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
+        :param livecrawl: Indicates which section(s) of search results to livecrawl and return full page content.
+        :param livecrawl_formats:
+        :param include_domains: A list of domains to restrict search results to. Only results from these domains will be returned. For large domain lists (up to 500), use POST with a JSON array instead. This is a strict allowlist — cannot be combined with `exclude_domains` (returns `422`).
+
+            **Important:** Use a single comma-separated value (e.g. `include_domains=nytimes.com,bbc.com`). Repeated parameters (`include_domains=a.com&include_domains=b.com`) are not supported.
+        :param exclude_domains: A list of domains to exclude from search results. Results from these domains will be filtered out. For large domain lists (up to 500), use POST with a JSON array instead. Cannot be combined with `include_domains` (returns `422`).
+
+            **Important:** You must use a single comma-separated value (e.g. `exclude_domains=spam-site.com,other-site.com`). Repeated parameters are not supported.
+        :param crawl_timeout:
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = models.SEARCH_OP_SERVERS[0]
+
+        request = models.SearchRequest(
+            query=query,
+            count=count,
+            freshness=freshness,
+            offset=offset,
+            country=country,
+            language=language,
+            safesearch=safesearch,
+            livecrawl=livecrawl,
+            livecrawl_formats=livecrawl_formats,
+            include_domains=include_domains,
+            exclude_domains=exclude_domains,
+            crawl_timeout=crawl_timeout,
+            x_api_key=x_api_key,
+        )
+
+        req = self._build_request(
+            method="GET",
+            path="/v1/search",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=False,
+            request_has_path_params=False,
+            request_has_query_params=True,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = self.do_request(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="search",
+                oauth2_scopes=None,
+                security_source=None,
+            ),
+            request=req,
+            error_status_codes=["401", "403", "422", "4XX", "500", "5XX"],
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(models.SearchResponse, http_res)
+        if utils.match_response(http_res, "401", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchRequestUnauthorizedErrorData, http_res
+            )
+            raise errors.SearchRequestUnauthorizedError(response_data, http_res)
+        if utils.match_response(http_res, "403", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchRequestForbiddenErrorData, http_res
+            )
+            raise errors.SearchRequestForbiddenError(response_data, http_res)
+        if utils.match_response(http_res, "422", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchRequestUnprocessableEntityErrorData, http_res
+            )
+            raise errors.SearchRequestUnprocessableEntityError(response_data, http_res)
+        if utils.match_response(http_res, "500", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchRequestInternalServerErrorData, http_res
+            )
+            raise errors.SearchRequestInternalServerError(response_data, http_res)
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    async def unified_async(
+        self,
+        *,
+        query: str,
+        x_api_key: str,
+        count: Optional[int] = 10,
+        freshness: Optional[
+            Union[models.FreshnessValue, models.FreshnessValueTypedDict]
+        ] = None,
+        offset: Optional[int] = None,
+        country: Optional[models.Country] = None,
+        language: Optional[models.Language] = models.Language.EN,
+        safesearch: Optional[models.SafeSearch] = None,
+        livecrawl: Optional[models.LiveCrawl] = None,
+        livecrawl_formats: Optional[List[models.LiveCrawlFormatsItems]] = None,
+        include_domains: Optional[str] = None,
+        exclude_domains: Optional[str] = None,
+        crawl_timeout: Optional[int] = 10,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> models.SearchResponse:
+        r"""Returns a list of unified search results from web and news sources
+
+        This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
+
+        `GET` is a good choice for simple queries where HTTP cacheability matters—GET responses can be cached at CDN and proxy layers, whereas POST responses are not cached by default per the HTTP spec. For requests with complex parameters such as `include_domains` or `exclude_domains`, use POST instead - domain lists are passed as comma-separated strings in GET and are limited by URL length.
+
+        :param query:
+        :param x_api_key: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
+        :param count:
+        :param freshness: Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
+
+            When your search query includes a temporal keyword and you also set a freshness parameter, the search will use the broader (i.e., less restrictive) of the two timeframes. For example, if you use `query=news+this+week&freshness=month`, the results will use a freshness of month.
+        :param offset:
+        :param country: The country code that determines the geographical focus of the web results.
+        :param language: The language of the web results that will be returned (BCP 47 format).
+        :param safesearch: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
+        :param livecrawl: Indicates which section(s) of search results to livecrawl and return full page content.
+        :param livecrawl_formats:
+        :param include_domains: A list of domains to restrict search results to. Only results from these domains will be returned. For large domain lists (up to 500), use POST with a JSON array instead. This is a strict allowlist — cannot be combined with `exclude_domains` (returns `422`).
+
+            **Important:** Use a single comma-separated value (e.g. `include_domains=nytimes.com,bbc.com`). Repeated parameters (`include_domains=a.com&include_domains=b.com`) are not supported.
+        :param exclude_domains: A list of domains to exclude from search results. Results from these domains will be filtered out. For large domain lists (up to 500), use POST with a JSON array instead. Cannot be combined with `include_domains` (returns `422`).
+
+            **Important:** You must use a single comma-separated value (e.g. `exclude_domains=spam-site.com,other-site.com`). Repeated parameters are not supported.
+        :param crawl_timeout:
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = models.SEARCH_OP_SERVERS[0]
+
+        request = models.SearchRequest(
+            query=query,
+            count=count,
+            freshness=freshness,
+            offset=offset,
+            country=country,
+            language=language,
+            safesearch=safesearch,
+            livecrawl=livecrawl,
+            livecrawl_formats=livecrawl_formats,
+            include_domains=include_domains,
+            exclude_domains=exclude_domains,
+            crawl_timeout=crawl_timeout,
+            x_api_key=x_api_key,
+        )
+
+        req = self._build_request_async(
+            method="GET",
+            path="/v1/search",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=False,
+            request_has_path_params=False,
+            request_has_query_params=True,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = await self.do_request_async(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="search",
+                oauth2_scopes=None,
+                security_source=None,
+            ),
+            request=req,
+            error_status_codes=["401", "403", "422", "4XX", "500", "5XX"],
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(models.SearchResponse, http_res)
+        if utils.match_response(http_res, "401", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchRequestUnauthorizedErrorData, http_res
+            )
+            raise errors.SearchRequestUnauthorizedError(response_data, http_res)
+        if utils.match_response(http_res, "403", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchRequestForbiddenErrorData, http_res
+            )
+            raise errors.SearchRequestForbiddenError(response_data, http_res)
+        if utils.match_response(http_res, "422", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchRequestUnprocessableEntityErrorData, http_res
+            )
+            raise errors.SearchRequestUnprocessableEntityError(response_data, http_res)
+        if utils.match_response(http_res, "500", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchRequestInternalServerErrorData, http_res
+            )
+            raise errors.SearchRequestInternalServerError(response_data, http_res)
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    def search_post(
+        self,
+        *,
+        x_api_key: str,
+        query: str,
+        count: Optional[int] = 10,
+        freshness: Optional[
+            Union[models.FreshnessValue, models.FreshnessValueTypedDict]
+        ] = None,
+        offset: Optional[int] = None,
+        country: Optional[models.Country] = None,
+        language: Optional[models.Language] = models.Language.EN,
+        safesearch: Optional[models.SafeSearch] = None,
+        livecrawl: Optional[models.LiveCrawl] = None,
+        livecrawl_formats: Optional[List[models.LiveCrawlFormatsItems]] = None,
+        include_domains: Optional[List[str]] = None,
+        exclude_domains: Optional[List[str]] = None,
+        crawl_timeout: Optional[int] = 10,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> models.SearchResponse:
+        r"""Returns a list of unified search results from web and news sources
+
+        This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
+
+        `POST` is the recommended method when using complex parameters such as `include_domains` or `exclude_domains`. These fields accept JSON arrays in the request body, which is unambiguous and supports up to 500 domains per request—something that would exceed URL length limits with GET. Use GET for simple queries where HTTP cacheability matters.
+
+        :param x_api_key: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
+        :param query: The search query used to retrieve relevant results from the web. You can also include [search operators](https://docs.you.com/search/search-operators) to refine your search.
+        :param count: Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them).
+        :param freshness: Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
+
+            When your search query includes a temporal keyword and you also set a freshness parameter, the search will use the broader (i.e., less restrictive) of the two timeframes. For example, if you use `query=news+this+week&freshness=month`, the results will use a freshness of month.
+        :param offset: Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`.
+        :param country: The country code that determines the geographical focus of the web results.
+        :param language: The language of the web results that will be returned (BCP 47 format).
+        :param safesearch: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
+        :param livecrawl: Indicates which section(s) of search results to livecrawl and return full page content.
+        :param livecrawl_formats: Indicates the format(s) of the livecrawled content. Pass one or both values (`html`, `markdown`). In a GET request, repeat the parameter: `?livecrawl_formats=html&livecrawl_formats=markdown`. In a POST body, provide a JSON array: `[\"html\", \"markdown\"]`.
+        :param include_domains: A list of domains to restrict search results to. Only results from these domains will be returned. Supports up to 500 domains. This is a strict allowlist, not a boost — results are limited exclusively to the specified domains.
+
+            Cannot be combined with `exclude_domains`; passing both will return a `422` error.
+        :param exclude_domains: A list of domains to exclude from search results. Results from these domains will be filtered out. Supports up to 500 domains.
+
+            Cannot be combined with `include_domains`; passing both will return a `422` error.
+        :param crawl_timeout: Maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Default is 10 seconds.
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = models.SEARCH_POST_OP_SERVERS[0]
+
+        request = models.SearchPostRequest(
+            x_api_key=x_api_key,
+            body=models.SearchRequestBody(
+                query=query,
+                count=count,
+                freshness=freshness,
+                offset=offset,
+                country=country,
+                language=language,
+                safesearch=safesearch,
+                livecrawl=livecrawl,
+                livecrawl_formats=livecrawl_formats,
+                include_domains=include_domains,
+                exclude_domains=exclude_domains,
+                crawl_timeout=crawl_timeout,
+            ),
+        )
+
+        req = self._build_request(
+            method="POST",
+            path="/v1/search",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=False,
+            request_has_path_params=False,
+            request_has_query_params=False,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            get_serialized_body=lambda: utils.serialize_request_body(
+                request.body if request is not None else None,
+                False,
+                True,
+                "json",
+                Optional[models.SearchRequestBody],
+            ),
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = self.do_request(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="search-post",
+                oauth2_scopes=None,
+                security_source=None,
+            ),
+            request=req,
+            error_status_codes=["401", "403", "422", "4XX", "500", "5XX"],
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(models.SearchResponse, http_res)
+        if utils.match_response(http_res, "401", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchPostRequestUnauthorizedErrorData, http_res
+            )
+            raise errors.SearchPostRequestUnauthorizedError(response_data, http_res)
+        if utils.match_response(http_res, "403", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchPostRequestForbiddenErrorData, http_res
+            )
+            raise errors.SearchPostRequestForbiddenError(response_data, http_res)
+        if utils.match_response(http_res, "422", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchPostRequestUnprocessableEntityErrorData, http_res
+            )
+            raise errors.SearchPostRequestUnprocessableEntityError(
+                response_data, http_res
+            )
+        if utils.match_response(http_res, "500", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchPostRequestInternalServerErrorData, http_res
+            )
+            raise errors.SearchPostRequestInternalServerError(response_data, http_res)
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    async def search_post_async(
+        self,
+        *,
+        x_api_key: str,
+        query: str,
+        count: Optional[int] = 10,
+        freshness: Optional[
+            Union[models.FreshnessValue, models.FreshnessValueTypedDict]
+        ] = None,
+        offset: Optional[int] = None,
+        country: Optional[models.Country] = None,
+        language: Optional[models.Language] = models.Language.EN,
+        safesearch: Optional[models.SafeSearch] = None,
+        livecrawl: Optional[models.LiveCrawl] = None,
+        livecrawl_formats: Optional[List[models.LiveCrawlFormatsItems]] = None,
+        include_domains: Optional[List[str]] = None,
+        exclude_domains: Optional[List[str]] = None,
+        crawl_timeout: Optional[int] = 10,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> models.SearchResponse:
+        r"""Returns a list of unified search results from web and news sources
+
+        This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
+
+        `POST` is the recommended method when using complex parameters such as `include_domains` or `exclude_domains`. These fields accept JSON arrays in the request body, which is unambiguous and supports up to 500 domains per request—something that would exceed URL length limits with GET. Use GET for simple queries where HTTP cacheability matters.
+
+        :param x_api_key: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
+        :param query: The search query used to retrieve relevant results from the web. You can also include [search operators](https://docs.you.com/search/search-operators) to refine your search.
+        :param count: Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them).
+        :param freshness: Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
+
+            When your search query includes a temporal keyword and you also set a freshness parameter, the search will use the broader (i.e., less restrictive) of the two timeframes. For example, if you use `query=news+this+week&freshness=month`, the results will use a freshness of month.
+        :param offset: Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`.
+        :param country: The country code that determines the geographical focus of the web results.
+        :param language: The language of the web results that will be returned (BCP 47 format).
+        :param safesearch: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
+        :param livecrawl: Indicates which section(s) of search results to livecrawl and return full page content.
+        :param livecrawl_formats: Indicates the format(s) of the livecrawled content. Pass one or both values (`html`, `markdown`). In a GET request, repeat the parameter: `?livecrawl_formats=html&livecrawl_formats=markdown`. In a POST body, provide a JSON array: `[\"html\", \"markdown\"]`.
+        :param include_domains: A list of domains to restrict search results to. Only results from these domains will be returned. Supports up to 500 domains. This is a strict allowlist, not a boost — results are limited exclusively to the specified domains.
+
+            Cannot be combined with `exclude_domains`; passing both will return a `422` error.
+        :param exclude_domains: A list of domains to exclude from search results. Results from these domains will be filtered out. Supports up to 500 domains.
+
+            Cannot be combined with `include_domains`; passing both will return a `422` error.
+        :param crawl_timeout: Maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Default is 10 seconds.
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = models.SEARCH_POST_OP_SERVERS[0]
+
+        request = models.SearchPostRequest(
+            x_api_key=x_api_key,
+            body=models.SearchRequestBody(
+                query=query,
+                count=count,
+                freshness=freshness,
+                offset=offset,
+                country=country,
+                language=language,
+                safesearch=safesearch,
+                livecrawl=livecrawl,
+                livecrawl_formats=livecrawl_formats,
+                include_domains=include_domains,
+                exclude_domains=exclude_domains,
+                crawl_timeout=crawl_timeout,
+            ),
+        )
+
+        req = self._build_request_async(
+            method="POST",
+            path="/v1/search",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=False,
+            request_has_path_params=False,
+            request_has_query_params=False,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            get_serialized_body=lambda: utils.serialize_request_body(
+                request.body if request is not None else None,
+                False,
+                True,
+                "json",
+                Optional[models.SearchRequestBody],
+            ),
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = await self.do_request_async(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="search-post",
+                oauth2_scopes=None,
+                security_source=None,
+            ),
+            request=req,
+            error_status_codes=["401", "403", "422", "4XX", "500", "5XX"],
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(models.SearchResponse, http_res)
+        if utils.match_response(http_res, "401", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchPostRequestUnauthorizedErrorData, http_res
+            )
+            raise errors.SearchPostRequestUnauthorizedError(response_data, http_res)
+        if utils.match_response(http_res, "403", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchPostRequestForbiddenErrorData, http_res
+            )
+            raise errors.SearchPostRequestForbiddenError(response_data, http_res)
+        if utils.match_response(http_res, "422", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchPostRequestUnprocessableEntityErrorData, http_res
+            )
+            raise errors.SearchPostRequestUnprocessableEntityError(
+                response_data, http_res
+            )
+        if utils.match_response(http_res, "500", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.SearchPostRequestInternalServerErrorData, http_res
+            )
+            raise errors.SearchPostRequestInternalServerError(response_data, http_res)
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    def generate(
+        self,
+        *,
+        x_api_key: str,
+        urls: Optional[List[str]] = None,
+        formats: Optional[List[models.ContentsFormatsItems]] = None,
+        crawl_timeout: Optional[int] = 10,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> List[models.V1ContentsPostResponsesContentApplicationJSONSchemaItems]:
+        r"""Returns the content of the web pages
+
+        Returns the HTML or Markdown of a target webpage.
+
+        :param x_api_key: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
+        :param urls: Array of URLs to fetch the contents from.
+        :param formats: Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available.
+        :param crawl_timeout: Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds.
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = models.CONTENTS_OP_SERVERS[0]
+
+        request = models.ContentsRequest(
+            x_api_key=x_api_key,
+            body=models.ContentsRequestBody(
+                urls=urls,
+                formats=formats,
+                crawl_timeout=crawl_timeout,
+            ),
+        )
+
+        req = self._build_request(
+            method="POST",
+            path="/v1/contents",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=False,
+            request_has_path_params=False,
+            request_has_query_params=False,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            get_serialized_body=lambda: utils.serialize_request_body(
+                request.body if request is not None else None,
+                False,
+                True,
+                "json",
+                Optional[models.ContentsRequestBody],
+            ),
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = self.do_request(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="contents",
+                oauth2_scopes=None,
+                security_source=None,
+            ),
+            request=req,
+            error_status_codes=["401", "403", "4XX", "500", "5XX"],
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(
+                List[models.V1ContentsPostResponsesContentApplicationJSONSchemaItems],
+                http_res,
+            )
+        if utils.match_response(http_res, "401", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ContentsRequestUnauthorizedErrorData, http_res
+            )
+            raise errors.ContentsRequestUnauthorizedError(response_data, http_res)
+        if utils.match_response(http_res, "403", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ContentsRequestForbiddenErrorData, http_res
+            )
+            raise errors.ContentsRequestForbiddenError(response_data, http_res)
+        if utils.match_response(http_res, "500", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ContentsRequestInternalServerErrorData, http_res
+            )
+            raise errors.ContentsRequestInternalServerError(response_data, http_res)
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    async def generate_async(
+        self,
+        *,
+        x_api_key: str,
+        urls: Optional[List[str]] = None,
+        formats: Optional[List[models.ContentsFormatsItems]] = None,
+        crawl_timeout: Optional[int] = 10,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> List[models.V1ContentsPostResponsesContentApplicationJSONSchemaItems]:
+        r"""Returns the content of the web pages
+
+        Returns the HTML or Markdown of a target webpage.
+
+        :param x_api_key: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
+        :param urls: Array of URLs to fetch the contents from.
+        :param formats: Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available.
+        :param crawl_timeout: Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds.
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = models.CONTENTS_OP_SERVERS[0]
+
+        request = models.ContentsRequest(
+            x_api_key=x_api_key,
+            body=models.ContentsRequestBody(
+                urls=urls,
+                formats=formats,
+                crawl_timeout=crawl_timeout,
+            ),
+        )
+
+        req = self._build_request_async(
+            method="POST",
+            path="/v1/contents",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=False,
+            request_has_path_params=False,
+            request_has_query_params=False,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            get_serialized_body=lambda: utils.serialize_request_body(
+                request.body if request is not None else None,
+                False,
+                True,
+                "json",
+                Optional[models.ContentsRequestBody],
+            ),
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = await self.do_request_async(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="contents",
+                oauth2_scopes=None,
+                security_source=None,
+            ),
+            request=req,
+            error_status_codes=["401", "403", "4XX", "500", "5XX"],
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(
+                List[models.V1ContentsPostResponsesContentApplicationJSONSchemaItems],
+                http_res,
+            )
+        if utils.match_response(http_res, "401", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ContentsRequestUnauthorizedErrorData, http_res
+            )
+            raise errors.ContentsRequestUnauthorizedError(response_data, http_res)
+        if utils.match_response(http_res, "403", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ContentsRequestForbiddenErrorData, http_res
+            )
+            raise errors.ContentsRequestForbiddenError(response_data, http_res)
+        if utils.match_response(http_res, "500", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ContentsRequestInternalServerErrorData, http_res
+            )
+            raise errors.ContentsRequestInternalServerError(response_data, http_res)
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    def research(
+        self,
+        *,
+        x_api_key: str,
+        input: str,
+        research_effort: Optional[
+            models.V1ResearchPostRequestBodyContentApplicationJSONSchemaResearchEffort
+        ] = models.V1ResearchPostRequestBodyContentApplicationJSONSchemaResearchEffort.STANDARD,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> models.ResearchResponse200:
+        r"""Returns comprehensive research-grade answers with multi-step reasoning
+
+        Research goes beyond a single web search. In response to your question, it runs multiple searches, reads through the sources, and synthesizes everything into a thorough, well-cited answer. Use it when a question is too complex for a simple lookup, and when you need a response you can actually trust and verify.
+
+        :param x_api_key: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
+        :param input: The research question or complex query requiring in-depth investigation and multi-step reasoning.
+
+            Note: The maximum length of the input is 40,000 characters.
+        :param research_effort: Controls how much time and effort the Research API spends on your question. Higher effort levels run more searches and dig deeper into sources, at the cost of a longer response time.
+
+            Available levels:
+            - `lite`: Returns answers quickly. Good for straightforward questions that just need a fast, reliable answer.
+            - `standard`: The default. Balances speed and depth, a good fit for most questions.
+            - `deep`: Spends more time researching and cross-referencing sources. Use this when accuracy and thoroughness matter more than speed.
+            - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex research tasks where you want the highest quality result.
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = models.RESEARCH_OP_SERVERS[0]
+
+        request = models.ResearchRequest(
+            x_api_key=x_api_key,
+            body=models.ResearchRequestBody(
+                input=input,
+                research_effort=research_effort,
+            ),
+        )
+
+        req = self._build_request(
+            method="POST",
+            path="/v1/research",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=False,
+            request_has_path_params=False,
+            request_has_query_params=False,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            get_serialized_body=lambda: utils.serialize_request_body(
+                request.body if request is not None else None,
+                False,
+                True,
+                "json",
+                Optional[models.ResearchRequestBody],
+            ),
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = self.do_request(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="research",
+                oauth2_scopes=None,
+                security_source=None,
+            ),
+            request=req,
+            error_status_codes=["401", "403", "422", "4XX", "500", "5XX"],
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(models.ResearchResponse200, http_res)
+        if utils.match_response(http_res, "401", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ResearchRequestUnauthorizedErrorData, http_res
+            )
+            raise errors.ResearchRequestUnauthorizedError(response_data, http_res)
+        if utils.match_response(http_res, "403", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ResearchRequestForbiddenErrorData, http_res
+            )
+            raise errors.ResearchRequestForbiddenError(response_data, http_res)
+        if utils.match_response(http_res, "422", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ResearchRequestUnprocessableEntityErrorData, http_res
+            )
+            raise errors.ResearchRequestUnprocessableEntityError(
+                response_data, http_res
+            )
+        if utils.match_response(http_res, "500", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ResearchRequestInternalServerErrorData, http_res
+            )
+            raise errors.ResearchRequestInternalServerError(response_data, http_res)
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    async def research_async(
+        self,
+        *,
+        x_api_key: str,
+        input: str,
+        research_effort: Optional[
+            models.V1ResearchPostRequestBodyContentApplicationJSONSchemaResearchEffort
+        ] = models.V1ResearchPostRequestBodyContentApplicationJSONSchemaResearchEffort.STANDARD,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> models.ResearchResponse200:
+        r"""Returns comprehensive research-grade answers with multi-step reasoning
+
+        Research goes beyond a single web search. In response to your question, it runs multiple searches, reads through the sources, and synthesizes everything into a thorough, well-cited answer. Use it when a question is too complex for a simple lookup, and when you need a response you can actually trust and verify.
+
+        :param x_api_key: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
+        :param input: The research question or complex query requiring in-depth investigation and multi-step reasoning.
+
+            Note: The maximum length of the input is 40,000 characters.
+        :param research_effort: Controls how much time and effort the Research API spends on your question. Higher effort levels run more searches and dig deeper into sources, at the cost of a longer response time.
+
+            Available levels:
+            - `lite`: Returns answers quickly. Good for straightforward questions that just need a fast, reliable answer.
+            - `standard`: The default. Balances speed and depth, a good fit for most questions.
+            - `deep`: Spends more time researching and cross-referencing sources. Use this when accuracy and thoroughness matter more than speed.
+            - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex research tasks where you want the highest quality result.
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = models.RESEARCH_OP_SERVERS[0]
+
+        request = models.ResearchRequest(
+            x_api_key=x_api_key,
+            body=models.ResearchRequestBody(
+                input=input,
+                research_effort=research_effort,
+            ),
+        )
+
+        req = self._build_request_async(
+            method="POST",
+            path="/v1/research",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=False,
+            request_has_path_params=False,
+            request_has_query_params=False,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            get_serialized_body=lambda: utils.serialize_request_body(
+                request.body if request is not None else None,
+                False,
+                True,
+                "json",
+                Optional[models.ResearchRequestBody],
+            ),
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = await self.do_request_async(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="research",
+                oauth2_scopes=None,
+                security_source=None,
+            ),
+            request=req,
+            error_status_codes=["401", "403", "422", "4XX", "500", "5XX"],
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(models.ResearchResponse200, http_res)
+        if utils.match_response(http_res, "401", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ResearchRequestUnauthorizedErrorData, http_res
+            )
+            raise errors.ResearchRequestUnauthorizedError(response_data, http_res)
+        if utils.match_response(http_res, "403", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ResearchRequestForbiddenErrorData, http_res
+            )
+            raise errors.ResearchRequestForbiddenError(response_data, http_res)
+        if utils.match_response(http_res, "422", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ResearchRequestUnprocessableEntityErrorData, http_res
+            )
+            raise errors.ResearchRequestUnprocessableEntityError(
+                response_data, http_res
+            )
+        if utils.match_response(http_res, "500", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ResearchRequestInternalServerErrorData, http_res
+            )
+            raise errors.ResearchRequestInternalServerError(response_data, http_res)
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
