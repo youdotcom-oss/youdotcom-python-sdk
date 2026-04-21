@@ -1,12 +1,21 @@
 <!-- Start SDK Example Usage [usage] -->
 ```python
 # Synchronous Example
+import os
 from youdotcom import You, models
 
 
-with You() as you:
+with You(
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+) as you:
 
-    res = you.unified(query="Your query", x_api_key="<value>", count=10, language=models.Language.EN, crawl_timeout=10)
+    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
+        "nytimes.com",
+        "bbc.com",
+    ], exclude_domains=[
+        "spam-site.com",
+        "other-site.com",
+    ], crawl_timeout=10)
 
     # Handle response
     print(res)
@@ -19,13 +28,22 @@ The same SDK client can also be used to make asynchronous requests by importing 
 ```python
 # Asynchronous Example
 import asyncio
+import os
 from youdotcom import You, models
 
 async def main():
 
-    async with You() as you:
+    async with You(
+        api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    ) as you:
 
-        res = await you.unified_async(query="Your query", x_api_key="<value>", count=10, language=models.Language.EN, crawl_timeout=10)
+        res = await you.search_post_async(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
+            "nytimes.com",
+            "bbc.com",
+        ], exclude_domains=[
+            "spam-site.com",
+            "other-site.com",
+        ], crawl_timeout=10)
 
         # Handle response
         print(res)

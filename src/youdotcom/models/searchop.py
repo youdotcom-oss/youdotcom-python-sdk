@@ -5,14 +5,13 @@ from .country import Country
 from .freshnessvalue import FreshnessValue, FreshnessValueTypedDict
 from .language import Language
 from .livecrawl import LiveCrawl
-from .livecrawlformatsitems import LiveCrawlFormatsItems
+from .livecrawlformats import LiveCrawlFormats
 from .safesearch import SafeSearch
-import pydantic
 from pydantic import model_serializer
 from typing import List, Optional
 from typing_extensions import Annotated, NotRequired, TypedDict
 from youdotcom.types import BaseModel, UNSET_SENTINEL
-from youdotcom.utils import FieldMetadata, HeaderMetadata, QueryParamMetadata
+from youdotcom.utils import FieldMetadata, QueryParamMetadata
 
 
 SEARCH_OP_SERVERS = [
@@ -22,8 +21,6 @@ SEARCH_OP_SERVERS = [
 
 class SearchRequestTypedDict(TypedDict):
     query: str
-    x_api_key: str
-    r"""A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform)."""
     count: NotRequired[int]
     freshness: NotRequired[FreshnessValueTypedDict]
     r"""Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
@@ -39,7 +36,7 @@ class SearchRequestTypedDict(TypedDict):
     r"""Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."""
     livecrawl: NotRequired[LiveCrawl]
     r"""Indicates which section(s) of search results to livecrawl and return full page content."""
-    livecrawl_formats: NotRequired[List[LiveCrawlFormatsItems]]
+    livecrawl_formats: NotRequired[List[LiveCrawlFormats]]
     include_domains: NotRequired[str]
     r"""A list of domains to restrict search results to. Only results from these domains will be returned. For large domain lists (up to 500), use POST with a JSON array instead. This is a strict allowlist — cannot be combined with `exclude_domains` (returns `422`).
 
@@ -57,13 +54,6 @@ class SearchRequest(BaseModel):
     query: Annotated[
         str, FieldMetadata(query=QueryParamMetadata(style="form", explode=True))
     ]
-
-    x_api_key: Annotated[
-        str,
-        pydantic.Field(alias="X-API-Key"),
-        FieldMetadata(header=HeaderMetadata(style="simple", explode=False)),
-    ]
-    r"""A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform)."""
 
     count: Annotated[
         Optional[int],
@@ -109,7 +99,7 @@ class SearchRequest(BaseModel):
     r"""Indicates which section(s) of search results to livecrawl and return full page content."""
 
     livecrawl_formats: Annotated[
-        Optional[List[LiveCrawlFormatsItems]],
+        Optional[List[LiveCrawlFormats]],
         FieldMetadata(query=QueryParamMetadata(style="form", explode=True)),
     ] = None
 

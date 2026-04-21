@@ -1,9 +1,0 @@
-# SearchPostRequest
-
-
-## Fields
-
-| Field                                                                                                                 | Type                                                                                                                  | Required                                                                                                              | Description                                                                                                           |
-| --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `x_api_key`                                                                                                           | *str*                                                                                                                 | :heavy_check_mark:                                                                                                    | A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform). |
-| `body`                                                                                                                | [Optional[models.SearchRequestBody]](../models/searchrequestbody.md)                                                  | :heavy_minus_sign:                                                                                                    | N/A                                                                                                                   |

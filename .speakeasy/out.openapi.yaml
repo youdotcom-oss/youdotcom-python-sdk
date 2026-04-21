@@ -3,12 +3,18 @@ info:
   title: You.com API
   description: |-
     Unified API for Express, Advanced, and Custom Agents from You.com
+    Get the best search results from web and news sources
+    Returns the HTML or Markdown of a target webpage
+    Multi-step reasoning with comprehensive research capabilities
     Comprehensive API for You.com services:
     - **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
     - **Research API**: In-depth, multi-step research with citations and sources
     - **Search API**: Get search results from web and news sources
     - **Contents API**: Retrieve and process web page content
   version: 1.0.0
+servers:
+  - url: https://api.you.com
+    x-fern-server-name: Production
 paths:
   /v1/agents/runs:
     post:
@@ -116,6 +122,34 @@ paths:
         - agents.runs
       x-speakeasy-name-override: create
   /v1/search:
+    post:
+      operationId: searchPost
+      summary: Returns a list of unified search results from web and news sources
+      description: |-
+        This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
+
+        `POST` is the recommended method when using complex parameters such as `include_domains` or `exclude_domains`. These fields accept JSON arrays in the request body, which is unambiguous and supports up to 500 domains per request—something that would exceed URL length limits with GET. Use GET for simple queries where HTTP cacheability matters.
+      servers:
+        - url: https://ydc-index.io
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequestBody'
+        required: true
+      responses:
+        "200":
+          $ref: '#/components/responses/SearchSuccess'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
     get:
       operationId: search
       summary: Returns a list of unified search results from web and news sources
@@ -123,192 +157,44 @@ paths:
         This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
 
         `GET` is a good choice for simple queries where HTTP cacheability matters—GET responses can be cached at CDN and proxy layers, whereas POST responses are not cached by default per the HTTP spec. For requests with complex parameters such as `include_domains` or `exclude_domains`, use POST instead - domain lists are passed as comma-separated strings in GET and are limited by URL length.
+      servers:
+        - url: https://ydc-index.io
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Query'
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/FreshnessParam'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/CountryParam'
+        - $ref: '#/components/parameters/LanguageParam'
+        - $ref: '#/components/parameters/SafeSearchParam'
+        - $ref: '#/components/parameters/LiveCrawlParam'
+        - $ref: '#/components/parameters/LiveCrawlFormatsParam'
+        - $ref: '#/components/parameters/IncludeDomainsParam'
+        - $ref: '#/components/parameters/ExcludeDomainsParam'
+        - $ref: '#/components/parameters/CrawlTimeout'
+      responses:
+        "200":
+          $ref: '#/components/responses/SearchSuccess'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
       tags:
-        - ""
         - search
-      servers:
-        - url: https://ydc-index.io
-      security: []
-      parameters:
-        - name: query
-          in: query
-          required: true
-          schema:
-            $ref: '#/components/schemas/SearchQuery'
-        - name: count
-          in: query
-          required: false
-          schema:
-            $ref: '#/components/schemas/Count'
-        - name: freshness
-          in: query
-          required: false
-          schema:
-            $ref: '#/components/schemas/FreshnessValue'
-        - name: offset
-          in: query
-          required: false
-          schema:
-            $ref: '#/components/schemas/Offset'
-        - name: country
-          in: query
-          required: false
-          schema:
-            $ref: '#/components/schemas/Country'
-        - name: language
-          in: query
-          required: false
-          schema:
-            $ref: '#/components/schemas/Language'
-        - name: safesearch
-          in: query
-          required: false
-          schema:
-            $ref: '#/components/schemas/SafeSearch'
-        - name: livecrawl
-          in: query
-          required: false
-          schema:
-            $ref: '#/components/schemas/LiveCrawl'
-        - name: livecrawl_formats
-          in: query
-          required: false
-          schema:
-            $ref: '#/components/schemas/LiveCrawlFormats'
-        - name: include_domains
-          in: query
-          description: |-
-            A list of domains to restrict search results to. Only results from these domains will be returned. For large domain lists (up to 500), use POST with a JSON array instead. This is a strict allowlist — cannot be combined with `exclude_domains` (returns `422`).
-
-            **Important:** Use a single comma-separated value (e.g. `include_domains=nytimes.com,bbc.com`). Repeated parameters (`include_domains=a.com&include_domains=b.com`) are not supported.
-          required: false
-          schema:
-            type: string
-        - name: exclude_domains
-          in: query
-          description: |-
-            A list of domains to exclude from search results. Results from these domains will be filtered out. For large domain lists (up to 500), use POST with a JSON array instead. Cannot be combined with `include_domains` (returns `422`).
-
-            **Important:** You must use a single comma-separated value (e.g. `exclude_domains=spam-site.com,other-site.com`). Repeated parameters are not supported.
-          required: false
-          schema:
-            type: string
-        - name: crawl_timeout
-          in: query
-          required: false
-          schema:
-            $ref: '#/components/schemas/CrawlTimeout'
-        - name: X-API-Key
-          in: header
-          description: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: A JSON object containing unified search results from web and news sources
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchResponse'
-        "401":
-          description: Unauthorized. Problems with API key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchRequestUnauthorizedError'
-        "403":
-          description: Forbidden. API key lacks scope for this path.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchRequestForbiddenError'
-        "422":
-          description: Unprocessable Entity. Invalid request parameter combination.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchRequestUnprocessableEntityError'
-        "500":
-          description: Internal Server Error during authentication/authorization middleware.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchRequestInternalServerError'
       x-speakeasy-name-override: unified
-    post:
-      operationId: search-post
-      summary: Returns a list of unified search results from web and news sources
-      description: |-
-        This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
-
-        `POST` is the recommended method when using complex parameters such as `include_domains` or `exclude_domains`. These fields accept JSON arrays in the request body, which is unambiguous and supports up to 500 domains per request—something that would exceed URL length limits with GET. Use GET for simple queries where HTTP cacheability matters.
-      tags:
-        - ""
-      servers:
-        - url: https://ydc-index.io
-      security: []
-      parameters:
-        - name: X-API-Key
-          in: header
-          description: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SearchRequestBody'
-      responses:
-        "200":
-          description: A JSON object containing unified search results from web and news sources
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchResponse'
-        "401":
-          description: Unauthorized. Problems with API key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchPostRequestUnauthorizedError'
-        "403":
-          description: Forbidden. API key lacks scope for this path.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchPostRequestForbiddenError'
-        "422":
-          description: Unprocessable Entity. Invalid request parameter combination.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchPostRequestUnprocessableEntityError'
-        "500":
-          description: Internal Server Error during authentication/authorization middleware.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchPostRequestInternalServerError'
   /v1/contents:
     post:
       operationId: contents
       summary: Returns the content of the web pages
       description: Returns the HTML or Markdown of a target webpage.
-      tags:
-        - ""
-        - contents
-      servers:
-        - url: https://ydc-index.io
-      security: []
-      parameters:
-        - name: X-API-Key
-          in: header
-          description: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
-          required: true
-          schema:
-            type: string
+      security:
+        - ApiKeyAuth: []
       requestBody:
         content:
           application/json:
@@ -320,13 +206,18 @@ paths:
                   items:
                     type: string
                     format: uri
+                    example: "https://www.you.com"
                   description: Array of URLs to fetch the contents from.
                 formats:
                   $ref: '#/components/schemas/ContentsFormats'
                 crawl_timeout:
                   type: integer
+                  maximum: 60
+                  minimum: 1
                   description: Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds.
                   default: 10
+                  example: 10
+        required: true
       responses:
         "200":
           description: An array of JSON objects containing the page content of each web page
@@ -335,43 +226,94 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/V1ContentsPostResponsesContentApplicationJsonSchemaItems'
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                      format: uri
+                      description: The webpage URL whose content has been fetched.
+                      example: "https://www.you.com"
+                    title:
+                      type: string
+                      description: The title of the web page.
+                      example: "The best website in the world"
+                    html:
+                      type: string
+                      description: The retrieved HTML content of the web page.
+                      nullable: true
+                    markdown:
+                      type: string
+                      description: The retrieved Markdown content of the web page.
+                      nullable: true
+                    metadata:
+                      $ref: '#/components/schemas/ContentsMetadata'
         "401":
           description: Unauthorized. Problems with API key.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ContentsRequestUnauthorizedError'
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error detail message.
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    detail: "API key is required"
+                invalidOrExpired:
+                  summary: Invalid/expired API key
+                  value:
+                    detail: "Invalid or expired API key"
+                otherAuthParsing:
+                  summary: Other auth parsing errors
+                  value:
+                    detail: "<error message>"
         "403":
           description: Forbidden. API key lacks scope for this path.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ContentsRequestForbiddenError'
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                missingScopes:
+                  summary: Missing required scopes
+                  value:
+                    detail: "Missing required scopes"
         "500":
           description: Internal Server Error during authentication/authorization middleware.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ContentsRequestInternalServerError'
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                authFailure:
+                  summary: Authentication failure
+                  value:
+                    detail: "Internal authentication error"
+                authorizationFailure:
+                  summary: Authorization failure
+                  value:
+                    detail: "Internal authorization error"
+      tags:
+        - contents
       x-speakeasy-name-override: generate
+    servers:
+      - url: https://ydc-index.io
   /v1/research:
     post:
       operationId: research
       summary: Returns comprehensive research-grade answers with multi-step reasoning
       description: Research goes beyond a single web search. In response to your question, it runs multiple searches, reads through the sources, and synthesizes everything into a thorough, well-cited answer. Use it when a question is too complex for a simple lookup, and when you need a response you can actually trust and verify.
-      tags:
-        - ""
-      servers:
-        - url: https://api.you.com
-      security: []
-      parameters:
-        - name: X-API-Key
-          in: header
-          description: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
-          required: true
-          schema:
-            type: string
+      security:
+        - ApiKeyAuth: []
       requestBody:
         content:
           application/json:
@@ -380,12 +322,18 @@ paths:
               properties:
                 input:
                   type: string
+                  maxLength: 40000
                   description: |-
                     The research question or complex query requiring in-depth investigation and multi-step reasoning.
 
                     Note: The maximum length of the input is 40,000 characters.
                 research_effort:
-                  $ref: '#/components/schemas/V1ResearchPostRequestBodyContentApplicationJsonSchemaResearchEffort'
+                  type: string
+                  enum:
+                    - lite
+                    - standard
+                    - deep
+                    - exhaustive
                   description: |-
                     Controls how much time and effort the Research API spends on your question. Higher effort levels run more searches and dig deeper into sources, at the cost of a longer response time.
 
@@ -394,46 +342,255 @@ paths:
                     - `standard`: The default. Balances speed and depth, a good fit for most questions.
                     - `deep`: Spends more time researching and cross-referencing sources. Use this when accuracy and thoroughness matter more than speed.
                     - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex research tasks where you want the highest quality result.
+                  default: standard
               required:
                 - input
+            example:
+              input: Which global cities improved air quality the most over the past 10 years, and what measurable actions contributed?
+              research_effort: lite
+        required: true
       responses:
         "200":
           description: A JSON object containing a comprehensive answer with citations and supporting search results
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/research_Response_200'
-        "401":
-          description: Unauthorized. Problems with API key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResearchRequestUnauthorizedError'
-        "403":
-          description: Forbidden. API key lacks scope for this path.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResearchRequestForbiddenError'
+                type: object
+                properties:
+                  output:
+                    type: object
+                    properties:
+                      content:
+                        type: string
+                        description: The comprehensive response with inline citations. The content is formatted in Markdown and includes numbered citations that reference the items in the sources array.
+                      content_type:
+                        type: string
+                        enum:
+                          - text
+                        description: The format of the content field.
+                      sources:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type: string
+                              description: The URL of the source webpage.
+                            title:
+                              type: string
+                              description: The title of the source webpage.
+                            snippets:
+                              type: array
+                              items:
+                                type: string
+                              description: Relevant excerpts from the source page that were used in generating the answer.
+                          required:
+                            - url
+                        description: A list of web sources used to generate the answer.
+                    required:
+                      - content
+                      - content_type
+                      - sources
+                    description: The research output containing the answer and sources.
+                required:
+                  - output
+              example:
+                output:
+                  content: |-
+                    Over the past decade, some global cities have shown improvements in air quality due to specific actions. Beijing, for example, made significant strides in improving its air quality through coordinated control measures with surrounding areas, collaborative planning, unified standards, joint emergency responses, and information sharing [[1]]. These efforts, including a five-year action plan for air pollution prevention and control, have helped to substantially improve air quality in the Jing-Jin-Ji region [[2]].
+
+                    Paris has also seen improvements, with a 50% reduction in Nitrogen dioxide pollution and a 55% decrease in particulate matter citywide since 2005. This was achieved through its climate strategy, which included adding more bike lanes and increasing cycling networks [[3]]. Wellington, New Zealand, improved air quality in one of its busiest districts by increasing the percentage of electric buses from 5% to over 50% between 2022 and 2023, leading to a 50% reduction in black carbon and a 29% drop in nitrogen dioxide levels [[3]]. Mexico City, once known as the world's most polluted city in the early 1990s, has vastly improved its air quality, with the daily concentration of SO2 declining significantly by 2018 [[2]].
+
+                    While many cities globally have experienced persistently high or even rising levels of air pollution, especially concerning PM2.5 concentrations, NO2 exposures have shown an encouraging trend, with 211 more cities meeting the WHO guideline in 2019 compared to 2010 [[4]]. Local policies have been instrumental in these improvements [[4]].
+                  content_type: text
+                  sources:
+                    - url: https://sustainablemobility.iclei.org/air-pollution-beijing/
+                      title: "Clearing the skies: how Beijing tackled air pollution & what lies ..."
+                      snippets:
+                        - >-
+                          However, Beijing has made remarkable strides in recent years to improve its air quality, setting an example for other cities grappling with similar challenges. The root causes Comparing the past 20 years of its development to the 20 before, Beijing's GDP, population, and vehicles sharply increased by 1078%, 74%, and 335% respectively (UNEP, 2019).
+                        - >-
+                          The city actively coordinated air pollution control measures with surrounding areas, such as the Beijing-Tianjin-Hebei region. Collaborative planning, unified standards, joint emergency responses, and information sharing significantly improved the air quality in this broader region.
+                        - >-
+                          While Beijing has made significant strides, challenges remain. The average PM2.5 level is still six times higher than the World Health Organization's (WHO) guideline, and the 2021-22 improvement may be partially attributed to measures taken for the Winter Olympics.
+                        - >-
+                          As China emerged as the world's largest automobile producer and consumer, it grappled with the detrimental impacts of increased oil consumption. Furthermore, the high level of coal consumption, especially during the winter heating season, contributed to the city's deteriorating air quality, reaching an average of 101.56 micrograms of PM2.5 particles per cubic meter in 2013 (Statista, 2023).
+                    - url: https://blogs.worldbank.org/en/voices/tackling-poor-air-quality-lessons-three-cities
+                      title: "Tackling poor air quality: Lessons from three cities"
+                      snippets:
+                        - >-
+                          The latest World Bank report, Clearing the Air: A Tale of Three Cities, chose Beijing, New Delhi and Mexico City to assess how current and past efforts improved air quality. In the early 1990s, Mexico City was known as the world's most polluted city and while there are still challenges, air quality has vastly improved. Daily concentration of SO2 – a contributor to PM2.5 concentrations – declined from 300 µg/m3 in the 1990s to less than 100 µg/m3 in 2018.
+                        - >-
+                          In China, the ministries of Environmental Protection (now the Ministry of Ecology and Environment), Industry and Information Technology, Finance, Housing and Rural Development, along with the National Development and Reform Commission and National Energy Administration, worked together to issue a five-year action plan for air pollution prevention and control for the entire Jing-Jin-Ji region that surrounds Beijing and includes the municipality of Beijing, municipality of Tianjin, the province of Hebei, and small parts of Henan, Shanxi, inner Mongolia, and Shandong. What's encouraging about this new work is that it shows that with the right policies, incentives and information, air quality can be improved substantially, particularly as countries work to grow back cleaner after the pandemic.
+                        - >-
+                          Failure to provide such incentives in India in the late 1990s resulted in the government developing plans but not implementing them. This led to India's Supreme Court stepping in to force the government to implement policy measures. A recent government of India program to provide performance-based grants to cities to reward improvements in air quality is a step in the right direction.
+                        - >-
+                          The cost associated with health impacts of outdoor PM2.5 air pollution is estimated to be US$5.7 trillion, equivalent to 4.8 percent of global GDP, according to World Bank research. The COVID-19 pandemic further highlights why addressing air pollution is so important, with early research pointing to links between air pollution, illness and death due to the virus. On the flip side, the economic lockdowns caused by the pandemic, while devastating for communities, did result in some noticeable improvements in air quality but these improvements were inconsistent, particularly when it came to PM2.5.
+                    - url: https://www.weforum.org/stories/2025/06/urban-mobility-improving-cities-air-quality/
+                      title: "Boosting clean air strategies in cities around the world | World ..."
+                      snippets:
+                        - >-
+                          Comprehensive cycling networks improve air quality while also transforming urban mobility. Paris has added more bike lanes to its cityscape in recent years. Between 2022 and 2023 alone, bike path usage doubled during rush hour and cyclists now outnumber cars on many of the city's streets. The results of Paris' growing cycling network are promising. Alongside other elements of Paris's climate strategy, cycling has contributed to a 50% reduction in Nitrogen dioxide pollution and 55% decrease in particulate matter citywide since 2005.
+                        - >-
+                          In 2025, the alliance and members of the Global New Mobility Coalition will launch a new workstream on Transport and Urbanism that aims to speed up cross-sector collaboration on implementing proven mobility options to improve air quality and drive sustainable growth.
+                        - >-
+                          Air pollution has been estimated to cause 4.2 million premature deaths worldwide per year, according to the World Health Organization, and nearly half of urban airborne contamination comes from city transport. While vehicles are essential to the vitality of cities, without the right policies in place, transport will continue to be a major contributor to harmful air pollution.
+                        - >-
+                          In Wellington, New Zealand, the percentage of electric buses travelling across the city's heavily trafficked Golden Mile corridor rose from 5% to over 50% between 2022 and 2023. This shift led to a 50% reduction in black carbon and a 29% drop in nitrogen dioxide levels throughout the district. This has significantly improved air quality in one of the busiest parts of Wellington, as well as lowering noise pollution.
+                    - url: https://www.stateofglobalair.org/resources/health-in-cities
+                      title: "Air Pollution and Health in Cities | State of Global Air"
+                      snippets:
+                        - >-
+                          Globally, NO2 exposures are heading in an encouraging direction as 211 more cities met the WHO guideline of 10 µg/m3 in 2019 compared to 2010. However, NO2 pollution is worsening in some other regions. Percentage of cities by population-weighted annual average pollutant concentration in 2010 and 2019. However, interventions targeting pollution at the local scale have successfully improved air quality in some cities.
+                        - >-
+                          Local policies have improved air quality in some cities, while pollution has worsened in others. Overall, many cities have seen persistently high — and even rising — levels of air pollution over the past decade. PM2.5 exposures remained stagnant in many cities from 2010 to 2019.
+                        - >-
+                          Cities are often hotspots for poor air quality. As rapid urbanization increases the number of people breathing dangerously polluted air, city-level data can help inform targeted efforts to curb urban air pollution and improve public health.
+                        - >-
+                          Explore air quality and health data for your city using our new interactive app here. Most cities have polluted air, but the type of pollution varies from place to place. Local policies have improved air quality in some cities, while pollution has worsened in others.
         "422":
           description: Unprocessable Entity. Request validation failed.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResearchRequestUnprocessableEntityError'
+                type: object
+                properties:
+                  detail:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          description: The validation error type.
+                          example: missing
+                        loc:
+                          type: array
+                          items:
+                            oneOf:
+                              - type: string
+                              - type: integer
+                          description: The location of the error as a path of segments (strings for field names, integers for byte offsets).
+                          example: ["body", "input"]
+                        msg:
+                          type: string
+                          description: A human-readable description of the error.
+                          example: Field required
+                        input:
+                          oneOf:
+                            - type: string
+                            - type: object
+                          description: The input value that caused the error.
+                        ctx:
+                          type: object
+                          additionalProperties: true
+                          description: Additional context about the error.
+                      required:
+                        - type
+                        - loc
+                        - msg
+                        - input
+              examples:
+                missingField:
+                  summary: Required field missing
+                  value:
+                    detail:
+                      - type: missing
+                        loc: ["body", "input"]
+                        msg: Field required
+                        input: {}
+                invalidEnum:
+                  summary: Invalid enum value for research_effort
+                  value:
+                    detail:
+                      - type: enum
+                        loc: ["body", "research_effort"]
+                        msg: "Input should be 'lite', 'standard', 'deep' or 'exhaustive'"
+                        input: invalid_value
+                        ctx:
+                          expected: "'lite', 'standard', 'deep' or 'exhaustive'"
+                stringTooLong:
+                  summary: Input exceeds maximum length
+                  value:
+                    detail:
+                      - type: string_too_long
+                        loc: ["body", "input"]
+                        msg: String should have at most 40000 characters
+                        input: <truncated>
+                        ctx:
+                          max_length: 40000
+                invalidJson:
+                  summary: Invalid JSON body
+                  value:
+                    detail:
+                      - type: json_invalid
+                        loc: ["body", 115]
+                        msg: JSON decode error
+                        input: {}
+                        ctx:
+                          error: Invalid control character at
+        "401":
+          description: Unauthorized. Problems with API key.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error detail message.
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    detail: API key is required
+                invalidOrExpired:
+                  summary: Invalid/expired API key
+                  value:
+                    detail: Invalid or expired API key
+                otherAuthParsing:
+                  summary: Other auth parsing errors
+                  value:
+                    detail: <error message>
+        "403":
+          description: Forbidden. API key lacks scope for this path.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                missingScopes:
+                  summary: Missing required scopes
+                  value:
+                    detail: Missing required scopes
         "500":
           description: Internal Server Error during authentication/authorization middleware.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResearchRequestInternalServerError'
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                authFailure:
+                  summary: Authentication failure
+                  value:
+                    detail: Internal authentication error
+                authorizationFailure:
+                  summary: Authorization failure
+                  value:
+                    detail: Internal authorization error
 components:
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
       in: header
       name: X-API-Key
-      description: "A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform)."
+      description: "A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform/api-keys)."
   schemas:
     # REQUEST SCHEMAS
     ExpressAgentRunsRequest:
@@ -937,16 +1094,16 @@ components:
               - input
     SearchQuery:
       type: string
-      title: SearchQuery
       description: The search query used to retrieve relevant results from the web. You can also include [search operators](https://docs.you.com/search/search-operators) to refine your search.
+      example: What are the latest geopolitical updates from India
     Count:
       type: integer
-      title: Count
+      maximum: 100
+      minimum: 1
       description: Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them).
       default: 10
     Freshness:
       type: string
-      title: Freshness
       enum:
         - day
         - week
@@ -956,18 +1113,17 @@ components:
       oneOf:
         - $ref: '#/components/schemas/Freshness'
         - type: string
-      title: FreshnessValue
       description: |-
         Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
 
         When your search query includes a temporal keyword and you also set a freshness parameter, the search will use the broader (i.e., less restrictive) of the two timeframes. For example, if you use `query=news+this+week&freshness=month`, the results will use a freshness of month.
     Offset:
       type: integer
-      title: Offset
+      maximum: 9
+      minimum: 0
       description: Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`.
     Country:
       type: string
-      title: Country
       enum:
         - AR
         - AU
@@ -990,7 +1146,7 @@ components:
         - MX
         - NL
         - NZ
-        - 'NO'
+        - "NO"
         - CN
         - PL
         - PT
@@ -1008,7 +1164,6 @@ components:
       description: The country code that determines the geographical focus of the web results.
     Language:
       type: string
-      title: Language
       enum:
         - AR
         - EU
@@ -1065,181 +1220,55 @@ components:
       default: EN
     SafeSearch:
       type: string
-      title: SafeSearch
       enum:
-        - 'off'
+        - "off"
         - moderate
         - strict
       description: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
     LiveCrawl:
       type: string
-      title: LiveCrawl
       enum:
         - web
         - news
         - all
       description: Indicates which section(s) of search results to livecrawl and return full page content.
-    LiveCrawlFormatsItems:
-      type: string
-      title: LiveCrawlFormatsItems
-      enum:
-        - html
-        - markdown
     LiveCrawlFormats:
       type: array
       items:
-        $ref: '#/components/schemas/LiveCrawlFormatsItems'
-      title: LiveCrawlFormats
+        type: string
+        enum:
+          - html
+          - markdown
       description: 'Indicates the format(s) of the livecrawled content. Pass one or both values (`html`, `markdown`). In a GET request, repeat the parameter: `?livecrawl_formats=html&livecrawl_formats=markdown`. In a POST body, provide a JSON array: `["html", "markdown"]`.'
-    CrawlTimeout:
-      type: integer
-      title: CrawlTimeout
-      description: Maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Default is 10 seconds.
-      default: 10
-    Contents:
-      type: object
-      properties:
-        html:
-          type: string
-          description: The HTML content of the page.
-        markdown:
-          type: string
-          description: The Markdown content of the page.
-      title: Contents
-      description: Contents of the page if livecrawl was enabled.
-    WebResult:
-      type: object
-      properties:
-        url:
-          type: string
-          description: The URL of the specific search result.
-        title:
-          type: string
-          description: The title or name of the search result.
-        description:
-          type: string
-          description: A brief description of the content of the search result.
-        snippets:
-          type: array
-          items:
-            type: string
-          description: An array of text snippets from the search result, providing a preview of the content.
-        thumbnail_url:
-          type: string
-          description: URL of the thumbnail.
-        page_age:
-          type: string
-          format: date-time
-          description: The age of the search result.
-        contents:
-          $ref: '#/components/schemas/Contents'
-        authors:
-          type: array
-          items:
-            type: string
-          description: An array of authors of the search result.
-        favicon_url:
-          type: string
-          description: The URL of the favicon of the search result's domain.
-      title: WebResult
-    NewsResult:
-      type: object
-      properties:
-        title:
-          type: string
-          description: The title of the news result.
-        description:
-          type: string
-          description: A brief description of the content of the news result.
-        page_age:
-          type: string
-          format: date-time
-          description: UTC timestamp of the article's publication date.
-        thumbnail_url:
-          type: string
-          description: URL of the thumbnail.
-        url:
-          type: string
-          description: The URL of the news result.
-        contents:
-          $ref: '#/components/schemas/Contents'
-      title: NewsResult
-    SearchResponseResults:
-      type: object
-      properties:
-        web:
-          type: array
-          items:
-            $ref: '#/components/schemas/WebResult'
-        news:
-          type: array
-          items:
-            $ref: '#/components/schemas/NewsResult'
-      title: SearchResponseResults
-    SearchMetadata:
-      type: object
-      properties:
-        search_uuid:
-          type: string
-          format: uuid
-        query:
-          type: string
-          description: Returns the search query used to retrieve the results.
-        latency:
-          type: number
-          format: double
-      title: SearchMetadata
-    SearchResponse:
-      type: object
-      properties:
-        results:
-          $ref: '#/components/schemas/SearchResponseResults'
-        metadata:
-          $ref: '#/components/schemas/SearchMetadata'
-      title: SearchResponse
-    SearchRequestUnauthorizedError:
-      type: object
-      properties:
-        detail:
-          type: string
-          description: Error detail message.
-      title: SearchRequestUnauthorizedError
-    SearchRequestForbiddenError:
-      type: object
-      properties:
-        detail:
-          type: string
-      title: SearchRequestForbiddenError
-    SearchRequestUnprocessableEntityError:
-      type: object
-      properties:
-        error:
-          type: string
-      title: SearchRequestUnprocessableEntityError
-    SearchRequestInternalServerError:
-      type: object
-      properties:
-        detail:
-          type: string
-      title: SearchRequestInternalServerError
     IncludeDomains:
       type: array
       items:
         type: string
-      title: IncludeDomains
       description: |-
         A list of domains to restrict search results to. Only results from these domains will be returned. Supports up to 500 domains. This is a strict allowlist, not a boost — results are limited exclusively to the specified domains.
 
         Cannot be combined with `exclude_domains`; passing both will return a `422` error.
+      example:
+        - nytimes.com
+        - bbc.com
     ExcludeDomains:
       type: array
       items:
         type: string
-      title: ExcludeDomains
       description: |-
         A list of domains to exclude from search results. Results from these domains will be filtered out. Supports up to 500 domains.
 
         Cannot be combined with `include_domains`; passing both will return a `422` error.
+      example:
+        - spam-site.com
+        - other-site.com
+    CrawlTimeout:
+      type: integer
+      maximum: 60
+      minimum: 1
+      description: Maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Default is 10 seconds.
+      default: 10
+      example: 10
     SearchRequestBody:
       type: object
       properties:
@@ -1267,236 +1296,301 @@ components:
           $ref: '#/components/schemas/ExcludeDomains'
         crawl_timeout:
           $ref: '#/components/schemas/CrawlTimeout'
-      title: SearchRequestBody
       required:
         - query
-    SearchPostRequestUnauthorizedError:
+    SearchResponse:
       type: object
       properties:
-        detail:
-          type: string
-          description: Error detail message.
-      title: SearchPostRequestUnauthorizedError
-    SearchPostRequestForbiddenError:
-      type: object
-      properties:
-        detail:
-          type: string
-      title: SearchPostRequestForbiddenError
-    SearchPostRequestUnprocessableEntityError:
-      type: object
-      properties:
-        error:
-          type: string
-      title: SearchPostRequestUnprocessableEntityError
-    SearchPostRequestInternalServerError:
-      type: object
-      properties:
-        detail:
-          type: string
-      title: SearchPostRequestInternalServerError
-    ContentsFormatsItems:
-      type: string
-      title: ContentsFormatsItems
-      enum:
-        - html
-        - markdown
-        - metadata
-    ContentsFormats:
-      type: array
-      items:
-        $ref: '#/components/schemas/ContentsFormatsItems'
-      title: ContentsFormats
-      description: Array of content formats to return. All included formats are returned in the response. Include "metadata" to get JSON-LD and OpenGraph information, if available.
-    ContentsMetadata:
-      type: object
-      properties:
-        site_name:
-          type:
-            - string
-            - "null"
-          description: The OpenGraph site name of the web page.
-        favicon_url:
-          type: string
-          description: The URL of the favicon of the web page's domain.
-      title: ContentsMetadata
-      description: Metadata about the web page. Only returned when 'metadata' is included in the formats array.
-    V1ContentsPostResponsesContentApplicationJsonSchemaItems:
-      type: object
-      properties:
-        url:
-          type: string
-          format: uri
-          description: The webpage URL whose content has been fetched.
-        title:
-          type: string
-          description: The title of the web page.
-        html:
-          type:
-            - string
-            - "null"
-          description: The retrieved HTML content of the web page.
-        markdown:
-          type:
-            - string
-            - "null"
-          description: The retrieved Markdown content of the web page.
+        results:
+          type: object
+          properties:
+            web:
+              type: array
+              items:
+                $ref: '#/components/schemas/WebResult'
+            news:
+              type: array
+              items:
+                $ref: '#/components/schemas/NewsResult'
         metadata:
-          $ref: '#/components/schemas/ContentsMetadata'
-      title: V1ContentsPostResponsesContentApplicationJsonSchemaItems
-    ContentsRequestUnauthorizedError:
-      type: object
-      properties:
-        detail:
-          type: string
-          description: Error detail message.
-      title: ContentsRequestUnauthorizedError
-    ContentsRequestForbiddenError:
-      type: object
-      properties:
-        detail:
-          type: string
-      title: ContentsRequestForbiddenError
-    ContentsRequestInternalServerError:
-      type: object
-      properties:
-        detail:
-          type: string
-      title: ContentsRequestInternalServerError
-    V1ResearchPostRequestBodyContentApplicationJsonSchemaResearchEffort:
-      type: string
-      title: V1ResearchPostRequestBodyContentApplicationJsonSchemaResearchEffort
-      enum:
-        - lite
-        - standard
-        - deep
-        - exhaustive
-      description: |-
-        Controls how much time and effort the Research API spends on your question. Higher effort levels run more searches and dig deeper into sources, at the cost of a longer response time.
-
-        Available levels:
-        - `lite`: Returns answers quickly. Good for straightforward questions that just need a fast, reliable answer.
-        - `standard`: The default. Balances speed and depth, a good fit for most questions.
-        - `deep`: Spends more time researching and cross-referencing sources. Use this when accuracy and thoroughness matter more than speed.
-        - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex research tasks where you want the highest quality result.
-      default: standard
-    V1ResearchPostResponsesContentApplicationJsonSchemaOutputContentType:
-      type: string
-      title: V1ResearchPostResponsesContentApplicationJsonSchemaOutputContentType
-      enum:
-        - text
-      description: The format of the content field.
-    V1ResearchPostResponsesContentApplicationJsonSchemaOutputSourcesItems:
+          $ref: '#/components/schemas/SearchMetadata'
+    WebResult:
       type: object
       properties:
         url:
           type: string
-          description: The URL of the source webpage.
+          description: The URL of the specific search result.
+          example: https://you.com
         title:
           type: string
-          description: The title of the source webpage.
+          description: The title or name of the search result.
+          example: The World's Greatest Search Engine!
+        description:
+          type: string
+          description: A brief description of the content of the search result.
+          example: Search on YDC
         snippets:
           type: array
           items:
             type: string
-          description: Relevant excerpts from the source page that were used in generating the answer.
-      title: V1ResearchPostResponsesContentApplicationJsonSchemaOutputSourcesItems
-      required:
-        - url
-    V1ResearchPostResponsesContentApplicationJsonSchemaOutput:
-      type: object
-      properties:
-        content:
+            example: >-
+              I'm an AI assistant that helps you get more done. What can I help you with?
+          description: An array of text snippets from the search result, providing a preview of the content.
+        thumbnail_url:
           type: string
-          description: The comprehensive response with inline citations. The content is formatted in Markdown and includes numbered citations that reference the items in the sources array.
-        content_type:
-          $ref: '#/components/schemas/V1ResearchPostResponsesContentApplicationJsonSchemaOutputContentType'
-          description: The format of the content field.
-        sources:
+          description: URL of the thumbnail.
+          example: https://www.somethumbnailsite.com/thumbnail.jpg
+        page_age:
+          type: string
+          format: date-time
+          description: The age of the search result.
+          example: "2025-06-25T11:41:00"
+        contents:
+          $ref: '#/components/schemas/Contents'
+        authors:
           type: array
           items:
-            $ref: '#/components/schemas/V1ResearchPostResponsesContentApplicationJsonSchemaOutputSourcesItems'
-          description: A list of web sources used to generate the answer.
-      title: V1ResearchPostResponsesContentApplicationJsonSchemaOutput
-      required:
-        - content
-        - content_type
-        - sources
-      description: The research output containing the answer and sources.
-    research_Response_200:
-      type: object
-      properties:
-        output:
-          $ref: '#/components/schemas/V1ResearchPostResponsesContentApplicationJsonSchemaOutput'
-          description: The research output containing the answer and sources.
-      title: research_Response_200
-      required:
-        - output
-    ResearchRequestUnauthorizedError:
-      type: object
-      properties:
-        detail:
+            type: string
+            example: John Doe
+          description: An array of authors of the search result.
+        favicon_url:
           type: string
-          description: Error detail message.
-      title: ResearchRequestUnauthorizedError
-    ResearchRequestForbiddenError:
+          description: The URL of the favicon of the search result's domain.
+          example: https://someurl.com/favicon
+    NewsResult:
       type: object
       properties:
-        detail:
+        title:
           type: string
-      title: ResearchRequestForbiddenError
-    V1ResearchPostResponsesContentApplicationJsonSchemaDetailItemsLocItems:
-      oneOf:
-        - type: string
-        - type: integer
-      title: V1ResearchPostResponsesContentApplicationJsonSchemaDetailItemsLocItems
-    V1ResearchPostResponsesContentApplicationJsonSchemaDetailItemsInput:
-      oneOf:
-        - type: string
-        - type: object
-          additionalProperties:
-            description: Any type
-      title: V1ResearchPostResponsesContentApplicationJsonSchemaDetailItemsInput
-      description: The input value that caused the error.
-    V1ResearchPostResponsesContentApplicationJsonSchemaDetailItems:
+          description: The title of the news result.
+          example: >-
+            Exclusive | You.com becomes the backbone of the EU's AI strategy
+        description:
+          type: string
+          description: A brief description of the content of the news result.
+          example: >-
+            As the EU's AI strategy is being debated, You.com becomes the backbone of the EU's AI strategy.
+        page_age:
+          type: string
+          format: date-time
+          description: UTC timestamp of the article's publication date.
+          example: "2025-06-25T11:41:00"
+        thumbnail_url:
+          type: string
+          description: URL of the thumbnail.
+          example: https://www.somethumbnailsite.com/thumbnail.jpg
+        url:
+          type: string
+          description: The URL of the news result.
+          example: https://www.you.com/news/eu-ai-strategy-youcom
+        contents:
+          $ref: '#/components/schemas/Contents'
+    SearchMetadata:
       type: object
       properties:
-        type:
+        search_uuid:
           type: string
-          description: The validation error type.
-        loc:
-          type: array
-          items:
-            $ref: '#/components/schemas/V1ResearchPostResponsesContentApplicationJsonSchemaDetailItemsLocItems'
-          description: The location of the error as a path of segments (strings for field names, integers for byte offsets).
-        msg:
+          format: uuid
+          example: 942ccbdd-7705-4d9c-9d37-4ef386658e90
+        query:
           type: string
-          description: A human-readable description of the error.
-        input:
-          $ref: '#/components/schemas/V1ResearchPostResponsesContentApplicationJsonSchemaDetailItemsInput'
-          description: The input value that caused the error.
-        ctx:
-          type: object
-          additionalProperties:
-            description: Any type
-          description: Additional context about the error.
-      title: V1ResearchPostResponsesContentApplicationJsonSchemaDetailItems
-      required:
-        - type
-        - loc
-        - msg
-        - input
-    ResearchRequestUnprocessableEntityError:
+          description: Returns the search query used to retrieve the results.
+          example: What are the latest geopolitical updates from India
+        latency:
+          type: number
+          example: 0.123
+    Contents:
       type: object
       properties:
-        detail:
-          type: array
-          items:
-            $ref: '#/components/schemas/V1ResearchPostResponsesContentApplicationJsonSchemaDetailItems'
-      title: ResearchRequestUnprocessableEntityError
-    ResearchRequestInternalServerError:
+        html:
+          type: string
+          description: The HTML content of the page.
+        markdown:
+          type: string
+          description: The Markdown content of the page.
+      description: Contents of the page if livecrawl was enabled.
+    ContentsFormats:
+      type: array
+      items:
+        type: string
+        enum:
+          - html
+          - markdown
+          - metadata
+      description: Array of content formats to return. All included formats are returned in the response. Include "metadata" to get JSON-LD and OpenGraph information, if available.
+      example: ["html", "markdown"]
+    ContentsMetadata:
       type: object
       properties:
-        detail:
+        site_name:
           type: string
-      title: ResearchRequestInternalServerError
+          description: The OpenGraph site name of the web page.
+          nullable: true
+          example: "You.com"
+        favicon_url:
+          type: string
+          description: The URL of the favicon of the web page's domain.
+          example: "https://api.ydc-index.io/favicon?domain=you.com&size=128"
+      description: Metadata about the web page. Only returned when 'metadata' is included in the formats array.
+      nullable: true
+  responses:
+    SearchSuccess:
+      description: A JSON object containing unified search results from web and news sources
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SearchResponse'
+    Unauthorized:
+      description: Unauthorized. Problems with API key.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                description: Error detail message.
+          examples:
+            missingApiKey:
+              summary: Missing API key
+              value:
+                detail: API key is required
+            invalidOrExpired:
+              summary: Invalid/expired API key
+              value:
+                detail: Invalid or expired API key
+            otherAuthParsing:
+              summary: Other auth parsing errors
+              value:
+                detail: <error message>
+    Forbidden:
+      description: Forbidden. API key lacks scope for this path.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+          examples:
+            missingScopes:
+              summary: Missing required scopes
+              value:
+                detail: Missing required scopes
+    UnprocessableEntity:
+      description: Unprocessable Entity. Invalid request parameter combination.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+          examples:
+            invalidParams:
+              summary: Invalid request parameters
+              value:
+                error: "invalid request parameter(s)"
+    InternalServerError:
+      description: Internal Server Error during authentication/authorization middleware.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+          examples:
+            authFailure:
+              summary: Authentication failure
+              value:
+                detail: Internal authentication error
+            authorizationFailure:
+              summary: Authorization failure
+              value:
+                detail: Internal authorization error
+  parameters:
+    Query:
+      name: query
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/SearchQuery'
+    Count:
+      name: count
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/Count'
+    FreshnessParam:
+      name: freshness
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/FreshnessValue'
+    Offset:
+      name: offset
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/Offset'
+    CountryParam:
+      name: country
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/Country'
+    LanguageParam:
+      name: language
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/Language'
+    SafeSearchParam:
+      name: safesearch
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/SafeSearch'
+    LiveCrawlParam:
+      name: livecrawl
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/LiveCrawl'
+    LiveCrawlFormatsParam:
+      name: livecrawl_formats
+      in: query
+      required: false
+      style: form
+      explode: true
+      schema:
+        $ref: '#/components/schemas/LiveCrawlFormats'
+    IncludeDomainsParam:
+      name: include_domains
+      in: query
+      description: |-
+        A list of domains to restrict search results to. Only results from these domains will be returned. For large domain lists (up to 500), use POST with a JSON array instead. This is a strict allowlist — cannot be combined with `exclude_domains` (returns `422`).
+
+        **Important:** Use a single comma-separated value (e.g. `include_domains=nytimes.com,bbc.com`). Repeated parameters (`include_domains=a.com&include_domains=b.com`) are not supported.
+      required: false
+      schema:
+        type: string
+      example: nytimes.com,bbc.com
+    ExcludeDomainsParam:
+      name: exclude_domains
+      in: query
+      description: |-
+        A list of domains to exclude from search results. Results from these domains will be filtered out. For large domain lists (up to 500), use POST with a JSON array instead. Cannot be combined with `include_domains` (returns `422`).
+
+        **Important:** You must use a single comma-separated value (e.g. `exclude_domains=spam-site.com,other-site.com`). Repeated parameters are not supported.
+      required: false
+      schema:
+        type: string
+      example: spam-site.com,other-site.com
+    CrawlTimeout:
+      name: crawl_timeout
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/CrawlTimeout'

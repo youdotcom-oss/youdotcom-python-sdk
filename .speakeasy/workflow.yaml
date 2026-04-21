@@ -4,9 +4,9 @@ sources:
     You.com API:
         inputs:
             - location: https://you.com/specs/openapi_unified_agents.yaml
-            - location: https://docs.you.com/openapi.yaml?api=5d925697-1e84-4659-abf5-540ddf0dcbfb
-            - location: https://docs.you.com/openapi.yaml?api=8f6224f2-70ae-4044-a420-8a699eab7726
-            - location: https://docs.you.com/openapi.yaml?api=e8db3883-dc9b-489f-8b67-21338852cc1f
+            - location: https://you.com/specs/openapi_search_v1.yaml
+            - location: https://you.com/specs/openapi_contents.yaml
+            - location: https://you.com/specs/openapi_research.yaml
             - location: https://you.com/specs/openapi_base.yaml
         overlays:
             - location: ./overlays/python_overlay.yaml

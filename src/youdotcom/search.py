@@ -5,6 +5,7 @@ from typing import Any, List, Mapping, Optional, Union
 from youdotcom import errors, models, utils
 from youdotcom._hooks import HookContext
 from youdotcom.types import OptionalNullable, UNSET
+from youdotcom.utils import get_security_from_env
 from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
 
 
@@ -13,7 +14,6 @@ class Search(BaseSDK):
         self,
         *,
         query: str,
-        x_api_key: str,
         count: Optional[int] = 10,
         freshness: Optional[
             Union[models.FreshnessValue, models.FreshnessValueTypedDict]
@@ -23,7 +23,7 @@ class Search(BaseSDK):
         language: Optional[models.Language] = models.Language.EN,
         safesearch: Optional[models.SafeSearch] = None,
         livecrawl: Optional[models.LiveCrawl] = None,
-        livecrawl_formats: Optional[List[models.LiveCrawlFormatsItems]] = None,
+        livecrawl_formats: Optional[List[models.LiveCrawlFormats]] = None,
         include_domains: Optional[str] = None,
         exclude_domains: Optional[str] = None,
         crawl_timeout: Optional[int] = 10,
@@ -39,7 +39,6 @@ class Search(BaseSDK):
         `GET` is a good choice for simple queries where HTTP cacheability matters—GET responses can be cached at CDN and proxy layers, whereas POST responses are not cached by default per the HTTP spec. For requests with complex parameters such as `include_domains` or `exclude_domains`, use POST instead - domain lists are passed as comma-separated strings in GET and are limited by URL length.
 
         :param query:
-        :param x_api_key: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
         :param count:
         :param freshness: Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
 
@@ -85,7 +84,6 @@ class Search(BaseSDK):
             include_domains=include_domains,
             exclude_domains=exclude_domains,
             crawl_timeout=crawl_timeout,
-            x_api_key=x_api_key,
         )
 
         req = self._build_request(
@@ -100,6 +98,7 @@ class Search(BaseSDK):
             user_agent_header="user-agent",
             accept_header_value="application/json",
             http_headers=http_headers,
+            security=self.sdk_configuration.security,
             allow_empty_value=None,
             timeout_ms=timeout_ms,
         )
@@ -118,10 +117,12 @@ class Search(BaseSDK):
                 base_url=base_url or "",
                 operation_id="search",
                 oauth2_scopes=None,
-                security_source=None,
+                security_source=get_security_from_env(
+                    self.sdk_configuration.security, models.Security
+                ),
             ),
             request=req,
-            error_status_codes=["401", "403", "422", "4XX", "500", "5XX"],
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
             retry_config=retry_config,
         )
 
@@ -130,24 +131,24 @@ class Search(BaseSDK):
             return unmarshal_json_response(models.SearchResponse, http_res)
         if utils.match_response(http_res, "401", "application/json"):
             response_data = unmarshal_json_response(
-                errors.SearchRequestUnauthorizedErrorData, http_res
+                errors.UnauthorizedResponseErrorData, http_res
             )
-            raise errors.SearchRequestUnauthorizedError(response_data, http_res)
+            raise errors.UnauthorizedResponseError(response_data, http_res)
         if utils.match_response(http_res, "403", "application/json"):
             response_data = unmarshal_json_response(
-                errors.SearchRequestForbiddenErrorData, http_res
+                errors.ForbiddenResponseErrorData, http_res
             )
-            raise errors.SearchRequestForbiddenError(response_data, http_res)
+            raise errors.ForbiddenResponseError(response_data, http_res)
         if utils.match_response(http_res, "422", "application/json"):
             response_data = unmarshal_json_response(
-                errors.SearchRequestUnprocessableEntityErrorData, http_res
+                errors.UnprocessableEntityResponseErrorData, http_res
             )
-            raise errors.SearchRequestUnprocessableEntityError(response_data, http_res)
+            raise errors.UnprocessableEntityResponseError(response_data, http_res)
         if utils.match_response(http_res, "500", "application/json"):
             response_data = unmarshal_json_response(
-                errors.SearchRequestInternalServerErrorData, http_res
+                errors.InternalServerErrorResponseData, http_res
             )
-            raise errors.SearchRequestInternalServerError(response_data, http_res)
+            raise errors.InternalServerErrorResponse(response_data, http_res)
         if utils.match_response(http_res, "4XX", "*"):
             http_res_text = utils.stream_to_text(http_res)
             raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
@@ -161,7 +162,6 @@ class Search(BaseSDK):
         self,
         *,
         query: str,
-        x_api_key: str,
         count: Optional[int] = 10,
         freshness: Optional[
             Union[models.FreshnessValue, models.FreshnessValueTypedDict]
@@ -171,7 +171,7 @@ class Search(BaseSDK):
         language: Optional[models.Language] = models.Language.EN,
         safesearch: Optional[models.SafeSearch] = None,
         livecrawl: Optional[models.LiveCrawl] = None,
-        livecrawl_formats: Optional[List[models.LiveCrawlFormatsItems]] = None,
+        livecrawl_formats: Optional[List[models.LiveCrawlFormats]] = None,
         include_domains: Optional[str] = None,
         exclude_domains: Optional[str] = None,
         crawl_timeout: Optional[int] = 10,
@@ -187,7 +187,6 @@ class Search(BaseSDK):
         `GET` is a good choice for simple queries where HTTP cacheability matters—GET responses can be cached at CDN and proxy layers, whereas POST responses are not cached by default per the HTTP spec. For requests with complex parameters such as `include_domains` or `exclude_domains`, use POST instead - domain lists are passed as comma-separated strings in GET and are limited by URL length.
 
         :param query:
-        :param x_api_key: A unique API Key is required to authorize API access. [Get your API Key with free credits](https://you.com/platform).
         :param count:
         :param freshness: Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
 
@@ -233,7 +232,6 @@ class Search(BaseSDK):
             include_domains=include_domains,
             exclude_domains=exclude_domains,
             crawl_timeout=crawl_timeout,
-            x_api_key=x_api_key,
         )
 
         req = self._build_request_async(
@@ -248,6 +246,7 @@ class Search(BaseSDK):
             user_agent_header="user-agent",
             accept_header_value="application/json",
             http_headers=http_headers,
+            security=self.sdk_configuration.security,
             allow_empty_value=None,
             timeout_ms=timeout_ms,
         )
@@ -266,10 +265,12 @@ class Search(BaseSDK):
                 base_url=base_url or "",
                 operation_id="search",
                 oauth2_scopes=None,
-                security_source=None,
+                security_source=get_security_from_env(
+                    self.sdk_configuration.security, models.Security
+                ),
             ),
             request=req,
-            error_status_codes=["401", "403", "422", "4XX", "500", "5XX"],
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
             retry_config=retry_config,
         )
 
@@ -278,24 +279,24 @@ class Search(BaseSDK):
             return unmarshal_json_response(models.SearchResponse, http_res)
         if utils.match_response(http_res, "401", "application/json"):
             response_data = unmarshal_json_response(
-                errors.SearchRequestUnauthorizedErrorData, http_res
+                errors.UnauthorizedResponseErrorData, http_res
             )
-            raise errors.SearchRequestUnauthorizedError(response_data, http_res)
+            raise errors.UnauthorizedResponseError(response_data, http_res)
         if utils.match_response(http_res, "403", "application/json"):
             response_data = unmarshal_json_response(
-                errors.SearchRequestForbiddenErrorData, http_res
+                errors.ForbiddenResponseErrorData, http_res
             )
-            raise errors.SearchRequestForbiddenError(response_data, http_res)
+            raise errors.ForbiddenResponseError(response_data, http_res)
         if utils.match_response(http_res, "422", "application/json"):
             response_data = unmarshal_json_response(
-                errors.SearchRequestUnprocessableEntityErrorData, http_res
+                errors.UnprocessableEntityResponseErrorData, http_res
             )
-            raise errors.SearchRequestUnprocessableEntityError(response_data, http_res)
+            raise errors.UnprocessableEntityResponseError(response_data, http_res)
         if utils.match_response(http_res, "500", "application/json"):
             response_data = unmarshal_json_response(
-                errors.SearchRequestInternalServerErrorData, http_res
+                errors.InternalServerErrorResponseData, http_res
             )
-            raise errors.SearchRequestInternalServerError(response_data, http_res)
+            raise errors.InternalServerErrorResponse(response_data, http_res)
         if utils.match_response(http_res, "4XX", "*"):
             http_res_text = await utils.stream_to_text_async(http_res)
             raise errors.YouDefaultError("API error occurred", http_res, http_res_text)

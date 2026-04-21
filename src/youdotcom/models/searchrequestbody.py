@@ -5,7 +5,7 @@ from .country import Country
 from .freshnessvalue import FreshnessValue, FreshnessValueTypedDict
 from .language import Language
 from .livecrawl import LiveCrawl
-from .livecrawlformatsitems import LiveCrawlFormatsItems
+from .livecrawlformats import LiveCrawlFormats
 from .safesearch import SafeSearch
 from pydantic import model_serializer
 from typing import List, Optional
@@ -33,7 +33,7 @@ class SearchRequestBodyTypedDict(TypedDict):
     r"""Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."""
     livecrawl: NotRequired[LiveCrawl]
     r"""Indicates which section(s) of search results to livecrawl and return full page content."""
-    livecrawl_formats: NotRequired[List[LiveCrawlFormatsItems]]
+    livecrawl_formats: NotRequired[List[LiveCrawlFormats]]
     r"""Indicates the format(s) of the livecrawled content. Pass one or both values (`html`, `markdown`). In a GET request, repeat the parameter: `?livecrawl_formats=html&livecrawl_formats=markdown`. In a POST body, provide a JSON array: `[\"html\", \"markdown\"]`."""
     include_domains: NotRequired[List[str]]
     r"""A list of domains to restrict search results to. Only results from these domains will be returned. Supports up to 500 domains. This is a strict allowlist, not a boost — results are limited exclusively to the specified domains.
@@ -77,7 +77,7 @@ class SearchRequestBody(BaseModel):
     livecrawl: Optional[LiveCrawl] = None
     r"""Indicates which section(s) of search results to livecrawl and return full page content."""
 
-    livecrawl_formats: Optional[List[LiveCrawlFormatsItems]] = None
+    livecrawl_formats: Optional[List[LiveCrawlFormats]] = None
     r"""Indicates the format(s) of the livecrawled content. Pass one or both values (`html`, `markdown`). In a GET request, repeat the parameter: `?livecrawl_formats=html&livecrawl_formats=markdown`. In a POST body, provide a JSON array: `[\"html\", \"markdown\"]`."""
 
     include_domains: Optional[List[str]] = None

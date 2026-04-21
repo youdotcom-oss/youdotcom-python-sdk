@@ -18,67 +18,41 @@ if TYPE_CHECKING:
         AgentRuns422ResponseError,
         AgentRuns422ResponseErrorData,
     )
-    from .contentsrequestforbiddenerror import (
-        ContentsRequestForbiddenError,
-        ContentsRequestForbiddenErrorData,
+    from .contentsop import (
+        ContentsForbiddenError,
+        ContentsForbiddenErrorData,
+        ContentsInternalServerError,
+        ContentsInternalServerErrorData,
+        ContentsUnauthorizedError,
+        ContentsUnauthorizedErrorData,
     )
-    from .contentsrequestinternalservererror import (
-        ContentsRequestInternalServerError,
-        ContentsRequestInternalServerErrorData,
+    from .forbidden_response_error import (
+        ForbiddenResponseError,
+        ForbiddenResponseErrorData,
     )
-    from .contentsrequestunauthorizederror import (
-        ContentsRequestUnauthorizedError,
-        ContentsRequestUnauthorizedErrorData,
+    from .internalservererror_response import (
+        InternalServerErrorResponse,
+        InternalServerErrorResponseData,
     )
     from .no_response_error import NoResponseError
-    from .researchrequestforbiddenerror import (
-        ResearchRequestForbiddenError,
-        ResearchRequestForbiddenErrorData,
-    )
-    from .researchrequestinternalservererror import (
-        ResearchRequestInternalServerError,
-        ResearchRequestInternalServerErrorData,
-    )
-    from .researchrequestunauthorizederror import (
-        ResearchRequestUnauthorizedError,
-        ResearchRequestUnauthorizedErrorData,
-    )
-    from .researchrequestunprocessableentityerror import (
-        ResearchRequestUnprocessableEntityError,
-        ResearchRequestUnprocessableEntityErrorData,
+    from .researchop import (
+        ResearchForbiddenError,
+        ResearchForbiddenErrorData,
+        ResearchInternalServerError,
+        ResearchInternalServerErrorData,
+        ResearchUnauthorizedError,
+        ResearchUnauthorizedErrorData,
+        ResearchUnprocessableEntityError,
+        ResearchUnprocessableEntityErrorData,
     )
     from .responsevalidationerror import ResponseValidationError
-    from .searchpostrequestforbiddenerror import (
-        SearchPostRequestForbiddenError,
-        SearchPostRequestForbiddenErrorData,
+    from .unauthorized_response_error import (
+        UnauthorizedResponseError,
+        UnauthorizedResponseErrorData,
     )
-    from .searchpostrequestinternalservererror import (
-        SearchPostRequestInternalServerError,
-        SearchPostRequestInternalServerErrorData,
-    )
-    from .searchpostrequestunauthorizederror import (
-        SearchPostRequestUnauthorizedError,
-        SearchPostRequestUnauthorizedErrorData,
-    )
-    from .searchpostrequestunprocessableentityerror import (
-        SearchPostRequestUnprocessableEntityError,
-        SearchPostRequestUnprocessableEntityErrorData,
-    )
-    from .searchrequestforbiddenerror import (
-        SearchRequestForbiddenError,
-        SearchRequestForbiddenErrorData,
-    )
-    from .searchrequestinternalservererror import (
-        SearchRequestInternalServerError,
-        SearchRequestInternalServerErrorData,
-    )
-    from .searchrequestunauthorizederror import (
-        SearchRequestUnauthorizedError,
-        SearchRequestUnauthorizedErrorData,
-    )
-    from .searchrequestunprocessableentityerror import (
-        SearchRequestUnprocessableEntityError,
-        SearchRequestUnprocessableEntityErrorData,
+    from .unprocessableentity_response_error import (
+        UnprocessableEntityResponseError,
+        UnprocessableEntityResponseErrorData,
     )
     from .youdefaulterror import YouDefaultError
 
@@ -89,38 +63,30 @@ __all__ = [
     "AgentRuns401ResponseErrorData",
     "AgentRuns422ResponseError",
     "AgentRuns422ResponseErrorData",
-    "ContentsRequestForbiddenError",
-    "ContentsRequestForbiddenErrorData",
-    "ContentsRequestInternalServerError",
-    "ContentsRequestInternalServerErrorData",
-    "ContentsRequestUnauthorizedError",
-    "ContentsRequestUnauthorizedErrorData",
+    "ContentsForbiddenError",
+    "ContentsForbiddenErrorData",
+    "ContentsInternalServerError",
+    "ContentsInternalServerErrorData",
+    "ContentsUnauthorizedError",
+    "ContentsUnauthorizedErrorData",
+    "ForbiddenResponseError",
+    "ForbiddenResponseErrorData",
+    "InternalServerErrorResponse",
+    "InternalServerErrorResponseData",
     "NoResponseError",
-    "ResearchRequestForbiddenError",
-    "ResearchRequestForbiddenErrorData",
-    "ResearchRequestInternalServerError",
-    "ResearchRequestInternalServerErrorData",
-    "ResearchRequestUnauthorizedError",
-    "ResearchRequestUnauthorizedErrorData",
-    "ResearchRequestUnprocessableEntityError",
-    "ResearchRequestUnprocessableEntityErrorData",
+    "ResearchForbiddenError",
+    "ResearchForbiddenErrorData",
+    "ResearchInternalServerError",
+    "ResearchInternalServerErrorData",
+    "ResearchUnauthorizedError",
+    "ResearchUnauthorizedErrorData",
+    "ResearchUnprocessableEntityError",
+    "ResearchUnprocessableEntityErrorData",
     "ResponseValidationError",
-    "SearchPostRequestForbiddenError",
-    "SearchPostRequestForbiddenErrorData",
-    "SearchPostRequestInternalServerError",
-    "SearchPostRequestInternalServerErrorData",
-    "SearchPostRequestUnauthorizedError",
-    "SearchPostRequestUnauthorizedErrorData",
-    "SearchPostRequestUnprocessableEntityError",
-    "SearchPostRequestUnprocessableEntityErrorData",
-    "SearchRequestForbiddenError",
-    "SearchRequestForbiddenErrorData",
-    "SearchRequestInternalServerError",
-    "SearchRequestInternalServerErrorData",
-    "SearchRequestUnauthorizedError",
-    "SearchRequestUnauthorizedErrorData",
-    "SearchRequestUnprocessableEntityError",
-    "SearchRequestUnprocessableEntityErrorData",
+    "UnauthorizedResponseError",
+    "UnauthorizedResponseErrorData",
+    "UnprocessableEntityResponseError",
+    "UnprocessableEntityResponseErrorData",
     "YouDefaultError",
     "YouError",
 ]
@@ -132,38 +98,30 @@ _dynamic_imports: dict[str, str] = {
     "AgentRuns401ResponseErrorData": ".agentruns401response_error",
     "AgentRuns422ResponseError": ".agentruns422response_error",
     "AgentRuns422ResponseErrorData": ".agentruns422response_error",
-    "ContentsRequestForbiddenError": ".contentsrequestforbiddenerror",
-    "ContentsRequestForbiddenErrorData": ".contentsrequestforbiddenerror",
-    "ContentsRequestInternalServerError": ".contentsrequestinternalservererror",
-    "ContentsRequestInternalServerErrorData": ".contentsrequestinternalservererror",
-    "ContentsRequestUnauthorizedError": ".contentsrequestunauthorizederror",
-    "ContentsRequestUnauthorizedErrorData": ".contentsrequestunauthorizederror",
+    "ContentsForbiddenError": ".contentsop",
+    "ContentsForbiddenErrorData": ".contentsop",
+    "ContentsInternalServerError": ".contentsop",
+    "ContentsInternalServerErrorData": ".contentsop",
+    "ContentsUnauthorizedError": ".contentsop",
+    "ContentsUnauthorizedErrorData": ".contentsop",
+    "ForbiddenResponseError": ".forbidden_response_error",
+    "ForbiddenResponseErrorData": ".forbidden_response_error",
+    "InternalServerErrorResponse": ".internalservererror_response",
+    "InternalServerErrorResponseData": ".internalservererror_response",
     "NoResponseError": ".no_response_error",
-    "ResearchRequestForbiddenError": ".researchrequestforbiddenerror",
-    "ResearchRequestForbiddenErrorData": ".researchrequestforbiddenerror",
-    "ResearchRequestInternalServerError": ".researchrequestinternalservererror",
-    "ResearchRequestInternalServerErrorData": ".researchrequestinternalservererror",
-    "ResearchRequestUnauthorizedError": ".researchrequestunauthorizederror",
-    "ResearchRequestUnauthorizedErrorData": ".researchrequestunauthorizederror",
-    "ResearchRequestUnprocessableEntityError": ".researchrequestunprocessableentityerror",
-    "ResearchRequestUnprocessableEntityErrorData": ".researchrequestunprocessableentityerror",
+    "ResearchForbiddenError": ".researchop",
+    "ResearchForbiddenErrorData": ".researchop",
+    "ResearchInternalServerError": ".researchop",
+    "ResearchInternalServerErrorData": ".researchop",
+    "ResearchUnauthorizedError": ".researchop",
+    "ResearchUnauthorizedErrorData": ".researchop",
+    "ResearchUnprocessableEntityError": ".researchop",
+    "ResearchUnprocessableEntityErrorData": ".researchop",
     "ResponseValidationError": ".responsevalidationerror",
-    "SearchPostRequestForbiddenError": ".searchpostrequestforbiddenerror",
-    "SearchPostRequestForbiddenErrorData": ".searchpostrequestforbiddenerror",
-    "SearchPostRequestInternalServerError": ".searchpostrequestinternalservererror",
-    "SearchPostRequestInternalServerErrorData": ".searchpostrequestinternalservererror",
-    "SearchPostRequestUnauthorizedError": ".searchpostrequestunauthorizederror",
-    "SearchPostRequestUnauthorizedErrorData": ".searchpostrequestunauthorizederror",
-    "SearchPostRequestUnprocessableEntityError": ".searchpostrequestunprocessableentityerror",
-    "SearchPostRequestUnprocessableEntityErrorData": ".searchpostrequestunprocessableentityerror",
-    "SearchRequestForbiddenError": ".searchrequestforbiddenerror",
-    "SearchRequestForbiddenErrorData": ".searchrequestforbiddenerror",
-    "SearchRequestInternalServerError": ".searchrequestinternalservererror",
-    "SearchRequestInternalServerErrorData": ".searchrequestinternalservererror",
-    "SearchRequestUnauthorizedError": ".searchrequestunauthorizederror",
-    "SearchRequestUnauthorizedErrorData": ".searchrequestunauthorizederror",
-    "SearchRequestUnprocessableEntityError": ".searchrequestunprocessableentityerror",
-    "SearchRequestUnprocessableEntityErrorData": ".searchrequestunprocessableentityerror",
+    "UnauthorizedResponseError": ".unauthorized_response_error",
+    "UnauthorizedResponseErrorData": ".unauthorized_response_error",
+    "UnprocessableEntityResponseError": ".unprocessableentity_response_error",
+    "UnprocessableEntityResponseErrorData": ".unprocessableentity_response_error",
     "YouDefaultError": ".youdefaulterror",
 }
 

@@ -1,9 +1,9 @@
-speakeasyVersion: 1.761.3
+speakeasyVersion: 1.761.9
 sources:
     You.com API:
         sourceNamespace: you-com-search-api
-        sourceRevisionDigest: sha256:fd179dc36fc2b3d48c61afb532e675b0da613d372f0508ba5bbdef9ad18479a5
-        sourceBlobDigest: sha256:d52f6eaddd9dc05686c4e1cec1d9bfc662d2c2bd90fdef953ace9cdf93531159
+        sourceRevisionDigest: sha256:21b61adfb37e5271ef2670871f39b63bb40dca516af4c1a408e0d6b49544e2bf
+        sourceBlobDigest: sha256:4d4a51d32309f54a93b6918cc5c83eec660fef3778669ad929fe1824c7512499
         tags:
             - latest
             - 1.0.0
@@ -11,10 +11,10 @@ targets:
     you:
         source: You.com API
         sourceNamespace: you-com-search-api
-        sourceRevisionDigest: sha256:fd179dc36fc2b3d48c61afb532e675b0da613d372f0508ba5bbdef9ad18479a5
-        sourceBlobDigest: sha256:d52f6eaddd9dc05686c4e1cec1d9bfc662d2c2bd90fdef953ace9cdf93531159
+        sourceRevisionDigest: sha256:21b61adfb37e5271ef2670871f39b63bb40dca516af4c1a408e0d6b49544e2bf
+        sourceBlobDigest: sha256:4d4a51d32309f54a93b6918cc5c83eec660fef3778669ad929fe1824c7512499
         codeSamplesNamespace: you-com-search-api-code-samples
-        codeSamplesRevisionDigest: sha256:3a1289d4cfe272799f8708bfb51d776caff82f157be84a140d743ad3fc01e204
+        codeSamplesRevisionDigest: sha256:0b093740e74cfd0253d0a1fbed2904ce8f454896c33baed3364f98115bceb46f
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest
@@ -22,9 +22,9 @@ workflow:
         You.com API:
             inputs:
                 - location: https://you.com/specs/openapi_unified_agents.yaml
-                - location: https://docs.you.com/openapi.yaml?api=5d925697-1e84-4659-abf5-540ddf0dcbfb
-                - location: https://docs.you.com/openapi.yaml?api=8f6224f2-70ae-4044-a420-8a699eab7726
-                - location: https://docs.you.com/openapi.yaml?api=e8db3883-dc9b-489f-8b67-21338852cc1f
+                - location: https://you.com/specs/openapi_search_v1.yaml
+                - location: https://you.com/specs/openapi_contents.yaml
+                - location: https://you.com/specs/openapi_research.yaml
                 - location: https://you.com/specs/openapi_base.yaml
             overlays:
                 - location: ./overlays/python_overlay.yaml

@@ -18,14 +18,14 @@ class Role(str, Enum):
     USER = "user"
 
 
-class InputTypedDict(TypedDict):
+class Input1TypedDict(TypedDict):
     role: Role
     r"""The access based role of the user"""
     content: str
     r"""The question populated in the request payload"""
 
 
-class Input(BaseModel):
+class Input1(BaseModel):
     role: Role
     r"""The access based role of the user"""
 
@@ -36,7 +36,7 @@ class Input(BaseModel):
 class AgentRunsBatchResponseTypedDict(TypedDict):
     agent: str
     r"""The id of the agent populated in the request."""
-    input: List[InputTypedDict]
+    input: List[Input1TypedDict]
     r"""The users access role and question you asked the agent"""
     output: List[AgentRunsResponseOutputTypedDict]
     r"""Array of response outputs from the agent"""
@@ -48,7 +48,7 @@ class AgentRunsBatchResponse(BaseModel):
     agent: str
     r"""The id of the agent populated in the request."""
 
-    input: List[Input]
+    input: List[Input1]
     r"""The users access role and question you asked the agent"""
 
     output: List[AgentRunsResponseOutput]

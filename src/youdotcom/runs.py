@@ -37,8 +37,6 @@ class Runs(BaseSDK):
         The response format depends on the `stream` parameter - either a complete JSON payload or Server-Sent Events (SSE).
 
 
-        If set, this operation will use `api_key_auth` from the global security.
-
         :param request: The request object to send.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
@@ -79,7 +77,6 @@ class Runs(BaseSDK):
                 request, False, False, "json", models.AgentsRunsRequest
             ),
             allow_empty_value=None,
-            allowed_fields=["api_key_auth"],
             timeout_ms=timeout_ms,
         )
 
@@ -102,7 +99,7 @@ class Runs(BaseSDK):
                 ),
             ),
             request=req,
-            error_status_codes=["400", "401", "422", "4XX", "5XX"],
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
             stream=True,
             retry_config=retry_config,
         )
@@ -178,8 +175,6 @@ class Runs(BaseSDK):
         The response format depends on the `stream` parameter - either a complete JSON payload or Server-Sent Events (SSE).
 
 
-        If set, this operation will use `api_key_auth` from the global security.
-
         :param request: The request object to send.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
@@ -220,7 +215,6 @@ class Runs(BaseSDK):
                 request, False, False, "json", models.AgentsRunsRequest
             ),
             allow_empty_value=None,
-            allowed_fields=["api_key_auth"],
             timeout_ms=timeout_ms,
         )
 
@@ -243,7 +237,7 @@ class Runs(BaseSDK):
                 ),
             ),
             request=req,
-            error_status_codes=["400", "401", "422", "4XX", "5XX"],
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
             stream=True,
             retry_config=retry_config,
         )
