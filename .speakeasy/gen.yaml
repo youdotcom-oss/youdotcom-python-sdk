@@ -34,7 +34,7 @@ generation:
     examples:
       - usage.md
 python:
-  version: 2.3.0
+  version: 2.4.0
   additionalDependencies:
     dev: {}
     main: {}
@@ -46,13 +46,19 @@ python:
   authors:
     - You.com
   baseErrorName: YouError
+  bodyVariantOverloads: false
   clientServerStatusCodesAsErrors: true
   constFieldCasing: upper
   defaultErrorName: YouDefaultError
   description: The official You.com Python SDK.
+  durationFormat: false
   enableCustomCodeRegions: false
   enumFormat: enum
   envVarPrefix: YOU
+  errorSchemaValidation: true
+  eventStreamClassNames:
+    async: EventStreamAsync
+    sync: EventStream
   fixFlags:
     asyncPaginationSep2025: true
     conflictResistantModelImportsFeb2026: false
@@ -72,18 +78,25 @@ python:
       webhooks: ""
   inferUnionDiscriminators: true
   inputModelSuffix: input
+  inputTypedDictSuffix: TypedDict
   license: Apache-2.0
   maxMethodParams: 999
   methodArguments: infer-optional-args
+  methodTimeoutArgument: timeout-ms
+  methodTimeoutUnits: milliseconds
   moduleName: ""
   multipartArrayFormat: standard
+  optionalDependencies: {}
   outputModelSuffix: output
   packageManager: uv
   packageName: youdotcom
   preApplyUnionDiscriminators: true
   pytestFilterWarnings: []
   pytestTimeout: 0
+  rawResponseHelpers: false
   responseFormat: flat
+  responseSchemaValidation: true
   sseFlatResponse: false
   templateVersion: v2
   useAsyncHooks: false
+  uuidFormat: false

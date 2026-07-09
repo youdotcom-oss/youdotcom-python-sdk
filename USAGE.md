@@ -6,10 +6,16 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.research(input="Which global cities improved air quality the most over the past 10 years, and what measurable actions contributed?", research_effort=models.ResearchEffort.LITE)
+    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+        "spam-site.com",
+        "other-site.com",
+    ], boost_domains=[
+        "nytimes.com",
+        "wired.com",
+    ], crawl_timeout=10)
 
     # Handle response
     print(res)
@@ -28,10 +34,16 @@ from youdotcom import You, models
 async def main():
 
     async with You(
-        api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+        api_key_auth=os.getenv("YDC_API_KEY", ""),
     ) as you:
 
-        res = await you.research_async(input="Which global cities improved air quality the most over the past 10 years, and what measurable actions contributed?", research_effort=models.ResearchEffort.LITE)
+        res = await you.search_post_async(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+            "spam-site.com",
+            "other-site.com",
+        ], boost_domains=[
+            "nytimes.com",
+            "wired.com",
+        ], crawl_timeout=10)
 
         # Handle response
         print(res)

@@ -2,9 +2,9 @@
 Live API tests for You.com Python SDK.
 
 These tests run against the real You.com API to verify SDK functionality.
-Set the YOU_API_KEY_AUTH environment variable before running:
+Set the YDC_API_KEY environment variable before running:
 
-    YOU_API_KEY_AUTH="your-api-key" pytest tests/test_live.py -v
+    YDC_API_KEY="your-api-key" pytest tests/test_live.py -v
 
 To skip these tests, run pytest with the --ignore flag:
     pytest tests/ --ignore=tests/test_live.py -v
@@ -34,15 +34,15 @@ from youdotcom.models import (
 
 # Skip all tests in this file if no API key is provided
 pytestmark = pytest.mark.skipif(
-    not os.getenv("YOU_API_KEY_AUTH"),
-    reason="YOU_API_KEY_AUTH environment variable not set"
+    not os.getenv("YDC_API_KEY"),
+    reason="YDC_API_KEY environment variable not set"
 )
 
 
 @pytest.fixture
 def api_key():
     """Get API key from environment."""
-    return os.getenv("YOU_API_KEY_AUTH")
+    return os.getenv("YDC_API_KEY")
 
 
 @pytest.fixture

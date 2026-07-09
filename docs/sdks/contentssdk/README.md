@@ -19,7 +19,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -27,7 +27,7 @@ with You(
     ], formats=[
         models.ContentsFormats.HTML,
         models.ContentsFormats.MARKDOWN,
-    ], crawl_timeout=10)
+    ], crawl_timeout=10, max_age=86400)
 
     # Handle response
     print(res)
@@ -42,7 +42,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -50,7 +50,7 @@ with You(
     ], formats=[
         models.ContentsFormats.HTML,
         models.ContentsFormats.MARKDOWN,
-    ], crawl_timeout=10)
+    ], crawl_timeout=10, max_age=86400)
 
     # Handle response
     print(res)
@@ -65,7 +65,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -73,7 +73,7 @@ with You(
     ], formats=[
         models.ContentsFormats.HTML,
         models.ContentsFormats.MARKDOWN,
-    ], crawl_timeout=10)
+    ], crawl_timeout=10, max_age=86400)
 
     # Handle response
     print(res)
@@ -88,7 +88,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -96,7 +96,7 @@ with You(
     ], formats=[
         models.ContentsFormats.HTML,
         models.ContentsFormats.MARKDOWN,
-    ], crawl_timeout=10)
+    ], crawl_timeout=10, max_age=86400)
 
     # Handle response
     print(res)
@@ -111,7 +111,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -119,7 +119,7 @@ with You(
     ], formats=[
         models.ContentsFormats.HTML,
         models.ContentsFormats.MARKDOWN,
-    ], crawl_timeout=10)
+    ], crawl_timeout=10, max_age=86400)
 
     # Handle response
     print(res)
@@ -134,7 +134,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -142,7 +142,7 @@ with You(
     ], formats=[
         models.ContentsFormats.HTML,
         models.ContentsFormats.MARKDOWN,
-    ], crawl_timeout=10)
+    ], crawl_timeout=10, max_age=86400)
 
     # Handle response
     print(res)
@@ -151,13 +151,14 @@ with You(
 
 ### Parameters
 
-| Parameter                                                                                                                                                         | Type                                                                                                                                                              | Required                                                                                                                                                          | Description                                                                                                                                                       | Example                                                                                                                                                           |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `urls`                                                                                                                                                            | List[*str*]                                                                                                                                                       | :heavy_minus_sign:                                                                                                                                                | Array of URLs to fetch the contents from.                                                                                                                         |                                                                                                                                                                   |
-| `formats`                                                                                                                                                         | List[[models.ContentsFormats](../../models/contentsformats.md)]                                                                                                   | :heavy_minus_sign:                                                                                                                                                | Array of content formats to return. All included formats are returned in the response. Include "metadata" to get JSON-LD and OpenGraph information, if available. | [<br/>"html",<br/>"markdown"<br/>]                                                                                                                                |
-| `crawl_timeout`                                                                                                                                                   | *Optional[int]*                                                                                                                                                   | :heavy_minus_sign:                                                                                                                                                | Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds.                                                        | 10                                                                                                                                                                |
-| `retries`                                                                                                                                                         | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                                                                                                  | :heavy_minus_sign:                                                                                                                                                | Configuration to override the default retry behavior of the client.                                                                                               |                                                                                                                                                                   |
-| `server_url`                                                                                                                                                      | *Optional[str]*                                                                                                                                                   | :heavy_minus_sign:                                                                                                                                                | An optional server URL to use.                                                                                                                                    | http://localhost:8080                                                                                                                                             |
+| Parameter                                                                                                                                                                                                                                     | Type                                                                                                                                                                                                                                          | Required                                                                                                                                                                                                                                      | Description                                                                                                                                                                                                                                   | Example                                                                                                                                                                                                                                       |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `urls`                                                                                                                                                                                                                                        | List[*str*]                                                                                                                                                                                                                                   | :heavy_minus_sign:                                                                                                                                                                                                                            | Array of URLs to fetch the contents from.                                                                                                                                                                                                     |                                                                                                                                                                                                                                               |
+| `formats`                                                                                                                                                                                                                                     | List[[models.ContentsFormats](../../models/contentsformats.md)]                                                                                                                                                                               | :heavy_minus_sign:                                                                                                                                                                                                                            | Array of content formats to return. All included formats are returned in the response. Include "metadata" to get JSON-LD and OpenGraph information, if available.                                                                             | [<br/>"html",<br/>"markdown"<br/>]                                                                                                                                                                                                            |
+| `crawl_timeout`                                                                                                                                                                                                                               | *Optional[int]*                                                                                                                                                                                                                               | :heavy_minus_sign:                                                                                                                                                                                                                            | Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds.                                                                                                                                    | 10                                                                                                                                                                                                                                            |
+| `max_age`                                                                                                                                                                                                                                     | *OptionalNullable[int]*                                                                                                                                                                                                                       | :heavy_minus_sign:                                                                                                                                                                                                                            | Maximum allowed age of cached content in seconds. When set, cached content older than this threshold is ignored and the page is re-fetched. Must be 0 or greater. Default: null (no age limit, cached content is returned regardless of age). | 86400                                                                                                                                                                                                                                         |
+| `retries`                                                                                                                                                                                                                                     | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                                                                                                                                                                              | :heavy_minus_sign:                                                                                                                                                                                                                            | Configuration to override the default retry behavior of the client.                                                                                                                                                                           |                                                                                                                                                                                                                                               |
+| `server_url`                                                                                                                                                                                                                                  | *Optional[str]*                                                                                                                                                                                                                               | :heavy_minus_sign:                                                                                                                                                                                                                            | An optional server URL to use.                                                                                                                                                                                                                | http://localhost:8080                                                                                                                                                                                                                         |
 
 ### Response
 

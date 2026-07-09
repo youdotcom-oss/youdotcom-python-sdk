@@ -5,7 +5,5 @@ from enum import Enum
 
 
 class LiveCrawlFormats(str, Enum):
-    r"""Indicates the format of the livecrawled content."""
-
     HTML = "html"
     MARKDOWN = "markdown"

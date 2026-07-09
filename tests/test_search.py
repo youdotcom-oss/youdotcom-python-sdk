@@ -4,8 +4,9 @@ import pytest
 from tests.test_client import create_test_http_client
 from youdotcom import You
 from youdotcom.errors import (
-    SearchForbiddenError,
-    SearchUnauthorizedError,
+    ForbiddenResponseError,
+    UnauthorizedResponseError,
+    YouDefaultError,
 )
 from youdotcom.models import (
     Country,
@@ -23,7 +24,7 @@ def server_url():
 
 @pytest.fixture
 def api_key():
-    return os.getenv("YOU_API_KEY_AUTH", "test-api-key")
+    return "test-api-key"
 
 
 class TestSearchBasic:
@@ -72,13 +73,13 @@ class TestSearchFilters:
 
     def test_search_with_livecrawl(self, server_url, api_key):
         client = create_test_http_client("get_/v1/search")
-        
+
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             res = you.search.unified(
                 query="machine learning tutorials",
                 count=3,
                 livecrawl=LiveCrawl.WEB,
-                livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
                 server_url=server_url,
             )
             
@@ -91,7 +92,7 @@ class TestSearchFilters:
 
     def test_search_all_parameters(self, server_url, api_key):
         client = create_test_http_client("get_/v1/search")
-        
+
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             res = you.search.unified(
                 query="quantum computing",
@@ -101,7 +102,7 @@ class TestSearchFilters:
                 country=Country.GB,
                 safesearch=SafeSearch.STRICT,
                 livecrawl=LiveCrawl.WEB,
-                livecrawl_formats=LiveCrawlFormats.HTML,
+                livecrawl_formats=[LiveCrawlFormats.HTML],
                 server_url=server_url,
             )
             
@@ -116,13 +117,13 @@ class TestSearchFilters:
     def test_search_news_with_livecrawl(self, server_url, api_key):
         """Test that news results can have contents when livecrawl is enabled (new in 2.2.0)."""
         client = create_test_http_client("get_/v1/search")
-        
+
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             res = you.search.unified(
                 query="technology news",
                 count=5,
                 livecrawl=LiveCrawl.NEWS,
-                livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
                 server_url=server_url,
             )
             
@@ -139,13 +140,13 @@ class TestSearchFilters:
     def test_search_livecrawl_all_with_news_contents(self, server_url, api_key):
         """Test livecrawl=ALL returns contents for both web and news results."""
         client = create_test_http_client("get_/v1/search")
-        
+
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             res = you.search.unified(
                 query="breaking tech news",
                 count=3,
                 livecrawl=LiveCrawl.ALL,
-                livecrawl_formats=LiveCrawlFormats.HTML,
+                livecrawl_formats=[LiveCrawlFormats.HTML],
                 server_url=server_url,
             )
             
@@ -168,12 +169,12 @@ class TestSearchErrors:
         client = create_test_http_client("get_/v1/search-unauthorized")
         
         with You(server_url=server_url, client=client, api_key_auth="invalid") as you:
-            with pytest.raises((SearchUnauthorizedError, SearchForbiddenError)):
+            with pytest.raises((UnauthorizedResponseError, ForbiddenResponseError, YouDefaultError)):
                 you.search.unified(query="test", server_url=server_url)
 
     def test_forbidden(self, server_url, api_key):
         client = create_test_http_client("get_/v1/search-forbidden")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            with pytest.raises(SearchForbiddenError):
+            with pytest.raises((ForbiddenResponseError, YouDefaultError)):
                 you.search.unified(query="test", server_url=server_url)

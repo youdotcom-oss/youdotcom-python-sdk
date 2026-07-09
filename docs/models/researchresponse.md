@@ -1,7 +1,5 @@
 # ResearchResponse
 
-A JSON object containing a comprehensive answer with citations and supporting search results
-
 
 ## Fields
 

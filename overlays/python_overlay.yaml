@@ -2,7 +2,7 @@ overlay: 1.0.0
 x-speakeasy-jsonpath: rfc9535
 info:
   title: Python Specific Modifications
-  version: 1.0.0
+  version: 1.1.0
 actions:
   - target: $["paths"]["/v1/contents"]["post"]
     update:
@@ -19,3 +19,16 @@ actions:
       tags:
         - agents.runs
       x-speakeasy-name-override: create
+  # Allow extras on the anonymous object branch of `output.content` so
+  # `output_schema=` requests preserve the structured payload through SDK
+  # unmarshal (today: `class Content(BaseModel): pass` drops everything
+  # due to pydantic `extra="ignore"`). Reviewed as part of Step 4i-9.
+  - target: $["components"]["schemas"]["ResearchResponse"]["properties"]["output"]["properties"]["content"]["oneOf"][1]
+    update:
+      additionalProperties: true
+  # Same fix for `TaskDetail.result` so background-mode research surfaces
+  # the typed `ResearchResponse` payload (today: `class Result(BaseModel): pass`
+  # round-trips as an empty dict).
+  - target: $["components"]["schemas"]["TaskDetail"]["properties"]["result"]
+    update:
+      additionalProperties: true

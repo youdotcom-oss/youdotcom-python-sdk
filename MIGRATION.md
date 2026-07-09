@@ -1,6 +1,181 @@
 # Migration Guide
 
-## 1.x → 2.3.0 (Latest)
+## 2.3.0 → 2.4.0 (Latest)
+
+This guide covers breaking changes introduced in 2.4.0. If you are upgrading from 1.x or 2.0, also read the [1.x → 2.0](#1x-to-20) section below.
+
+### Breaking Changes in 2.4.0
+
+#### New `FinanceResearchEffort` enum
+
+The Finance Research API has its own effort enum (`DEEP`, `EXHAUSTIVE`) distinct from the Research API's `ResearchEffort` enum (which is unchanged):
+
+```python
+# Research API (unchanged from 2.3.x)
+from youdotcom.models import ResearchEffort
+you.research(input="...", research_effort=ResearchEffort.DEEP)
+
+# New in 2.4.0: Finance Research API
+from youdotcom.models import FinanceResearchEffort
+you.finance_research(input="...", research_effort=FinanceResearchEffort.DEEP)
+```
+
+`ResearchEffort` keeps the name `ResearchEffort` and values `LITE`, `STANDARD`, `DEEP`, `EXHAUSTIVE`. No migration is required — the OpenAPI spec was promoted to a named schema so the SDK preserves the clean name.
+
+#### `livecrawl_formats` now requires a list
+
+`livecrawl_formats` on the Search API is now strictly typed as `Optional[List[LiveCrawlFormats]]`. Passing a single enum value (silently coerced in earlier versions) raises a `ValidationError` at request time. Wrap the value in a list:
+
+```python
+# Before (2.3.x): single value was accepted
+you.search.unified(
+    query="...",
+    livecrawl=LiveCrawl.WEB,
+    livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+)
+
+# After (2.4.0): must be a list
+you.search.unified(
+    query="...",
+    livecrawl=LiveCrawl.WEB,
+    livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
+)
+```
+
+If you request multiple formats, the list form is the only available form:
+
+```python
+you.search.unified(
+    query="...",
+    livecrawl=LiveCrawl.WEB,
+    livecrawl_formats=[LiveCrawlFormats.HTML, LiveCrawlFormats.MARKDOWN],
+)
+```
+
+#### Research response is now `Union[ResearchResponse, TaskResponse]`
+
+`you.research()` now returns either `ResearchResponse` (the inline answer, default) or `TaskResponse` (a task handle) depending on the `background` parameter. Code that asserts `isinstance(res, ResearchResponse)` still works for synchronous research, but be aware that:
+
+```python
+# Synchronous (unchanged behaviour)
+res = you.research(input="...", research_effort=ResearchEffort.STANDARD)
+assert isinstance(res, ResearchResponse)  # still True
+
+# New: background-mode returns a TaskResponse
+res = you.research(
+    input="...",
+    research_effort=ResearchEffort.DEEP,
+    background=True,
+)
+assert isinstance(res, TaskResponse)
+```
+
+If you use `You` as a `TypedDict`-style client and only pass synchronous keyword arguments, this change is transparent.
+
+#### Research `output.content` is now `Union[str, object]`
+
+`output.content` is now `Union[str, object]` instead of always `str`. Plain research responses still return a Markdown `str` (with `content_type="text"`). Only when you supply `output_schema=...` does the SDK deserialize `output.content` as a structured JSON object matching your schema (with `content_type="object"`).
+
+```python
+res = you.research(
+    input="Are Acme Logistics DE and Acme Logistics NJ the same entity?",
+    output_schema={
+        "type": "object",
+        "properties": {
+            "same_entity": {"type": "boolean"},
+            "confidence": {"type": "number"},
+            "evidence": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": ["same_entity", "confidence", "evidence"],
+    },
+)
+assert res.output.content_type.value == "object"
+# Caveat (2.4.0): the typed `Content` model declares no fields and uses
+# pydantic's default `extra="ignore"`, so the JSON payload returned by the
+# server is dropped at unmarshal time. `res.output.content` is an empty
+# `Content()` instance rather than the structured dict. To get a typed
+# `ResearchResponse` with the structured object, re-issue the same call
+# synchronously with `background=False`:
+typed = you.research(
+    input="Are Acme Logistics DE and Acme Logistics NJ the same entity?",
+    output_schema={...},  # same schema as above
+)
+print(typed.output.content if isinstance(typed.output.content, dict) else "...")
+```
+
+Code that does `res.output.content.lower()` or similar string-only operations will still work for typical text responses (the value remains a `str`), but if you opt into `output_schema` you must branch on `content_type` before calling string methods.
+
+#### Environment variable renamed to `YDC_API_KEY`
+
+The SDK now reads `YDC_API_KEY` (canonical per `you.com/docs`) instead of `YOU_API_KEY_AUTH` for API key authentication. `YOU_API_KEY_AUTH` is still accepted as a fallback, so existing 2.3.x users do not need to change anything immediately. Update your environment to use the canonical name when convenient:
+
+```bash
+# Before (2.3.x)
+export YOU_API_KEY_AUTH="your-api-key"
+
+# After (2.4.0) — preferred
+export YDC_API_KEY="your-api-key"
+# YOU_API_KEY_AUTH still works as a fallback
+```
+
+### Optional Migrations Worth Adopting
+
+#### Use background mode for heavy research efforts
+
+For `ResearchEffort.DEEP` and `EXHAUSTIVE` calls, prefer background mode + polling or streaming to avoid client-side timeouts:
+
+```python
+# Recommended for long-running research
+res = you.research(
+    input="deep, multi-source question...",
+    research_effort=ResearchEffort.EXHAUSTIVE,
+    background=True,
+)
+
+while True:
+    status = you.get_research_task(task_id=res.task_id)
+    if status.status.value == "completed":
+        break
+    time.sleep(5)
+```
+
+#### Adopt new typed error names
+
+The catch surface for Research has shifted from bare-class names to per-endpoint classes:
+
+```python
+# Before (2.3.x)
+from youdotcom.errors import UnprocessableEntityError
+
+# After (2.4.0): prefer per-endpoint
+from youdotcom.errors import (
+    ResearchUnprocessableEntityError,  # research-specific
+    FinanceResearchUnprocessableEntityError,  # new
+    YouDefaultError,  # safety net
+)
+
+try:
+    you.research(input="")
+except ResearchUnprocessableEntityError as e:
+    ...
+except YouDefaultError as e:
+    ...
+```
+
+The bare `UnprocessableEntityError` / `SearchUnauthorizedError` / `SearchForbiddenError` names are gone. Code that catches on `YouDefaultError` or on `(SomeError, YouDefaultError)` tuples is unaffected.
+
+### New APIs to Try
+
+- `you.finance_research(input=..., research_effort=FinanceResearchEffort.DEEP)` — finance-optimized index.
+- `you.research(..., background=True)` + `you.get_research_task(task_id)` / `you.stream_research_task(task_id)` — long-running research with poll/stream.
+- `you.research(..., source_control={...})` — restrict / boost / exclude domains or filter by recency or country.
+- `you.research(..., output_schema={...})` — structured JSON output.
+- `you.search_post(..., boost_domains=[...])` (POST takes a list) or `you.search.unified(..., boost_domains="nytimes.com,wired.com")` (GET takes a single comma-separated string) — boost (but don't restrict) matching domains in ranking.
+- `you.contents.generate(..., max_age=86400)` — require cached content younger than 24 hours.
+
+---
+
+## 1.x → 2.3.0
 
 This guide covers breaking changes introduced in 2.3.0. If you are upgrading from 1.x, also read the [1.x → 2.0](#1x-to-20) section below.
 

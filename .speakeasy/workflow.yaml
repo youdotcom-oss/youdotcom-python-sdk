@@ -8,6 +8,7 @@ sources:
             - location: https://you.com/specs/openapi_contents.yaml
             - location: https://you.com/specs/openapi_base.yaml
             - location: https://you.com/specs/openapi_research.yaml
+            - location: https://you.com/specs/openapi_finance_research.yaml
         overlays:
             - location: ./overlays/python_overlay.yaml
         output: .speakeasy/out.openapi.yaml

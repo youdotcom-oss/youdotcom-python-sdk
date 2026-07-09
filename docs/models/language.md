@@ -1,5 +1,15 @@
 # Language
 
+The language of the web results that will be returned (BCP 47 format).
+
+## Example Usage
+
+```python
+from youdotcom.models import Language
+
+value = Language.AR
+```
+
 
 ## Values
 
@@ -30,7 +40,7 @@
 | `HU`      | HU        |
 | `IS`      | IS        |
 | `IT`      | IT        |
-| `JP`      | JP        |
+| `JA`      | JA        |
 | `KN`      | KN        |
 | `KO`      | KO        |
 | `LV`      | LV        |

@@ -1,32 +1,36 @@
 from .types import Hooks, BeforeRequestHook, BeforeRequestContext
 import httpx
 from typing import Union
+from .._version import __user_agent__
 
 
 # This file is only ever generated once on the first generation and then is free to be modified.
 # Any hooks you wish to add should be registered in the init_hooks function. Feel free to define them
 # in this file or in separate files in the hooks folder.
 
+_DEFAULT_UA_PREFIX = "speakeasy-sdk/"
+
+
 class YDCUserAgentOverrideHook(BeforeRequestHook):
-    """Hook that overrides the User-Agent header in all requests with browser fallback."""
+    """Hook that overrides the User-Agent header on every request.
+
+    Behaviour:
+    - If ``sdk_configuration.user_agent`` has been overridden away from the
+      speakeasy-default (``speakeasy-sdk/python ...``), pass it through so
+      integrations (langchain-youdotcom, youdotcom-temporal,
+      n8n-nodes-youdotcom) can identify their traffic.
+    - Otherwise, emit the SDK-default ``youdotcom-python-sdk/{sdk_version}``.
+    """
 
     def before_request(self, hook_ctx: BeforeRequestContext, request: httpx.Request) -> Union[httpx.Request, Exception]:
-        """
-        Override the User-Agent header before the request is sent.
-
-        In browser environments where setting User-Agent may be restricted,
-        this hook falls back to using the x-sdk-user-agent custom header.
-        """
         sdk_version = hook_ctx.config.sdk_version
-        user_agent = f"youdotcom-python-sdk/{sdk_version}"
+        configured_ua = hook_ctx.config.user_agent
 
-        # Try to set the standard User-Agent header first
-        request.headers["User-Agent"] = user_agent
+        is_custom = bool(configured_ua) and configured_ua != __user_agent__ and not configured_ua.startswith(_DEFAULT_UA_PREFIX)
 
-        # Check if the header was actually set
-        if not request.headers.get("User-Agent"):
-            # Fall back to a custom header if the User-Agent couldn't be set
-            request.headers["x-sdk-user-agent"] = user_agent
+        request.headers["User-Agent"] = (
+            configured_ua if is_custom else f"youdotcom-python-sdk/{sdk_version}"
+        )
 
         return request
 
