@@ -242,8 +242,10 @@ def research_and_wait(
             timeout_s=timeout_s,
         )
     # Stream mode: poll until terminal event OR deadline, then fetch the
-    # final detail. Track elapsed time against the user's ``timeout_s`` so
-    # a stuck stream can't block forever.
+    # final detail. The deadline check below runs after each received event;
+    # if the SSE connection itself stalls (server sends nothing), the real
+    # backstop is the httpx read timeout on the underlying request, not
+    # ``timeout_s``.
     for evt in stream_research_events_raw(client, task.task_id):
         name = evt.event
         if name in {"response.done", "complete"}:
@@ -291,8 +293,10 @@ async def research_and_wait_async(
             timeout_s=timeout_s,
         )
     # Stream mode: poll until terminal event OR deadline, then fetch the
-    # final detail. Track elapsed time against the user's ``timeout_s``
-    # so a stuck stream can't block forever.
+    # final detail. The deadline check below runs after each received event;
+    # if the SSE connection itself stalls (server sends nothing), the real
+    # backstop is the httpx read timeout on the underlying request, not
+    # ``timeout_s``.
     async for evt in stream_research_events_raw_async(client, task.task_id):
         name = evt.event
         if name in {"response.done", "complete"}:

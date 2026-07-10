@@ -460,21 +460,44 @@ for p in pathlib.Path("src/youdotcom/models").glob("*.py"):
 PY
 ```
 
-**Spec-side fix (regen-durable).** Add `additionalProperties: true` to the schema in the OpenAPI specification. Speakeasy then generates `extra="allow"` on the resulting model and unknown keys round-trip intact. Two ways to land it:
+**Spec-side fix (regen-durable).** Add `additionalProperties: true` to the schema in the OpenAPI specification. Speakeasy then generates `extra="allow"` on the resulting model and unknown keys round-trip intact — see the [Speakeasy additionalProperties docs](https://www.speakeasy.com/docs/sdks/customize/data-model/additionalproperties).
+
+Two ways to land it:
 
 - **Upstream spec**: Edit the responsible `*.yaml` in `~/Workspace/youdotcom-frontend/public/specs/` and let the next regen pick it up.
-- **OpenAPI overlay** (`overlays/python_overlay.yaml`): inject the keyword without touching upstream — survives regens, lives with this SDK:
+- **OpenAPI overlay** (`overlays/python_overlay.yaml`): inject the keyword without touching upstream — survives regens and lives with this SDK. Use the [RFC 9535 JSONPath syntax](https://github.com/speakeasy-api/openapi-overlay) (`x-speakeasy-jsonpath: rfc9535`) to match the existing overlay in this repo:
 
   ```yaml
   overlay: 1.0.0
+  x-speakeasy-jsonpath: rfc9535
   info:
-    title: Open-ended response schemas need additionalProperties
+    title: Allow extras on open-ended response schemas (output_schema content + background task result)
     version: 0.1.0
   actions:
-    - target: $.components.schemas.Content
-      update: { additionalProperties: true }
-    - target: $.components.schemas.Result
-      update: { additionalProperties: true }
+    # ResearchResponse.output.content has shape oneOf: [string, object]
+    # where the object branch is anonymous (no `properties`). Speakeasy
+    # currently emits `class Content(BaseModel): pass` (extra="ignore") and
+    # silently drops the structured payload returned by the server.
+    - target: $["components"]["schemas"]["ResearchResponse"]["properties"]["output"]["properties"]["content"]["oneOf"][1]
+      update:
+        additionalProperties: true
+    # TaskDetail.result is an anonymous object schema; same drop behaviour.
+    - target: $["components"]["schemas"]["TaskDetail"]["properties"]["result"]
+      update:
+        additionalProperties: true
+  ```
+
+  After applying the overlay and regen, verify the generated model now allows extras:
+
+  ```bash
+  grep -nE "extra=\"allow\"|class Content\(BaseModel\):" \
+      src/youdotcom/models/researchresponse.py
+  # Expect: from typing import ... ConfigDict ... model_config = ConfigDict(extra="allow")
+  # (or an equivalent annotation on the Content class)
+
+  # If Content still has `pass` body and no extra="allow" config, the
+  # overlay didn't apply. Double-check the JSONPath against
+  # `.speakeasy/out.openapi.yaml`.
   ```
 
 **Workaround until the fix lands.** When the typed model drops data:
@@ -482,9 +505,9 @@ PY
 - `research_helpers.py` docstring + CHANGELOG entry for `research_and_wait` MUST explicitly recommend the synchronous fallback (`client.research(..., background=False)` with the same `input`) and call out that `model_dump()` returns `{}`.
 - `MIGRATION.md` `output_schema` example MUST show the same workaround rather than the misleading `output.content["..."]` syntax.
 - `tests/test_research.py::TestResearchOutputSchema` MUST lock in `content_type.value == "object"` and the documented model_dump/emtpy-payload behaviour so a careless regen that re-introduces data loss fails loudly.
-- Once the spec fix lands, simplify the workaround comments + test and revert to the cleaner story.
+- Once the spec/overlay fix lands and regen produces `extra="allow"` models, simplify the workaround comments + drop the empty-payload lock-in assertion (replace with one that asserts the round-tripped dict).
 
-**Long-term.** Treat *empty* typed schemas as a red flag in spec review. Any schema backing a user-facing response field should declare `additionalProperties: true` (or a real schema) — never `{}` / no `properties`. The Speakeasy pipeline will surface this in PR review of the front-end repo if you add a check for it; for now this skill step is the safety net.
+**Long-term.** Treat *empty* typed schemas as a red flag in spec review. Any schema backing a user-facing response field should declare `additionalProperties: true` (or a real schema) — never `{}` / no `properties`. Add a check to the front-end repo's CI (e.g. `scripts/audit-empty-schemas.ts`) so an empty schema in `youdotcom-frontend/public/specs/*.yaml` fails the build with a message pointing to this skill step.
 
 ### 4j. Commit all changes
 

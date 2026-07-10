@@ -359,7 +359,7 @@ with You(
         "nytimes.com",
         "wired.com",
     ], crawl_timeout=10,
-        RetryConfig("backoff", BackoffStrategy(1, 50, 1.1, 100), False))
+        retries=RetryConfig("backoff", BackoffStrategy(1, 50, 1.1, 100), False))
 
     # Handle response
     print(res)

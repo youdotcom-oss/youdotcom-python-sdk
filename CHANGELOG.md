@@ -63,7 +63,7 @@ with you.stream_research_task(task_id=task_id) as stream:
 
 - **`Research` API response is now `Union[ResearchResponse, TaskResponse]`**: The `POST /v1/research` 200 response is now a `oneOf` between inline `ResearchResponse` and the new `TaskResponse` returned when `background=True`. Update code that asserts on `isinstance(res, ResearchResponse)` to handle both shapes (or use type narrowing based on whether you passed `background=True`).
 
-- **`Research.output.content` is now `Union[str, object]`**: When an `output_schema` is supplied, `output.content` is a structured JSON object (matching the schema) instead of a Markdown string. Check `output.content_type` to deserialise correctly: `text` → str, `object` → dict.
+- **`Research.output.content` is now `Union[str, object]`**: When an `output_schema` is supplied, the server returns a structured JSON object and `content_type` becomes `"object"`. **Caveat (2.4.0)**: the generated `Content` model currently declares no fields and uses pydantic's default `extra="ignore"`, so the structured payload is dropped at unmarshal time — `output.content` comes back as an empty `Content()` instance, not the dict. To retrieve the structured object, re-issue the same call synchronously with `background=False` (see `MIGRATION.md` for the full workaround). An overlay fix (`additionalProperties: true`) is staged in `overlays/python_overlay.yaml` for the next regeneration cycle, after which `output.content` will round-trip the dict directly. Check `output.content_type` to deserialise correctly: `text` → str, `object` → dict.
 
 - **New `FinanceResearchEffort` enum**: The Finance Research API has its own effort enum (`DEEP`, `EXHAUSTIVE`) distinct from the Research API's `ResearchEffort`. Both have clean names — `ResearchEffort` is unchanged from 2.3.x.
 
@@ -95,6 +95,7 @@ export YDC_API_KEY="your-api-key"
 - The `unresearched` `ulow` effort level remains internal and is intentionally NOT exposed in the SDK — it is consolidated as internal routing on the server.
 - `you.finance_research()` deliberately does not support `source_control` or `output_schema`. The Finance Research API runs against a finance-optimized index and returns Markdown-formatted answers only.
 - Background-mode + SSE streaming endpoints are considered ahead-of-docs and may receive minor surface changes before being documented at `docs.you.com`. The Python SDK contract matches the server implementation (`background`, `GET /v1/research/{task_id}`, `GET /v1/research/{task_id}/stream`) as of this release.
+- **`pydantic` upper bound pinned to `<2.13`**: Defensive pin to avoid potential breaking changes in pydantic 2.13+ (the SDK relies on `extra="ignore"` default behavior, `model_dump()`, and `ConfigDict` patterns that could shift across minor versions). Will be re-evaluated as pydantic stabilizes.
 
 ### Hand-maintained additions (not regenerated)
 
