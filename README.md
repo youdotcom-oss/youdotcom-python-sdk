@@ -15,7 +15,7 @@ The official developer-friendly & type-safe Python SDK specifically designed to 
 <!-- Start Summary [summary] -->
 ## Summary
 
-You.com Finance Research API: Unified API for Express, Advanced, and Custom Agents from You.com
+You.com API: Unified API for Express, Advanced, and Custom Agents from You.com
 Get the best search results from web and news sources
 Returns the HTML or Markdown of a target webpage
 Comprehensive API for You.com services:

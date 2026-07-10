@@ -24,7 +24,6 @@ top of the auto-generated research endpoints:
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import json
 import time
 from dataclasses import dataclass
@@ -232,7 +231,6 @@ def research_and_wait(
     """
     if mode not in {"poll", "stream"}:
         raise ValueError(f"mode must be 'poll' or 'stream', got {mode!r}")
-    deadline = time.monotonic() + timeout_s
     task = research_background(client, **kwargs)
     if mode == "poll":
         return poll_research_task(
@@ -241,6 +239,7 @@ def research_and_wait(
             interval_s=interval_s,
             timeout_s=timeout_s,
         )
+    deadline = time.monotonic() + timeout_s
     # Stream mode: poll until terminal event OR deadline, then fetch the
     # final detail. The deadline check below runs after each received event;
     # if the SSE connection itself stalls (server sends nothing), the real
@@ -283,7 +282,6 @@ async def research_and_wait_async(
     """Async variant of :func:`research_and_wait`."""
     if mode not in {"poll", "stream"}:
         raise ValueError(f"mode must be 'poll' or 'stream', got {mode!r}")
-    deadline = time.monotonic() + timeout_s
     task = await research_background_async(client, **kwargs)
     if mode == "poll":
         return await poll_research_task_async(
@@ -292,6 +290,7 @@ async def research_and_wait_async(
             interval_s=interval_s,
             timeout_s=timeout_s,
         )
+    deadline = time.monotonic() + timeout_s
     # Stream mode: poll until terminal event OR deadline, then fetch the
     # final detail. The deadline check below runs after each received event;
     # if the SSE connection itself stalls (server sends nothing), the real
@@ -480,12 +479,14 @@ async def stream_research_events_raw_async(
         from_id: Sequence number to resume from (reconnection). ``0`` starts at
             the beginning of the stream.
     """
-    # contextlib.aclosing guarantees the underlying httpx SSE response is
-    # closed deterministically on consumer break/return/throw, rather than
-    # relying on garbage-collected aclose() of the suspended async generator.
+    # Close the underlying httpx SSE response deterministically on consumer
+    # break/return/throw. EventStreamAsync exposes async close() (not aclose),
+    # so a try/finally is used rather than contextlib.aclosing.
     stream = await _open_raw_stream_async(
         client, task_id, http_headers=http_headers, from_id=from_id,
     )
-    async with contextlib.aclosing(stream) as closing_stream:
-        async for evt in closing_stream:
+    try:
+        async for evt in stream:
             yield evt
+    finally:
+        await stream.close()

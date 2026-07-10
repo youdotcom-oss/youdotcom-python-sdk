@@ -4,6 +4,11 @@ info:
   title: Python Specific Modifications
   version: 1.1.0
 actions:
+  # Restore the top-level spec title — the frontend spec changed info.title
+  # to "You.com Finance Research API" which mislabels the entire SDK in the
+  # regenerated README summary. Keep it as "You.com API".
+  - target: $["info"]["title"]
+    update: "You.com API"
   - target: $["paths"]["/v1/contents"]["post"]
     update:
       tags:

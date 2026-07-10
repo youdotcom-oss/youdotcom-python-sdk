@@ -16,11 +16,13 @@ from youdotcom.models import (
 from youdotcom.research_helpers import (
     RawStreamEvent,
     research_and_wait,
+    research_and_wait_async,
     research_background,
     research_background_async,
     poll_research_task,
     poll_research_task_async,
     stream_research_events_raw,
+    stream_research_events_raw_async,
     _decode_raw_event,
 )
 
@@ -512,3 +514,169 @@ class TestPollResearchTaskAsyncErrorPaths:
                 interval_s=0.01,
                 timeout_s=2.0,
             )
+
+
+# ---------------------------------------------------------------------------
+# Async streaming: mirror the sync TestStreamResearchEventsTolerant and
+# TestResearchAndWaitStreamMode. These also exercise the try/finally cleanup
+# path (replacing the broken contextlib.aclosing that called aclose()).
+
+class _AsyncChunks(httpx.AsyncByteStream):
+    """Wrap a list of bytes chunks in an AsyncByteStream for MockTransport
+    + AsyncClient streaming responses (httpx MockTransport returns sync
+    streams by default, which AsyncClient rejects for stream=True)."""
+
+    def __init__(self, chunks: list[bytes]):
+        self._chunks = chunks
+
+    async def __aiter__(self):
+        for chunk in self._chunks:
+            yield chunk
+
+
+class TestStreamResearchEventsTolerantAsync:
+    @pytest.mark.asyncio
+    async def test_async_tolerant_stream_yields_all_events_with_unknown_name(self):
+        """Async mirror of TestStreamResearchEventsTolerant — injects a
+        fake SSE stream with an unknown event type and verifies it surfaces
+        as RawStreamEvent without raising."""
+        recorded_ua: dict = {}
+
+        def record_send(request):
+            recorded_ua["value"] = request.headers.get("User-Agent")
+            chunks = [
+                b"id: 0\nevent: connected\ndata: "
+                b'{"type":"connected","task_id":"abc","status":"running"}\n\n',
+                b"id: 1\nevent: research.searching\ndata: "
+                b'{"query":"markets","phase":"searching"}\n\n',
+                b"id: 2\nevent: response.done\ndata: "
+                b'{"type":"response.done","task_id":"abc","status":"completed","sequence":2}\n\n',
+            ]
+            return httpx.Response(
+                200,
+                headers={"content-type": "text/event-stream"},
+                stream=_AsyncChunks(chunks),
+            )
+
+        transport = httpx.MockTransport(record_send)
+        sdk_async_client = httpx.AsyncClient(transport=transport)
+        you = You(
+            server_url="http://mock.local",
+            async_client=sdk_async_client,
+            api_key_auth="test-api-key",
+        )
+
+        events = [
+            evt
+            async for evt in stream_research_events_raw_async(
+                you, "00000000-0000-0000-0000-000000000001",
+            )
+        ]
+
+        assert [e.event for e in events] == [
+            "connected", "research.searching", "response.done",
+        ]
+        assert isinstance(events[1], RawStreamEvent)
+        assert events[1].data == {"query": "markets", "phase": "searching"}
+        assert recorded_ua["value"] == f"youdotcom-python-sdk/{you.sdk_configuration.sdk_version}"
+
+
+class TestResearchAndWaitStreamModeAsync:
+    @pytest.mark.asyncio
+    async def test_async_and_wait_stream_returns_completed_detail(self):
+        """Async mirror of TestResearchAndWaitStreamMode — verifies the
+        submit -> stream -> poll sequence and that the stream cleanup
+        (try/finally close) does not raise."""
+        import json
+
+        call_log: list = []
+
+        def handler(request):
+            url = str(request.url)
+            if url.endswith("/stream") or "/stream?" in url:
+                call_log.append("stream")
+                chunks = [
+                    b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n',
+                    b'id: 1\nevent: response.done\ndata: {"type":"response.done","task_id":"abc","status":"completed","sequence":1}\n\n',
+                ]
+                return httpx.Response(
+                    200,
+                    headers={"content-type": "text/event-stream"},
+                    stream=_AsyncChunks(chunks),
+                )
+            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
+                call_log.append("submit")
+                return httpx.Response(
+                    200,
+                    headers={"content-type": "application/json"},
+                    content=json.dumps({
+                        "task_id": "00000000-0000-0000-0000-000000000001",
+                        "type": "research",
+                        "status": "queued",
+                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
+                        "created_at": "2026-07-09T00:00:00Z",
+                    }),
+                )
+            call_log.append("poll")
+            return httpx.Response(
+                200,
+                headers={"content-type": "application/json"},
+                content=json.dumps({
+                    "id": "00000000-0000-0000-0000-000000000001",
+                    "task_type": "research",
+                    "status": "completed",
+                    "created_at": "2026-07-09T00:00:00Z",
+                    "updated_at": "2026-07-09T00:02:30Z",
+                    "completed_at": "2026-07-09T00:02:30Z",
+                    "result": {"output": {"content": "done", "content_type": "text", "sources": []}},
+                }),
+            )
+
+        transport = httpx.MockTransport(handler)
+        sdk_async_client = httpx.AsyncClient(transport=transport)
+        you = You(
+            server_url="http://mock.local",
+            async_client=sdk_async_client,
+            api_key_auth="test-api-key",
+        )
+
+        detail = await research_and_wait_async(
+            you,
+            mode="stream",
+            interval_s=0.01,
+            timeout_s=5.0,
+            input="test query",
+            research_effort=ResearchEffort.STANDARD,
+        )
+
+        assert isinstance(detail, TaskDetail)
+        assert detail.status.value == "completed"
+        assert call_log == ["submit", "stream", "poll"]
+
+
+class TestModeValidation:
+    def test_invalid_mode_raises_value_error(self):
+        """research_and_wait with an invalid mode must raise ValueError
+        before making any HTTP request."""
+        transport = httpx.MockTransport(lambda req: httpx.Response(500))
+        sdk_client = httpx.Client(transport=transport)
+        you = You(
+            server_url="http://mock.local",
+            client=sdk_client,
+            api_key_auth="test-api-key",
+        )
+        with pytest.raises(ValueError, match="mode must be 'poll' or 'stream'"):
+            research_and_wait(you, mode="bogus", input="test")
+
+    @pytest.mark.asyncio
+    async def test_invalid_mode_raises_value_error_async(self):
+        """Async mirror — research_and_wait_async with invalid mode."""
+        transport = httpx.MockTransport(lambda req: httpx.Response(500))
+        sdk_async_client = httpx.AsyncClient(transport=transport)
+        you = You(
+            server_url="http://mock.local",
+            async_client=sdk_async_client,
+            api_key_auth="test-api-key",
+        )
+        with pytest.raises(ValueError, match="mode must be 'poll' or 'stream'"):
+            await research_and_wait_async(you, mode="bogus", input="test")
