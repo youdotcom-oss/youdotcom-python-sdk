@@ -369,14 +369,11 @@ def research_output_schema_request():
 
     assert isinstance(res, ResearchResponse)
     print(f"content_type: {res.output.content_type.value}")
-    # Caveat (2.4.0): the typed `Content` model declares no fields and
-    # pydantic's `extra="ignore"` drops the structured payload at
-    # unmarshal time, so `res.output.content` is an empty `Content()` for
-    # structured responses today. There is no SDK-level workaround for
-    # structured output in 2.4.0 — the fix is staged in
-    # `overlays/python_overlay.yaml` (`additionalProperties: true`) and
-    # will take effect on the next regeneration.
-    print(f"structured content (empty until regen): {res.output.content}")
+    # The Content model uses extra="allow" so the structured payload is
+    # preserved. Use model_dump() to get the dict, or access fields
+    # directly via attribute access.
+    structured_content = res.output.content.model_dump()
+    print(f"structured payload: {structured_content}")
 
 
 def finance_research_request():

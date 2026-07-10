@@ -90,14 +90,12 @@ res = you.research(
     },
 )
 assert res.output.content_type.value == "object"
-# Caveat (2.4.0): the typed `Content` model declares no fields and uses
-# pydantic's default `extra="ignore"`, so the JSON payload returned by the
-# server is dropped at unmarshal time. `res.output.content` is an empty
-# `Content()` instance rather than the structured dict. There is no
-# SDK-level workaround for structured output in 2.4.0 — the fix is staged
-# in `overlays/python_overlay.yaml` (`additionalProperties: true`) and will
-# take effect on the next regeneration, after which `output.content` will
-# round-trip the dict directly.
+# The Content model uses extra="allow" so the structured payload is
+# preserved. res.output.content is a Content instance — use model_dump()
+# to get the structured dict, or access fields directly:
+print(res.output.content.model_dump())
+# {'same_entity': True, 'confidence': 0.95, 'evidence': [...]}
+print(res.output.content.same_entity)  # True
 ```
 
 Code that does `res.output.content.lower()` or similar string-only operations will still work for typical text responses (the value remains a `str`), but if you opt into `output_schema` you must branch on `content_type` before calling string methods.

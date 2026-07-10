@@ -3,7 +3,7 @@
 from __future__ import annotations
 from datetime import datetime
 from enum import Enum
-from pydantic import model_serializer
+from pydantic import ConfigDict, model_serializer
 from typing_extensions import NotRequired, TypedDict
 from youdotcom.types import BaseModel, Nullable, OptionalNullable, UNSET, UNSET_SENTINEL
 
@@ -32,6 +32,7 @@ class ResultTypedDict(TypedDict):
 
 class Result(BaseModel):
     r"""The task result when completed. For research tasks, this contains the ResearchResponse output."""
+    model_config = ConfigDict(extra="allow")
 
 
 class TaskDetailTypedDict(TypedDict):

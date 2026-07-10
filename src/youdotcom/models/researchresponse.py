@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from enum import Enum
-from pydantic import model_serializer
+from pydantic import ConfigDict, model_serializer
 from typing import List, Optional, Union
 from typing_extensions import NotRequired, TypeAliasType, TypedDict
 from youdotcom.types import BaseModel, UNSET_SENTINEL
@@ -13,7 +13,7 @@ class ContentTypedDict(TypedDict):
 
 
 class Content(BaseModel):
-    pass
+    model_config = ConfigDict(extra="allow")
 
 
 ContentUnionTypedDict = TypeAliasType(

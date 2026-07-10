@@ -263,16 +263,9 @@ class TestResearchOutputSchema:
     The default Go mockserver returns ``content_type=text`` regardless of
     the request body, so this test uses ``httpx.MockTransport`` to inject a
     realistic server response with ``content_type=object`` and asserts the
-    SDK correctly deserializes the ``content_type`` slot.
-
-    Caveat (2.4.0): the typed ``Content`` model in `researchresponse.py`
-    declares no fields and uses pydantic's default ``extra="ignore"``, so
-    the unknown ``content`` payload is dropped at unmarshal time. Today
-    `res.output.content` becomes an empty ``Content()`` instead of the
-    structured dict, same root cause as the ``TaskDetail.result``
-    empty-dict problem called out in `research_helpers.py` and
-    CHANGELOG.md. This test asserts the documented behavior (content_type
-    slot flips) without trying to recover the lost structure.
+    SDK correctly deserializes both the ``content_type`` slot and the
+    structured payload (preserved via ``extra="allow"`` on the ``Content``
+    model).
     """
 
     def test_output_schema_sets_content_type_to_object(self, server_url, api_key):
@@ -322,12 +315,12 @@ class TestResearchOutputSchema:
 
         assert isinstance(res, ResearchResponse)
         assert res.output.content_type.value == "object"
-        # SDK-level caveat: typed Content model has no fields, so
-        # res.output.content is an empty Content() instance rather than the
-        # structured dict. Document and assert the documented shape.
+        # With extra="allow" on the Content model, the structured payload
+        # is preserved. res.output.content is a Content instance whose
+        # model_dump() returns the full structured dict.
         assert res.output.content is not None
-        dumped = res.output.content.model_dump()
-        assert dumped == {} or isinstance(res.output.content, str)
+        assert res.output.content.model_dump() == structured_payload
+        assert res.output.content.same_entity is True
 
 
 class TestResearchSourceControl:
