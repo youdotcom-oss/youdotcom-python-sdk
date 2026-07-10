@@ -21,12 +21,12 @@ workflow:
     sources:
         You.com API:
             inputs:
-                - location: /Users/tyler/Workspace/youdotcom-frontend/public/specs/openapi_unified_agents.yaml
-                - location: /Users/tyler/Workspace/youdotcom-frontend/public/specs/openapi_search_v1.yaml
-                - location: /Users/tyler/Workspace/youdotcom-frontend/public/specs/openapi_contents.yaml
-                - location: /Users/tyler/Workspace/youdotcom-frontend/public/specs/openapi_base.yaml
-                - location: /Users/tyler/Workspace/youdotcom-frontend/public/specs/openapi_research.yaml
-                - location: /Users/tyler/Workspace/youdotcom-frontend/public/specs/openapi_finance_research.yaml
+                - location: https://you.com/specs/openapi_unified_agents.yaml
+                - location: https://you.com/specs/openapi_search_v1.yaml
+                - location: https://you.com/specs/openapi_contents.yaml
+                - location: https://you.com/specs/openapi_base.yaml
+                - location: https://you.com/specs/openapi_research.yaml
+                - location: https://you.com/specs/openapi_finance_research.yaml
             overlays:
                 - location: ./overlays/python_overlay.yaml
             output: .speakeasy/out.openapi.yaml
