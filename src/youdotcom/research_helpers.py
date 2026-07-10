@@ -223,11 +223,15 @@ def research_and_wait(
         which declares no fields), the inline ``ResearchResponse``
         payload in ``detail.result`` is not typed today —
         ``detail.result.model_dump()`` returns an empty dict because
-        pydantic drops the unknown ``output`` keys. The supported
-        workaround is to issue a follow-up synchronous
+        pydantic drops the unknown ``output`` keys. For text responses,
+        the supported workaround is to issue a follow-up synchronous
         ``client.research(..., background=False)`` call with the same
         ``input`` and ``research_effort`` to get a typed
-        ``ResearchResponse``.
+        ``ResearchResponse`` with ``output.content`` as a ``str``.
+        Note: if the original task used ``output_schema`` for structured
+        output, the sync fallback also returns an empty ``Content()``
+        — there is no SDK-level workaround for structured output in
+        2.4.0 (see ``overlays/python_overlay.yaml`` for the staged fix).
     """
     if mode not in {"poll", "stream"}:
         raise ValueError(f"mode must be 'poll' or 'stream', got {mode!r}")

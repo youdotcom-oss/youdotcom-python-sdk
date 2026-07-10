@@ -372,24 +372,11 @@ def research_output_schema_request():
     # Caveat (2.4.0): the typed `Content` model declares no fields and
     # pydantic's `extra="ignore"` drops the structured payload at
     # unmarshal time, so `res.output.content` is an empty `Content()` for
-    # structured responses today. To retrieve the typed object, re-issue
-    # the same call synchronously (background=False):
-    typed_res = you.research(
-        input="Are \"Acme Logistics LLC\" (Delaware) and \"Acme Logistics\" (Newark, NJ) the same business?",
-        research_effort=ResearchEffort.STANDARD,
-        output_schema={
-            "type": "object",
-            "properties": {
-                "same_entity": {"type": "boolean"},
-                "confidence": {"type": "number"},
-                "evidence": {"type": "array", "items": {"type": "string"}},
-            },
-            "required": ["same_entity", "confidence", "evidence"],
-            "additionalProperties": False,
-        },
-    )
-    structured_content = typed_res.output.content
-    print(f"structured payload: {structured_content}")
+    # structured responses today. There is no SDK-level workaround for
+    # structured output in 2.4.0 — the fix is staged in
+    # `overlays/python_overlay.yaml` (`additionalProperties: true`) and
+    # will take effect on the next regeneration.
+    print(f"structured content (empty until regen): {res.output.content}")
 
 
 def finance_research_request():

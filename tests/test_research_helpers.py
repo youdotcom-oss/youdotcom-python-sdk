@@ -680,3 +680,61 @@ class TestModeValidation:
         )
         with pytest.raises(ValueError, match="mode must be 'poll' or 'stream'"):
             await research_and_wait_async(you, mode="bogus", input="test")
+
+
+class TestResearchAndWaitAsyncPollMode:
+    @pytest.mark.asyncio
+    async def test_async_and_wait_poll_returns_completed_detail(self):
+        """Async poll-mode test for research_and_wait_async — mirrors the
+        sync TestResearchAndWait.test_and_wait_poll_returns_completed_detail
+        using httpx.MockTransport on an AsyncClient."""
+        import json
+
+        def handler(request):
+            url = str(request.url)
+            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
+                return httpx.Response(
+                    200,
+                    headers={"content-type": "application/json"},
+                    content=json.dumps({
+                        "task_id": "00000000-0000-0000-0000-000000000001",
+                        "type": "research",
+                        "status": "queued",
+                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
+                        "created_at": "2026-07-09T00:00:00Z",
+                    }),
+                )
+            # GET /v1/research/{task_id} — poll returns completed
+            return httpx.Response(
+                200,
+                headers={"content-type": "application/json"},
+                content=json.dumps({
+                    "id": "00000000-0000-0000-0000-000000000001",
+                    "task_type": "research",
+                    "status": "completed",
+                    "created_at": "2026-07-09T00:00:00Z",
+                    "updated_at": "2026-07-09T00:02:30Z",
+                    "completed_at": "2026-07-09T00:02:30Z",
+                    "result": {"output": {"content": "done", "content_type": "text", "sources": []}},
+                }),
+            )
+
+        transport = httpx.MockTransport(handler)
+        sdk_async_client = httpx.AsyncClient(transport=transport)
+        you = You(
+            server_url="http://mock.local",
+            async_client=sdk_async_client,
+            api_key_auth="test-api-key",
+        )
+
+        detail = await research_and_wait_async(
+            you,
+            mode="poll",
+            interval_s=0.01,
+            timeout_s=2.0,
+            input="test query",
+            research_effort=ResearchEffort.STANDARD,
+        )
+
+        assert isinstance(detail, TaskDetail)
+        assert detail.status.value == "completed"
