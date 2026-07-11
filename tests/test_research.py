@@ -8,6 +8,7 @@ from tests.test_client import create_test_http_client
 from youdotcom import You
 from youdotcom.errors import (
     FinanceResearchUnauthorizedError,
+    FinanceResearchUnprocessableEntityError,
     ResearchForbiddenError,
     ResearchInternalServerError,
     ResearchUnauthorizedError,
@@ -242,9 +243,10 @@ class TestResearchBackground:
             assert detail.status.value == "completed"
             assert detail.created_at is not None
             assert detail.completed_at is not None
-            # result is populated server-side; the typed Result model itself
-            # has no fields (extra=ignore), so we only assert presence here.
+            # result is populated server-side; the Result model uses
+            # extra="allow" so model_dump() recovers the full payload.
             assert detail.result is not None
+            assert detail.result.model_dump().get("output") is not None
 
 
 # ---------------------------------------------------------------------------
@@ -370,3 +372,131 @@ class TestResearchSourceControl:
 
 
 
+
+
+# ---------------------------------------------------------------------------
+# Negative tests: documented 422 behaviors + async finance_research.
+# These use httpx.MockTransport to inject 422 responses and assert the
+# correct typed error is raised, locking in the documented contract.
+# ---------------------------------------------------------------------------
+
+class TestResearch422ErrorPaths:
+    def test_include_and_exclude_domains_raises_422(self):
+        """include_domains + exclude_domains together is a 422 per docs."""
+        import json
+
+        def handler(request):
+            return httpx.Response(
+                422,
+                headers={"content-type": "application/json"},
+                content=json.dumps({"error": {"message": "cannot combine"}}),
+            )
+
+        transport = httpx.MockTransport(handler)
+        sdk_client = httpx.Client(transport=transport)
+        you = You(server_url="http://mock.local", client=sdk_client, api_key_auth="test")
+        with pytest.raises(ResearchUnprocessableEntityError):
+            you.research(
+                input="test",
+                research_effort=ResearchEffort.STANDARD,
+                source_control={
+                    "include_domains": ["example.com"],
+                    "exclude_domains": ["spam.com"],
+                },
+            )
+
+    def test_boost_and_include_domains_raises_422(self):
+        """boost_domains + include_domains together is a 422 per docs."""
+        import json
+
+        def handler(request):
+            return httpx.Response(
+                422,
+                headers={"content-type": "application/json"},
+                content=json.dumps({"error": {"message": "cannot combine"}}),
+            )
+
+        transport = httpx.MockTransport(handler)
+        sdk_client = httpx.Client(transport=transport)
+        you = You(server_url="http://mock.local", client=sdk_client, api_key_auth="test")
+        with pytest.raises(ResearchUnprocessableEntityError):
+            you.research(
+                input="test",
+                research_effort=ResearchEffort.STANDARD,
+                source_control={
+                    "boost_domains": ["wired.com"],
+                    "include_domains": ["example.com"],
+                },
+            )
+
+    def test_output_schema_with_lite_raises_422(self):
+        """output_schema with research_effort=LITE is a 422 per docs."""
+        import json
+
+        def handler(request):
+            return httpx.Response(
+                422,
+                headers={"content-type": "application/json"},
+                content=json.dumps({"error": {"message": "not supported with lite"}}),
+            )
+
+        transport = httpx.MockTransport(handler)
+        sdk_client = httpx.Client(transport=transport)
+        you = You(server_url="http://mock.local", client=sdk_client, api_key_auth="test")
+        with pytest.raises(ResearchUnprocessableEntityError):
+            you.research(
+                input="test",
+                research_effort=ResearchEffort.LITE,
+                output_schema={"type": "object", "properties": {}},
+            )
+
+
+class TestFinanceResearchAsync:
+    @pytest.mark.asyncio
+    async def test_async_finance_research_returns_response(self):
+        """Async finance_research happy path."""
+        import json
+
+        def handler(request):
+            return httpx.Response(
+                200,
+                headers={"content-type": "application/json"},
+                content=json.dumps({
+                    "output": {
+                        "content": "# Mock Finance Research\n\nNVIDIA revenue...",
+                        "content_type": "text",
+                        "sources": [{"url": "https://sec.gov/filing", "title": "SEC Filing"}],
+                    },
+                }),
+            )
+
+        transport = httpx.MockTransport(handler)
+        sdk_async_client = httpx.AsyncClient(transport=transport)
+        you = You(server_url="http://mock.local", async_client=sdk_async_client, api_key_auth="test")
+        res = await you.finance_research_async(
+            input="NVIDIA revenue trends",
+            research_effort=FinanceResearchEffort.DEEP,
+        )
+        assert res.output is not None
+        assert isinstance(res.output.content, str)
+
+    @pytest.mark.asyncio
+    async def test_async_finance_research_401(self):
+        """Async finance_research unauthorized."""
+        import json
+
+        def handler(request):
+            return httpx.Response(
+                401,
+                headers={"content-type": "application/json"},
+                content=json.dumps({"error": {"message": "Unauthorized"}}),
+            )
+
+        transport = httpx.MockTransport(handler)
+        sdk_async_client = httpx.AsyncClient(transport=transport)
+        you = You(server_url="http://mock.local", async_client=sdk_async_client, api_key_auth="bad-key")
+        with pytest.raises(FinanceResearchUnauthorizedError):
+            await you.finance_research_async(
+                input="test",
+                research_effort=FinanceResearchEffort.DEEP,
+            )

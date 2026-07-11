@@ -130,8 +130,8 @@ class TestPollResearchTask:
 
 # ---------------------------------------------------------------------------
 # research_and_wait: submit background + poll + return TaskDetail.
-# Note: result.output cannot be cleanly typed today (Result.extra=ignore),
-# so the helper returns TaskDetail; the test asserts the contract explicitly.
+# The Result model uses extra="allow" so detail.result.model_dump()
+# recovers the full payload; the helper returns TaskDetail.
 # ---------------------------------------------------------------------------
 
 class TestResearchAndWait:

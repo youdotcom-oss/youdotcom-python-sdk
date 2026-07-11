@@ -328,18 +328,11 @@ def research_background_request():
         time.sleep(5)
 
     if status == "completed":
-        # The typed `Result` model has no fields today (the SDK uses
-        # `extra="ignore"` on the typed result envelope), so `model_dump()`
-        # cannot recover the inline `ResearchResponse` payload from
-        # `status_res.result`. Use a synchronous `research(..., background=False)`
-        # call with the same input to retrieve the typed answer.
+        # The Result model uses extra="allow", so model_dump() recovers
+        # the full ResearchResponse payload from the task detail.
         print("\nFinal answer (preview):")
-        sync_res = you.research(
-            input="Compare the profitability of NVIDIA, AMD, and Intel over the past 5 fiscal years.",
-            research_effort=ResearchEffort.DEEP,
-        )
-        assert isinstance(sync_res, ResearchResponse)
-        content = sync_res.output.content
+        payload = status_res.result.model_dump() if status_res.result else {}
+        content = payload.get("output", {}).get("content", "")
         if isinstance(content, str):
             print(content[:500] + ("..." if len(content) > 500 else ""))
 

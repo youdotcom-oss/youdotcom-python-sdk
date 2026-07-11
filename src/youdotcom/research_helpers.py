@@ -24,6 +24,7 @@ top of the auto-generated research endpoints:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import time
 from dataclasses import dataclass
@@ -218,16 +219,13 @@ def research_and_wait(
 
     Returns:
         ``TaskDetail`` with ``status == completed`` and the task's
-        ``result`` attribute populated. Note: due to current SDK
-        unmarshaling (``extra=ignore`` on the generic ``Result`` model
-        which declares no fields), the inline ``ResearchResponse``
-        payload in ``detail.result`` is not typed today —
-        ``detail.result.model_dump()`` returns the full payload dict
-        (the ``Result`` model uses ``extra="allow"``). For text
-        responses, the supported workaround is to issue a follow-up
-        synchronous ``client.research(..., background=False)`` call
-        with the same ``input`` and ``research_effort`` to get a typed
-        ``ResearchResponse`` with ``output.content`` as a ``str``.
+        ``result`` attribute populated. The ``Result`` model uses
+        ``extra="allow"``, so ``detail.result.model_dump()`` returns
+        the full ``ResearchResponse`` payload dict. For a typed
+        ``ResearchResponse`` object (with ``output.content`` as a
+        ``str`` for text responses), issue a follow-up synchronous
+        ``client.research(..., background=False)`` call with the same
+        ``input`` and ``research_effort``.
     """
     if mode not in {"poll", "stream"}:
         raise ValueError(f"mode must be 'poll' or 'stream', got {mode!r}")
@@ -295,24 +293,29 @@ async def research_and_wait_async(
     # final detail. The deadline check below runs after each received event;
     # if the SSE connection itself stalls (server sends nothing), the real
     # backstop is the httpx read timeout on the underlying request, not
-    # ``timeout_s``.
-    async for evt in stream_research_events_raw_async(client, task.task_id):
-        name = evt.event
-        if name in {"response.done", "complete"}:
-            return await poll_research_task_async(
-                client,
-                task.task_id,
-                interval_s=interval_s,
-                timeout_s=max(interval_s, deadline - time.monotonic()),
-            )
-        if name in {"error", "cancelled"}:
-            raise RuntimeError(
-                f"research task {task.task_id} ended in non-completed state: {name}"
-            )
-        if time.monotonic() >= deadline:
-            raise TimeoutError(
-                f"research task {task.task_id} did not complete within {timeout_s}s"
-            )
+    # ``timeout_s``.  Wrap the async generator in ``aclosing`` so that an
+    # early ``return`` / ``raise`` drives its ``finally`` -> ``stream.close()``
+    # deterministically rather than relying on async-gen finalization.
+    async with contextlib.aclosing(
+        stream_research_events_raw_async(client, task.task_id)
+    ) as agen:
+        async for evt in agen:
+            name = evt.event
+            if name in {"response.done", "complete"}:
+                return await poll_research_task_async(
+                    client,
+                    task.task_id,
+                    interval_s=interval_s,
+                    timeout_s=max(interval_s, deadline - time.monotonic()),
+                )
+            if name in {"error", "cancelled"}:
+                raise RuntimeError(
+                    f"research task {task.task_id} ended in non-completed state: {name}"
+                )
+            if time.monotonic() >= deadline:
+                raise TimeoutError(
+                    f"research task {task.task_id} did not complete within {timeout_s}s"
+                )
     # Stream ended without a terminal event; fall back to polling.
     return await poll_research_task_async(
         client,
