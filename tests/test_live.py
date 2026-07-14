@@ -8,6 +8,11 @@ Set the YDC_API_KEY environment variable before running:
 
 To skip these tests, run pytest with the --ignore flag:
     pytest tests/ --ignore=tests/test_live.py -v
+
+The DEEP/EXHAUSTIVE research calls are slow on prod (30-90s); skip them
+with `-m "not slow"` for a fast smoke run:
+
+    pytest tests/test_live.py -v -m "not slow"
 """
 
 import os
@@ -43,6 +48,14 @@ pytestmark = pytest.mark.skipif(
 # 2.4.0 bumped livecrawl_formats to a strict list type and research can
 # legitimately take 20-30s for DEEP/EXHAUSTIVE effort. Generous timeout.
 LIVE_TIMEOUT_MS = 90_000
+
+
+def pytest_configure(config):
+    """Register the `slow` marker (used by tests that hit DEEP/EXHAUSTIVE)."""
+    config.addinivalue_line(
+        "markers",
+        "slow: marks tests as slow (DEEP/EXHAUSTIVE research; skip with `-m 'not slow'`)",
+    )
 
 
 @pytest.fixture
@@ -233,6 +246,7 @@ class TestLiveAgents:
             assert res.output is not None
             assert len(res.output) > 0
     
+    @pytest.mark.slow
     def test_advanced_agent_with_research(self, you_client):
         """Test Advanced agent with ResearchTool."""
         with you_client as you:
@@ -267,6 +281,7 @@ class TestLiveResearch:
             assert res.output.content is not None
             assert len(res.output.content) > 0
 
+    @pytest.mark.slow
     def test_research_deep_effort(self, you_client):
         """Test research with deep effort level (may be slow on prod)."""
         with you_client as you:
@@ -280,6 +295,7 @@ class TestLiveResearch:
             assert res.output.content is not None
             assert len(res.output.content) > 0
 
+    @pytest.mark.slow
     def test_research_exhaustive_effort(self, you_client):
         """Test research with exhaustive effort level (slow on prod)."""
         with you_client as you:
@@ -367,6 +383,7 @@ class TestLiveResearch240:
 class TestLiveFinanceResearch240:
     """Live tests for the Finance Research API (new in 2.4.0)."""
 
+    @pytest.mark.slow
     def test_finance_research_basic(self, you_client):
         """Test finance_research returns Markdown answer + sources."""
         with you_client as you:

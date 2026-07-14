@@ -17,7 +17,9 @@ func GeneratedHandlers(ctx context.Context, dir *logging.HTTPFileDirectory, rt *
 		NewGeneratedHandler(ctx, http.MethodPost, "/v1/contents", pathPostV1Contents(dir, rt)),
 		NewGeneratedHandler(ctx, http.MethodPost, "/v1/research", pathPostV1Research(dir, rt)),
 		NewGeneratedHandler(ctx, http.MethodPost, "/v1/finance_research", pathPostV1FinanceResearch(dir, rt)),
-		NewGeneratedHandler(ctx, http.MethodGet, "/v1/research/{task_id}", pathGetV1Research(dir, rt)),
-		NewGeneratedHandler(ctx, http.MethodGet, "/v1/research/{task_id}/stream", pathGetV1ResearchStream(dir, rt)),
+		// Background-mode endpoints (background=True, GET /v1/research/{task_id},
+		// GET /v1/research/{task_id}/stream) were pulled from 2.4.0 and preserved
+		// for 2.4.1 alongside DX-620 (docs ticket). Re-add handlers here when
+		// shipping 2.4.1.
 	}
 }
