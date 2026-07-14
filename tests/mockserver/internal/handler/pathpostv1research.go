@@ -18,9 +18,6 @@ import (
 //     structured JSON object as `output.content`. Mirrors the live API:
 //     same_entity + confidence + reason fields echoed back from the schema
 //     so the SDK can assert round-trip through `Union[str, Dict]` Content.
-//
-// Background-mode (background=True + GET /v1/research/{task_id}/stream)
-// was pulled from 2.4.0 and is not exposed here; preserved for 2.4.1.
 func pathPostV1Research(dir *logging.HTTPFileDirectory, rt *tracking.RequestTracker) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		test := req.Header.Get("x-speakeasy-test-name")

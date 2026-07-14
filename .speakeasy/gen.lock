@@ -1233,38 +1233,6 @@ examples:
           application/json: {}
         "500":
           application/json: {}
-  getResearchTask:
-    speakeasy-default-get-research-task:
-      parameters:
-        path:
-          task_id: "586a9bc3-2c52-499c-a61d-be3cc9170c51"
-      responses:
-        "200":
-          application/json: {"id": "fedcb54a-4cd4-42fd-a550-113b9cb183ca", "task_type": "research", "status": "failed", "created_at": "2026-05-26T02:11:52.050Z", "updated_at": "2024-04-19T23:33:40.253Z"}
-        "401":
-          application/json: {}
-        "403":
-          application/json: {}
-        "404":
-          application/json: {"detail": "Task not found"}
-        "500":
-          application/json: {}
-  streamResearchTask:
-    speakeasy-default-stream-research-task:
-      parameters:
-        path:
-          task_id: "b431835b-e51d-453e-a623-25615ac31489"
-        query:
-          from_id: 0
-      responses:
-        "401":
-          application/json: {}
-        "403":
-          application/json: {}
-        "404":
-          application/json: {"detail": "Task not found"}
-        "500":
-          application/json: {}
   finance_research:
     speakeasy-default-finance-research:
       requestBody:
