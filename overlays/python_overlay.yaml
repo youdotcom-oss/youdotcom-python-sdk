@@ -31,3 +31,12 @@ actions:
   - target: $["components"]["schemas"]["ResearchResponse"]["properties"]["output"]["properties"]["content"]["oneOf"][1]
     update:
       additionalProperties: true
+  # Same fix for the REQUEST side: `output_schema` is an inline `type: object`
+  # schema (no `$ref`), so Speakeasy generates an empty `OutputSchema` pydantic
+  # class that drops all `additionalProperties` (i.e., the JSON Schema fields the
+  # server actually consumes). Without this overlay, the request body arrives
+  # at the server as `{}` and we get a 422 ("Structured output schema root must
+  # be an object"). Reviewed as part of 2.4.0 final QA.
+  - target: $["paths"]["/v1/research"]["post"]["requestBody"]["content"]["application/json"]["schema"]["properties"]["output_schema"]
+    update:
+      additionalProperties: true

@@ -5,8 +5,8 @@ import importlib.metadata
 __title__: str = "youdotcom"
 __version__: str = "2.4.0"
 __openapi_doc_version__: str = "1.0.0"
-__gen_version__: str = "2.916.4"
-__user_agent__: str = "speakeasy-sdk/python 2.4.0 2.916.4 1.0.0 youdotcom"
+__gen_version__: str = "2.918.1"
+__user_agent__: str = "speakeasy-sdk/python 2.4.0 2.918.1 1.0.0 youdotcom"
 
 try:
     if __package__ is not None:

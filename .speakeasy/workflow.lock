@@ -1,32 +1,32 @@
-speakeasyVersion: 1.789.1
+speakeasyVersion: 1.790.1
 sources:
     You.com API:
         sourceNamespace: you-com-search-api
-        sourceRevisionDigest: sha256:1b718ccb4fb72a672b89e3703519f9f7593af632d689b8695991b76b0073193d
-        sourceBlobDigest: sha256:50bd60e232cd9939928c3a8d891b3c4e212b28600f933a1ec129aee2f9aff8d3
+        sourceRevisionDigest: sha256:3d877bc7e79a67634914d19f5fb8da8b3f26b84d7f2f426be6b42e6901d07372
+        sourceBlobDigest: sha256:3928c45357af349beb1276c811f239ad9de98d0f6bd0e5af9a09f4d4857143f8
         tags:
             - latest
-            - 0.0.1
+            - 1.0.0
 targets:
     you:
         source: You.com API
         sourceNamespace: you-com-search-api
-        sourceRevisionDigest: sha256:1b718ccb4fb72a672b89e3703519f9f7593af632d689b8695991b76b0073193d
-        sourceBlobDigest: sha256:50bd60e232cd9939928c3a8d891b3c4e212b28600f933a1ec129aee2f9aff8d3
+        sourceRevisionDigest: sha256:3d877bc7e79a67634914d19f5fb8da8b3f26b84d7f2f426be6b42e6901d07372
+        sourceBlobDigest: sha256:3928c45357af349beb1276c811f239ad9de98d0f6bd0e5af9a09f4d4857143f8
         codeSamplesNamespace: you-com-search-api-code-samples
-        codeSamplesRevisionDigest: sha256:b0a2333018ca37ecfcc9f824b023be519b5ee036f67882317ab8e80fbe460d3a
+        codeSamplesRevisionDigest: sha256:88c246f8d3a1852f39352e2da711eefe502b3c49b215503078124d8b6e0a6ce6
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest
     sources:
         You.com API:
             inputs:
-                - location: https://you.com/specs/openapi_unified_agents.yaml
-                - location: https://you.com/specs/openapi_search_v1.yaml
-                - location: https://you.com/specs/openapi_contents.yaml
-                - location: https://you.com/specs/openapi_base.yaml
-                - location: https://you.com/specs/openapi_research.yaml
-                - location: https://you.com/specs/openapi_finance_research.yaml
+                - location: /Users/tyler/Workspace/youdotcom-frontend/public/specs/openapi_unified_agents.yaml
+                - location: /Users/tyler/Workspace/youdotcom-frontend/public/specs/openapi_search_v1.yaml
+                - location: /Users/tyler/Workspace/youdotcom-frontend/public/specs/openapi_contents.yaml
+                - location: /Users/tyler/Workspace/youdotcom-frontend/public/specs/openapi_research.yaml
+                - location: /Users/tyler/Workspace/youdotcom-frontend/public/specs/openapi_finance_research.yaml
+                - location: /Users/tyler/Workspace/youdotcom-frontend/public/specs/openapi_base.yaml
             overlays:
                 - location: ./overlays/python_overlay.yaml
             output: .speakeasy/out.openapi.yaml

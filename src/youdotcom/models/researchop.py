@@ -72,24 +72,6 @@ class SourceControl(BaseModel):
         return m
 
 
-class OutputSchemaTypedDict(TypedDict):
-    r"""Beta. Requests structured JSON output in output.content using a supported JSON Schema subset. Supported only with research_effort values standard, deep, and exhaustive. Sending output_schema with research_effort: \"lite\" returns 422.
-
-    Schema rules: Root must be a JSON object. Top-level anyOf is not allowed. Every object must define properties and set additionalProperties: false. Every property must be listed in required. Recursive schemas are not supported.
-
-    Limits: Max nesting depth 5, max total properties 100, max total enum values 500, max total schema string budget 25,000.
-    """
-
-
-class OutputSchema(BaseModel):
-    r"""Beta. Requests structured JSON output in output.content using a supported JSON Schema subset. Supported only with research_effort values standard, deep, and exhaustive. Sending output_schema with research_effort: \"lite\" returns 422.
-
-    Schema rules: Root must be a JSON object. Top-level anyOf is not allowed. Every object must define properties and set additionalProperties: false. Every property must be listed in required. Recursive schemas are not supported.
-
-    Limits: Max nesting depth 5, max total properties 100, max total enum values 500, max total schema string budget 25,000.
-    """
-
-
 class ResearchRequestTypedDict(TypedDict):
     input: str
     r"""The research question or complex query requiring in-depth investigation and multi-step reasoning.
@@ -110,7 +92,7 @@ class ResearchRequestTypedDict(TypedDict):
 
     `include_domains` and `exclude_domains` cannot be used together. Each domain list is capped at 500 entries. `exclude_domains` also blocks the research agent from visiting pages on those domains during browsing. `boost_domains` gives matching domains a relative ranking boost without filtering out other domains. It can be combined with `exclude_domains` but cannot be combined with `include_domains`.
     """
-    output_schema: NotRequired[OutputSchemaTypedDict]
+    output_schema: NotRequired[Dict[str, Any]]
     r"""Beta. Requests structured JSON output in output.content using a supported JSON Schema subset. Supported only with research_effort values standard, deep, and exhaustive. Sending output_schema with research_effort: \"lite\" returns 422.
 
     Schema rules: Root must be a JSON object. Top-level anyOf is not allowed. Every object must define properties and set additionalProperties: false. Every property must be listed in required. Recursive schemas are not supported.
@@ -142,7 +124,7 @@ class ResearchRequest(BaseModel):
     `include_domains` and `exclude_domains` cannot be used together. Each domain list is capped at 500 entries. `exclude_domains` also blocks the research agent from visiting pages on those domains during browsing. `boost_domains` gives matching domains a relative ranking boost without filtering out other domains. It can be combined with `exclude_domains` but cannot be combined with `include_domains`.
     """
 
-    output_schema: Optional[OutputSchema] = None
+    output_schema: Optional[Dict[str, Any]] = None
     r"""Beta. Requests structured JSON output in output.content using a supported JSON Schema subset. Supported only with research_effort values standard, deep, and exhaustive. Sending output_schema with research_effort: \"lite\" returns 422.
 
     Schema rules: Root must be a JSON object. Top-level anyOf is not allowed. Every object must define properties and set additionalProperties: false. Every property must be listed in required. Recursive schemas are not supported.

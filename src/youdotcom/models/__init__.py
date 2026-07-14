@@ -92,8 +92,6 @@ if TYPE_CHECKING:
     from .reportverbosity import ReportVerbosity
     from .researcheffort import ResearchEffort
     from .researchop import (
-        OutputSchema,
-        OutputSchemaTypedDict,
         ResearchDetail,
         ResearchDetailTypedDict,
         ResearchInput,
@@ -239,8 +237,6 @@ __all__ = [
     "NewsResult",
     "NewsResultTypedDict",
     "Output",
-    "OutputSchema",
-    "OutputSchemaTypedDict",
     "OutputTypedDict",
     "ReportVerbosity",
     "ResearchDetail",
@@ -390,8 +386,6 @@ _dynamic_imports: dict[str, str] = {
     "NewsResultTypedDict": ".newsresult",
     "ReportVerbosity": ".reportverbosity",
     "ResearchEffort": ".researcheffort",
-    "OutputSchema": ".researchop",
-    "OutputSchemaTypedDict": ".researchop",
     "ResearchDetail": ".researchop",
     "ResearchDetailTypedDict": ".researchop",
     "ResearchInput": ".researchop",

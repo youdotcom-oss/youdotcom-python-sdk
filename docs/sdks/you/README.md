@@ -35,7 +35,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -62,7 +62,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -89,7 +89,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -116,7 +116,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -143,7 +143,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -170,7 +170,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -197,7 +197,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -263,7 +263,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -281,7 +281,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -299,7 +299,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -317,7 +317,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -335,7 +335,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -353,7 +353,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -371,7 +371,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -389,7 +389,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -407,7 +407,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -425,7 +425,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -442,7 +442,7 @@ with You(
 | `input`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | *str*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | :heavy_check_mark:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | The research question or complex query requiring in-depth investigation and multi-step reasoning.<br/><br/>Note: The maximum length of the input is 40,000 characters.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `research_effort`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | [Optional[models.ResearchEffort]](../../models/researcheffort.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Controls how much time and effort the Research API spends on your question. Higher effort levels run more searches and dig deeper into sources, at the cost of a longer response time.<br/><br/>Available levels:<br/>- `lite`: Returns answers quickly. Good for straightforward questions that just need a fast, reliable answer.<br/>- `standard`: The default. Balances speed and depth, a good fit for most questions.<br/>- `deep`: Spends more time researching and cross-referencing sources. Use this when accuracy and thoroughness matter more than speed.<br/>- `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex research tasks where you want the highest quality result. |
 | `source_control`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | [Optional[models.SourceControl]](../../models/sourcecontrol.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Beta. Controls which web sources the research agent searches and visits. Use this to allow specific domains, block specific domains, boost specific domains, filter by recency, or focus web results by country.<br/><br/>`include_domains` and `exclude_domains` cannot be used together. Each domain list is capped at 500 entries. `exclude_domains` also blocks the research agent from visiting pages on those domains during browsing. `boost_domains` gives matching domains a relative ranking boost without filtering out other domains. It can be combined with `exclude_domains` but cannot be combined with `include_domains`.                                                                             |
-| `output_schema`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | [Optional[models.OutputSchema]](../../models/outputschema.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Beta. Requests structured JSON output in output.content using a supported JSON Schema subset. Supported only with research_effort values standard, deep, and exhaustive. Sending output_schema with research_effort: "lite" returns 422.<br/><br/>Schema rules: Root must be a JSON object. Top-level anyOf is not allowed. Every object must define properties and set additionalProperties: false. Every property must be listed in required. Recursive schemas are not supported.<br/><br/>Limits: Max nesting depth 5, max total properties 100, max total enum values 500, max total schema string budget 25,000.                                                                                                 |
+| `output_schema`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Dict[str, *Any*]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Beta. Requests structured JSON output in output.content using a supported JSON Schema subset. Supported only with research_effort values standard, deep, and exhaustive. Sending output_schema with research_effort: "lite" returns 422.<br/><br/>Schema rules: Root must be a JSON object. Top-level anyOf is not allowed. Every object must define properties and set additionalProperties: false. Every property must be listed in required. Recursive schemas are not supported.<br/><br/>Limits: Max nesting depth 5, max total properties 100, max total enum values 500, max total schema string budget 25,000.                                                                                                 |
 | `retries`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Configuration to override the default retry behavior of the client.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ### Response
@@ -473,7 +473,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -491,7 +491,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -509,7 +509,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -527,7 +527,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -545,7 +545,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -563,7 +563,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -581,7 +581,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -599,7 +599,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -617,7 +617,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -635,7 +635,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)

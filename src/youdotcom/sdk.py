@@ -535,9 +535,7 @@ class You(BaseSDK):
         source_control: Optional[
             Union[models.SourceControl, models.SourceControlTypedDict]
         ] = None,
-        output_schema: Optional[
-            Union[models.OutputSchema, models.OutputSchemaTypedDict]
-        ] = None,
+        output_schema: Optional[Mapping[str, Any]] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -586,9 +584,7 @@ class You(BaseSDK):
             source_control=utils.get_pydantic_model(
                 source_control, Optional[models.SourceControl]
             ),
-            output_schema=utils.get_pydantic_model(
-                output_schema, Optional[models.OutputSchema]
-            ),
+            output_schema=utils.unmarshal(output_schema, Optional[Dict[str, Any]]),
         )
 
         req = self._build_request(
@@ -678,9 +674,7 @@ class You(BaseSDK):
         source_control: Optional[
             Union[models.SourceControl, models.SourceControlTypedDict]
         ] = None,
-        output_schema: Optional[
-            Union[models.OutputSchema, models.OutputSchemaTypedDict]
-        ] = None,
+        output_schema: Optional[Mapping[str, Any]] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -729,9 +723,7 @@ class You(BaseSDK):
             source_control=utils.get_pydantic_model(
                 source_control, Optional[models.SourceControl]
             ),
-            output_schema=utils.get_pydantic_model(
-                output_schema, Optional[models.OutputSchema]
-            ),
+            output_schema=utils.unmarshal(output_schema, Optional[Dict[str, Any]]),
         )
 
         req = self._build_request_async(
