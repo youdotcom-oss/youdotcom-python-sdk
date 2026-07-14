@@ -318,12 +318,11 @@ class TestLiveResearch:
                 assert source.url is not None
 
 
-class TestLiveResearch240:
-    """Live tests for the Research API additions shipping in 2.4.0.
+class TestLiveResearchOutputSchema:
+    """Live test for Research `output_schema` parameter (beta feature).
 
-    source_control and output_schema are beta features; smoke-test against
-    prod to ensure the overlay-generated `Content = Union[str, Dict[str, Any]]`
-    round-trips structured payloads correctly.
+    Smoke-tests prod to ensure the overlay-generated
+    `Content = Union[str, Dict[str, Any]]` round-trips structured payloads.
     """
 
     def test_research_output_schema_structured_payload(self, you_client):
@@ -355,6 +354,14 @@ class TestLiveResearch240:
             assert isinstance(res.output.content, dict)
             assert "same_entity" in res.output.content
 
+
+class TestLiveResearchSourceControl:
+    """Live test for Research `source_control` parameter (beta feature).
+
+    `source_control` constrains which web sources the research agent searches;
+    this smoke test exercises the basic `boost_domains` sub-parameter.
+    """
+
     def test_research_source_control_with_boost_domains(self, you_client):
         """source_control.boost_domains doesn't restrict, only boosts."""
         with you_client as you:
@@ -372,8 +379,8 @@ class TestLiveResearch240:
             assert len(res.output.content) > 0
 
 
-class TestLiveFinanceResearch240:
-    """Live tests for the Finance Research API (new in 2.4.0)."""
+class TestLiveFinanceResearch:
+    """Live tests for the Finance Research API."""
 
     @pytest.mark.slow
     def test_finance_research_basic(self, you_client):
@@ -394,8 +401,12 @@ class TestLiveFinanceResearch240:
                     assert source.url is not None
 
 
-class TestLiveContents240:
-    """Live test for Contents `max_age` parameter (new in 2.4.0)."""
+class TestLiveContentsMaxAge:
+    """Live test for Contents `max_age` parameter.
+
+    `max_age` controls cache freshness — when set, cached content older
+    than the threshold is ignored and the page is re-fetched.
+    """
 
     def test_contents_with_max_age(self, you_client):
         """max_age is accepted as an optional parameter."""
@@ -410,8 +421,12 @@ class TestLiveContents240:
             assert len(res) > 0
 
 
-class TestLiveSearch240:
-    """Live test for Search `boost_domains` parameter (new in 2.4.0)."""
+class TestLiveSearchBoostDomains:
+    """Live test for Search `boost_domains` parameter.
+
+    `boost_domains` prefers certain domains in ranking without excluding
+    other domains — for a more permissive alternative to `include_domains`.
+    """
 
     def test_search_post_boost_domains_list(self, you_client):
         """search_post accepts a Python list of boost domains."""

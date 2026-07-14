@@ -70,7 +70,7 @@ export YDC_API_KEY="your-api-key"
 
 ### Fixed
 
-- **`output_schema` requests no longer send an empty `{}` body**: the Research request body declares `output_schema` as an inline `type: object` schema (no `$ref`, no `properties`). Speakeasy was emitting `class OutputSchema(BaseModel): r"""..."""` — a docstring-only body — so pydantic's `extra="ignore"` stripped every JSON Schema field on serialize, leaving the server to receive `{}` and return 422 (`Structured output schema root must be an object`). The overlay now injects `additionalProperties: true` on the inline schema (mirror of the response-side `Content` fix), so `OutputSchema` round-trips as `Optional[Dict[str, Any]]` and the JSON Schema reaches the server intact. Regression caught before release by `tests/test_live.py::TestLiveResearch240::test_research_output_schema_structured_payload` against prod.
+- **`output_schema` requests no longer send an empty `{}` body**: the Research request body declares `output_schema` as an inline `type: object` schema (no `$ref`, no `properties`). Speakeasy was emitting `class OutputSchema(BaseModel): r"""..."""` — a docstring-only body — so pydantic's `extra="ignore"` stripped every JSON Schema field on serialize, leaving the server to receive `{}` and return 422 (`Structured output schema root must be an object`). The overlay now injects `additionalProperties: true` on the inline schema (mirror of the response-side `Content` fix), so `OutputSchema` round-trips as `Optional[Dict[str, Any]]` and the JSON Schema reaches the server intact. Regression caught before release by `tests/test_live.py::TestLiveResearchOutputSchema::test_research_output_schema_structured_payload` against prod.
 
 ### Hand-maintained additions (not regenerated)
 
