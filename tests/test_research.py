@@ -239,6 +239,10 @@ class TestResearchOutputSchema:
         def handler(request):
             body = json.loads(request.content)
             assert "output_schema" in body
+            # Guard the 2.4.0 regression: a reverted overlay serializes
+            # output_schema to an empty {}. Assert the schema fields survive.
+            assert body["output_schema"].get("properties", {}).get("same_entity")
+            assert "same_entity" in body["output_schema"].get("required", [])
             return httpx.Response(
                 200,
                 headers={"content-type": "application/json"},
@@ -343,8 +347,6 @@ class TestResearchSourceControl:
 class TestResearch422ErrorPaths:
     def test_include_and_exclude_domains_raises_422(self):
         """include_domains + exclude_domains together is a 422 per docs."""
-        import json
-
         def handler(request):
             return httpx.Response(
                 422,
@@ -368,8 +370,6 @@ class TestResearch422ErrorPaths:
 
     def test_boost_and_include_domains_raises_422(self):
         """boost_domains + include_domains together is a 422 per docs."""
-        import json
-
         def handler(request):
             return httpx.Response(
                 422,
@@ -393,8 +393,6 @@ class TestResearch422ErrorPaths:
 
     def test_output_schema_with_lite_raises_422(self):
         """output_schema with research_effort=LITE is a 422 per docs."""
-        import json
-
         def handler(request):
             return httpx.Response(
                 422,
@@ -418,8 +416,6 @@ class TestFinanceResearchAsync:
     @pytest.mark.asyncio
     async def test_async_finance_research_returns_response(self):
         """Async finance_research happy path."""
-        import json
-
         def handler(request):
             return httpx.Response(
                 200,
@@ -447,8 +443,6 @@ class TestFinanceResearchAsync:
     @pytest.mark.asyncio
     async def test_async_finance_research_401(self):
         """Async finance_research unauthorized."""
-        import json
-
         def handler(request):
             return httpx.Response(
                 401,
