@@ -19,7 +19,6 @@ Setup Instructions:
 """
 
 from typing import Optional
-import time
 from youdotcom import You
 from youdotcom.models import (
     ResearchTool,

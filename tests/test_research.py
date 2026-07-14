@@ -282,6 +282,7 @@ class TestResearchOutputSchema:
         assert res.output.content is not None
         assert res.output.content == structured_payload
         assert res.output.content["same_entity"] is True
+        sdk_client.close()
 
 
 class TestResearchSourceControl:
@@ -363,6 +364,7 @@ class TestResearch422ErrorPaths:
                     "exclude_domains": ["spam.com"],
                 },
             )
+        sdk_client.close()
 
     def test_boost_and_include_domains_raises_422(self):
         """boost_domains + include_domains together is a 422 per docs."""
@@ -387,6 +389,7 @@ class TestResearch422ErrorPaths:
                     "include_domains": ["example.com"],
                 },
             )
+        sdk_client.close()
 
     def test_output_schema_with_lite_raises_422(self):
         """output_schema with research_effort=LITE is a 422 per docs."""
@@ -408,6 +411,7 @@ class TestResearch422ErrorPaths:
                 research_effort=ResearchEffort.LITE,
                 output_schema={"type": "object", "properties": {}},
             )
+        sdk_client.close()
 
 
 class TestFinanceResearchAsync:
@@ -438,6 +442,7 @@ class TestFinanceResearchAsync:
         )
         assert res.output is not None
         assert isinstance(res.output.content, str)
+        await sdk_async_client.aclose()
 
     @pytest.mark.asyncio
     async def test_async_finance_research_401(self):
@@ -459,3 +464,4 @@ class TestFinanceResearchAsync:
                 input="test",
                 research_effort=FinanceResearchEffort.DEEP,
             )
+        await sdk_async_client.aclose()

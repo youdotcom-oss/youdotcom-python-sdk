@@ -36,7 +36,8 @@ func pathPostV1FinanceResearch(dir *logging.HTTPFileDirectory, rt *tracking.Requ
 }
 
 // Finance Research sources intentionally never include the `snippets` field
-// (FinanceResearchSource uses `extra="forbid"` with only `url` and `title`).
+// (FinanceResearchSource only defines `url` and `title`; extra fields are
+// ignored by pydantic's default config).
 func testPostV1FinanceResearchSuccess(w http.ResponseWriter, req *http.Request) {
 	if err := assert.SecurityHeader(req, "X-API-Key", false); err != nil {
 		log.Printf("assertion error: %s\n", err)
