@@ -1,7 +1,6 @@
 from .types import Hooks, BeforeRequestHook, BeforeRequestContext
 import httpx
 from typing import Union
-from .._version import __user_agent__
 
 
 # This file is only ever generated once on the first generation and then is free to be modified.
@@ -26,7 +25,10 @@ class YDCUserAgentOverrideHook(BeforeRequestHook):
         sdk_version = hook_ctx.config.sdk_version
         configured_ua = hook_ctx.config.user_agent
 
-        is_custom = bool(configured_ua) and configured_ua != __user_agent__ and not configured_ua.startswith(_DEFAULT_UA_PREFIX)
+        # `not startswith(_DEFAULT_UA_PREFIX)` already handles the default-UA
+        # case (the speakeasy default always starts with the prefix), so a
+        # separate `configured_ua != __user_agent__` check is redundant.
+        is_custom = bool(configured_ua) and not configured_ua.startswith(_DEFAULT_UA_PREFIX)
 
         request.headers["User-Agent"] = (
             configured_ua if is_custom else f"youdotcom-python-sdk/{sdk_version}"
