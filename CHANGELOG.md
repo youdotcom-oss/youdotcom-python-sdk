@@ -25,32 +25,6 @@ for source in res.output.sources:
     print(f"  - {source.title or 'Untitled'}: {source.url}")
 ```
 
-- **Research background mode**: New optional `background` parameter on `you.research()` and `you.research_async()`. When `True`, the request is queued as a task and a `TaskResponse` is returned immediately instead of blocking for the inline result. Use this for longer-running efforts (`deep`, `exhaustive`) that risk timeouts.
-
-```python
-res = you.research(
-    input="Compare NVIDIA, AMD, and Intel profitability over 5 years",
-    research_effort=ResearchEffort.DEEP,
-    background=True,
-)
-
-assert isinstance(res, TaskResponse)
-# poll or stream
-status = you.get_research_task(task_id=res.task_id)
-```
-
-- **Research task polling**: New `you.get_research_task(task_id)` and `get_research_task_async(task_id)` for polling background research tasks. Returns a `TaskDetail` with the current `status` and, when `completed`, the full `result` matching the synchronous `ResearchResponse` shape.
-
-- **Research SSE streaming**: New `you.stream_research_task(task_id)` and `stream_research_task_async(task_id)` for receiving real-time Server-Sent Events for a background task. Supports reconnection via `from_id=<seq>`. Event types: `connected`, `response.done` (terminal), `complete`, `error`, `cancelled`.
-
-```python
-with you.stream_research_task(task_id=task_id) as stream:
-    for event in stream:
-        data = event.data
-        # handle connected / response.done / complete / error / cancelled
-        ...
-```
-
 - **Research `source_control` (beta)**: New optional `source_control` object on `you.research()` for constraining the research agent's web sources. Supports `include_domains`, `exclude_domains`, `boost_domains`, `freshness`, and `country`. `include_domains` and `exclude_domains` cannot be combined (returns `422`); `boost_domains` combines with `exclude_domains` but not `include_domains`.
 
 - **Research `output_schema` (beta)**: New optional `output_schema` object on `you.research()` for requesting structured JSON output in `output.content`. Response `content_type` becomes `"object"` and `output.content` is a structured dict matching the schema. Supported on `standard`, `deep`, and `exhaustive` effort levels (sending it with `lite` returns `422`).
@@ -61,9 +35,7 @@ with you.stream_research_task(task_id=task_id) as stream:
 
 ### Changed
 
-- **`Research` API response is now `Union[ResearchResponse, TaskResponse]`**: The `POST /v1/research` 200 response is now a `oneOf` between inline `ResearchResponse` and the new `TaskResponse` returned when `background=True`. Update code that asserts on `isinstance(res, ResearchResponse)` to handle both shapes (or use type narrowing based on whether you passed `background=True`).
-
-- **`Research.output.content` is now `Union[str, object]`**: When an `output_schema` is supplied, the server returns a structured JSON object and `content_type` becomes `"object"`. The `Content` model has been hand-edited to use `extra="allow"` so the structured payload is preserved — `output.content` is a `Content` instance whose `model_dump()` returns the full structured dict (accessible via attribute access too, e.g. `output.content.same_entity`). Text responses (`content_type="text"`) return `output.content` as a `str`. Check `output.content_type` to deserialise correctly: `text` → str, `object` → `Content` instance (use `.model_dump()` for the dict).
+- **`Research.output.content` is now `Union[str, object]`**: When an `output_schema` is supplied, the server returns a structured JSON object and `content_type` becomes `"object"`. The overlay injects `additionalProperties: true` so `output.content` round-trips as a plain `dict` matching the requested schema. Text responses (`content_type="text"`) return `output.content` as a `str`. Check `output.content_type` to deserialise correctly: `text` → str, `object` → dict.
 
 - **New `FinanceResearchEffort` enum**: The Finance Research API has its own effort enum (`DEEP`, `EXHAUSTIVE`) distinct from the Research API's `ResearchEffort`. Both have clean names — `ResearchEffort` is unchanged from 2.3.x.
 
@@ -94,22 +66,13 @@ export YDC_API_KEY="your-api-key"
 
 - The `unresearched` `ulow` effort level remains internal and is intentionally NOT exposed in the SDK — it is consolidated as internal routing on the server.
 - `you.finance_research()` deliberately does not support `source_control` or `output_schema`. The Finance Research API runs against a finance-optimized index and returns Markdown-formatted answers only.
-- Background-mode + SSE streaming endpoints are considered ahead-of-docs and may receive minor surface changes before being documented at `docs.you.com`. The Python SDK contract matches the server implementation (`background`, `GET /v1/research/{task_id}`, `GET /v1/research/{task_id}/stream`) as of this release.
 - **`pydantic` upper bound pinned to `<2.13`**: Defensive pin to avoid potential breaking changes in pydantic 2.13+ (the SDK relies on `extra="allow"` on hand-edited models, `model_dump()`, and `ConfigDict` patterns that could shift across minor versions). Will be re-evaluated as pydantic stabilizes.
 
 ### Hand-maintained additions (not regenerated)
 
-These live in `src/youdotcom/research_helpers.py`, `src/youdotcom/_hooks/registration.py`, parts of `src/youdotcom/utils/security.py`, and hand-edited generated models in `src/youdotcom/models/researchresponse.py` and `src/youdotcom/models/taskdetail.py`. They are NOT regenerated by Speakeasy — future SDK regens will overwrite them. The next release MUST re-apply the hand-edits below (or move them into the overlay / `x-speakeasy-env-var` extension before regen) so they survive regeneration:
-
-- **`Content` and `Result` models (`extra="allow"`)**: The generated `Content` (`researchresponse.py`) and `Result` (`taskdetail.py`) classes are bare `class X(BaseModel): pass` with pydantic's default `extra="ignore"`, which silently drops structured payloads. Both have been hand-edited to add `model_config = ConfigDict(extra="allow")` so `output_schema` results and background-mode `result` survive unmarshal. The overlay in `overlays/python_overlay.yaml` injects `additionalProperties: true` at the same paths, so the next `speakeasy run` should produce the same result — verify with `grep "extra=\"allow\"" src/youdotcom/models/researchresponse.py src/youdotcom/models/taskdetail.py` after regen and re-apply if missing.
+These live in `src/youdotcom/_hooks/registration.py` and parts of `src/youdotcom/utils/security.py`. They are NOT regenerated by Speakeasy — future SDK regens will overwrite them. The next release MUST re-apply the hand-edits below (or move them into the overlay / `x-speakeasy-env-var` extension before regen) so they survive regeneration:
 
 - **`security.py` env-var precedence**: `get_security_from_env` reads `YDC_API_KEY` first and falls back to `YOU_API_KEY_AUTH` for backward compatibility with the 2.3.x env-var name. Covered by `tests/test_security_env.py`. Future regens that drop the fallback will lose `2.3.x` users — re-apply the two-line `or` chain after regen, or move the precedence into the Speakeasy overlay.
-
-- **`research_helpers` module**: New `youdotcom.research_helpers` with the following public helpers:
-  - `research_background(client, **kwargs)` / `research_background_async`: Submit research with `background=True` and return a typed `TaskResponse` directly (no need to narrow `Union[ResearchResponse, TaskResponse]`).
-  - `poll_research_task(client, task_id, *, interval_s, timeout_s)` / `poll_research_task_async`: Poll `GET /v1/research/{task_id}` until status reaches a terminal state (`completed`, `failed`, `cancelled`); raises `RuntimeError`/`TimeoutError` accordingly.
-  - `research_and_wait(client, *, mode, **kwargs)` / `research_and_wait_async`: Submit + wait (poll or stream) until done, returning the final `TaskDetail`. The `Result` model uses `extra="allow"` so `detail.result.model_dump()` returns the full payload. For text responses, issue a synchronous `client.research(..., background=False)` call with the same input to get a typed `ResearchResponse` with `output.content` as a `str`.
-  - `stream_research_events_raw(client, task_id)` / `stream_research_events_raw_async`: SSE iterator that yields `RawStreamEvent(id, event, data, retry)` and accepts event names outside the documented enum (`connected`/`response.done`/`complete`/`error`/`cancelled`). Use this in place of `client.stream_research_task(...)` when the server may emit intermediate workflow events (`research.searching`, etc.).
 
 - **`YDCUserAgentOverrideHook` honors custom `user_agent`**: Previously the hook unconditionally rewrote `User-Agent` to `youdotcom-python-sdk/{sdk_version}`. Now it detects when `sdk_configuration.user_agent` has been overridden away from the speakeasy default (`speakeasy-sdk/python ...`) and passes the custom value through. Integrations (langchain-youdotcom, youdotcom-temporal, n8n-nodes-youdotcom) can now simply set `client.sdk_configuration.user_agent = "<integration>/<version>"` after construction instead of swapping hooks.
 

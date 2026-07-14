@@ -1,19 +1,19 @@
 openapi: 3.1.0
 info:
-  title: You.com Finance Research API
+  title: You.com API
   description: |-
     Unified API for Express, Advanced, and Custom Agents from You.com
     Get the best search results from web and news sources
     Returns the HTML or Markdown of a target webpage
+    Multi-step reasoning with comprehensive research capabilities
+    Finance-focused multi-step research with competitive accuracy at same price points and latencies as the Research API
     Comprehensive API for You.com services:
     - **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
     - **Research API**: In-depth, multi-step research with citations and sources
     - **Finance Research API**: Finance-focused multi-step research with citations and sources
     - **Search API**: Get search results from web and news sources
     - **Contents API**: Retrieve and process web page content
-    Multi-step reasoning with comprehensive research capabilities
-    Finance-focused multi-step research with competitive accuracy at same price points and latencies as the Research API
-  version: 0.0.1
+  version: 1.0.0
 servers:
   - url: https://api.you.com
     x-fern-server-name: Production
@@ -339,10 +339,6 @@ paths:
                     Note: The maximum length of the input is 40,000 characters.
                 research_effort:
                   $ref: '#/components/schemas/ResearchEffort'
-                background:
-                  type: boolean
-                  description: When true, queue a research task and return a task handle immediately instead of waiting for the result inline. Defaults to synchronous. When enabled, the response is a TaskResponse object with a task_id and stream_url for polling progress via GET /v1/research/{task_id} or streaming via GET /v1/research/{task_id}/stream.
-                  default: false
                 source_control:
                   type: object
                   properties:
@@ -387,13 +383,11 @@ paths:
         required: true
       responses:
         "200":
-          description: A JSON object containing a comprehensive answer with citations and supporting search results. When background=true, returns a task handle instead.
+          description: A JSON object containing a comprehensive answer with citations and supporting search results.
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ResearchResponse'
-                  - $ref: '#/components/schemas/TaskResponse'
+                $ref: '#/components/schemas/ResearchResponse'
               example:
                 output:
                   content: |-
@@ -584,150 +578,6 @@ paths:
                   summary: Authorization failure
                   value:
                     detail: Internal authorization error
-  /v1/research/{task_id}:
-    get:
-      operationId: getResearchTask
-      summary: Get the status of a background research task
-      description: Poll the status of a background research task created with background=true. When the task is completed, the result is included in the response.
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - name: task_id
-          in: path
-          description: The UUID of the research task.
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "200":
-          description: The task status and, when complete, the result.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TaskDetail'
-              example:
-                id: "a1b2c3d4-0000-0000-0000-000000000000"
-                task_type: research
-                status: completed
-                created_at: "2026-07-09T18:00:00Z"
-                updated_at: "2026-07-09T18:02:30Z"
-                completed_at: "2026-07-09T18:02:30Z"
-                error: null
-                input:
-                  input: "What are the tradeoffs between microservices and monolithic architectures?"
-                  research_effort: deep
-                result:
-                  output:
-                    content: "## Microservices vs Monolithic Architectures\n\nThe choice involves several key tradeoffs..."
-                    content_type: text
-                    sources:
-                      - url: https://example.com/architecture-patterns
-                        title: "Architecture Patterns for High-Traffic Systems"
-        "401":
-          description: Unauthorized. Problems with API key.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  detail:
-                    type: string
-        "403":
-          description: Forbidden. API key lacks scope for this path.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  detail:
-                    type: string
-        "404":
-          description: Task not found or not authorized.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  detail:
-                    type: string
-                    example: Task not found
-        "500":
-          description: Internal Server Error.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  detail:
-                    type: string
-  /v1/research/{task_id}/stream:
-    get:
-      operationId: streamResearchTask
-      summary: Stream updates for a background research task
-      description: Stream real-time updates for a background research task via Server-Sent Events (SSE). Supports reconnection via the from_id query parameter to replay missed events. The connection closes automatically when the task reaches a terminal state.
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - name: task_id
-          in: path
-          description: The UUID of the research task.
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: from_id
-          in: query
-          description: Resume from a sequence number for reconnection.
-          required: false
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
-      responses:
-        "200":
-          description: SSE stream of task events.
-          content:
-            text/event-stream:
-              schema:
-                $ref: '#/components/schemas/ResearchTaskStreamEvent'
-        "401":
-          description: Unauthorized. Problems with API key.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  detail:
-                    type: string
-        "403":
-          description: Forbidden. API key lacks scope for this path.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  detail:
-                    type: string
-        "404":
-          description: Task not found or not authorized.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  detail:
-                    type: string
-                    example: Task not found
-        "500":
-          description: Internal Server Error.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  detail:
-                    type: string
   /v1/finance_research:
     post:
       operationId: finance_research
@@ -1840,6 +1690,7 @@ components:
               oneOf:
                 - type: string
                 - type: object
+                  additionalProperties: true
               description: The comprehensive response with inline citations. When content_type is "text", this is a Markdown string with numbered citations that reference the items in the sources array. When content_type is "object", this is a structured JSON object matching the requested output_schema.
             content_type:
               type: string
@@ -1873,141 +1724,6 @@ components:
           description: The research output containing the answer and sources.
       required:
         - output
-    TaskResponse:
-      type: object
-      properties:
-        task_id:
-          type: string
-          format: uuid
-          description: Unique identifier for the task.
-        type:
-          type: string
-          description: Task type.
-          example: research
-        status:
-          type: string
-          enum:
-            - queued
-            - running
-            - completed
-            - failed
-            - cancelled
-          description: Current status of the task.
-          example: queued
-        stream_url:
-          type: string
-          description: URL to stream task events via SSE.
-          example: /v1/research/a1b2c3d4-0000-0000-0000-000000000000/stream
-        created_at:
-          type: string
-          format: date-time
-          description: When the task was created.
-      required:
-        - task_id
-        - type
-        - status
-        - stream_url
-        - created_at
-    TaskDetail:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: Unique identifier for the task.
-        task_type:
-          type: string
-          description: Task type.
-          example: research
-        status:
-          type: string
-          enum:
-            - queued
-            - running
-            - completed
-            - failed
-            - cancelled
-          description: Current status of the task.
-        created_at:
-          type: string
-          format: date-time
-          description: When the task was created.
-        updated_at:
-          type: string
-          format: date-time
-          description: When the task was last updated.
-        completed_at:
-          type: string
-          format: date-time
-          description: When the task completed, if applicable.
-          nullable: true
-        error:
-          type: string
-          description: Error message if the task failed.
-          nullable: true
-        input:
-          type: object
-          description: The original request input for the task.
-          nullable: true
-        result:
-          type: object
-          description: The task result when completed. For research tasks, this contains the ResearchResponse output.
-          nullable: true
-      required:
-        - id
-        - task_type
-        - status
-        - created_at
-        - updated_at
-    ResearchTaskStreamEvent:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Sequence number of the SSE event.
-        event:
-          type: string
-          enum:
-            - connected
-            - response.done
-            - complete
-            - completed
-            - error
-            - failed
-            - cancelled
-          description: |-
-            The type of the SSE event. Most streams start with a `connected` event and then deliver terminal events `response.done`, `complete`, `error`, or `cancelled` from the worker.
-            If the SSE stream has aged out (after ~15 minutes) without any events flowing and the task is already in a terminal state, the server emits a synthetic event whose name is the task's status: one of `completed`, `failed`, or `cancelled`. Treat these synthetic event names the same as the corresponding worker-emitted names (`complete` ↔ `completed`, `error` ↔ `failed`, `cancelled` == `cancelled`).
-        data:
-          type: object
-          properties:
-            type:
-              type: string
-              description: The event type identifier.
-            task_id:
-              type: string
-              format: uuid
-              description: The task UUID.
-            status:
-              type: string
-              description: Current task status when the event was emitted.
-            data:
-              type: object
-              additionalProperties: true
-              description: Event-specific payload data.
-            error:
-              type: string
-              description: Error message if the event represents an error.
-              nullable: true
-            sequence:
-              type: integer
-              description: Event sequence number.
-          description: The event payload. Structure varies by event type. Common fields include type, task_id, status, data (event-specific), error, and sequence.
-      required:
-        - id
-        - event
-        - data
-      description: A server-sent event for a background research task stream.
     FinanceResearchEffort:
       type: string
       enum:

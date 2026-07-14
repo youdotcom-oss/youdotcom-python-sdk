@@ -76,9 +76,8 @@ def get_security_from_env(security: Any, security_class: Any) -> Optional[BaseMo
 
     security_dict: Any = {}
 
-    api_key = os.getenv("YDC_API_KEY") or os.getenv("YOU_API_KEY_AUTH")
-    if api_key:
-        security_dict["api_key_auth"] = api_key
+    if os.getenv("YDC_API_KEY") or os.getenv("YOU_API_KEY_AUTH"):
+        security_dict["api_key_auth"] = os.getenv("YDC_API_KEY") or os.getenv("YOU_API_KEY_AUTH")
 
     return security_class(**security_dict) if security_dict else None
 

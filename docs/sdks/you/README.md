@@ -5,21 +5,19 @@
 You.com API: Unified API for Express, Advanced, and Custom Agents from You.com
 Get the best search results from web and news sources
 Returns the HTML or Markdown of a target webpage
+Multi-step reasoning with comprehensive research capabilities
+Finance-focused multi-step research with competitive accuracy at same price points and latencies as the Research API
 Comprehensive API for You.com services:
 - **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
 - **Research API**: In-depth, multi-step research with citations and sources
 - **Finance Research API**: Finance-focused multi-step research with citations and sources
 - **Search API**: Get search results from web and news sources
 - **Contents API**: Retrieve and process web page content
-Multi-step reasoning with comprehensive research capabilities
-Finance-focused multi-step research with competitive accuracy at same price points and latencies as the Research API
 
 ### Available Operations
 
 * [search_post](#search_post) - Returns a list of unified search results from web and news sources
 * [research](#research) - Returns comprehensive research-grade answers with multi-step reasoning
-* [get_research_task](#get_research_task) - Get the status of a background research task
-* [stream_research_task](#stream_research_task) - Stream updates for a background research task
 * [finance_research](#finance_research) - Returns comprehensive finance-grade research answers with multi-step reasoning
 
 ## search_post
@@ -268,7 +266,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD, background=False)
+    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
 
     # Handle response
     print(res)
@@ -286,7 +284,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD, background=False)
+    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
 
     # Handle response
     print(res)
@@ -304,7 +302,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD, background=False)
+    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
 
     # Handle response
     print(res)
@@ -322,7 +320,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD, background=False)
+    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
 
     # Handle response
     print(res)
@@ -340,7 +338,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD, background=False)
+    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
 
     # Handle response
     print(res)
@@ -358,7 +356,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD, background=False)
+    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
 
     # Handle response
     print(res)
@@ -376,7 +374,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD, background=False)
+    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
 
     # Handle response
     print(res)
@@ -394,7 +392,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD, background=False)
+    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
 
     # Handle response
     print(res)
@@ -412,7 +410,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD, background=False)
+    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
 
     # Handle response
     print(res)
@@ -430,7 +428,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD, background=False)
+    res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
 
     # Handle response
     print(res)
@@ -443,14 +441,13 @@ with You(
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `input`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | *str*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | :heavy_check_mark:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | The research question or complex query requiring in-depth investigation and multi-step reasoning.<br/><br/>Note: The maximum length of the input is 40,000 characters.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `research_effort`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | [Optional[models.ResearchEffort]](../../models/researcheffort.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Controls how much time and effort the Research API spends on your question. Higher effort levels run more searches and dig deeper into sources, at the cost of a longer response time.<br/><br/>Available levels:<br/>- `lite`: Returns answers quickly. Good for straightforward questions that just need a fast, reliable answer.<br/>- `standard`: The default. Balances speed and depth, a good fit for most questions.<br/>- `deep`: Spends more time researching and cross-referencing sources. Use this when accuracy and thoroughness matter more than speed.<br/>- `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex research tasks where you want the highest quality result. |
-| `background`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | *Optional[bool]*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | When true, queue a research task and return a task handle immediately instead of waiting for the result inline. Defaults to synchronous. When enabled, the response is a TaskResponse object with a task_id and stream_url for polling progress via GET /v1/research/{task_id} or streaming via GET /v1/research/{task_id}/stream.                                                                                                                                                                                                                                                                                                                                                                                     |
 | `source_control`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | [Optional[models.SourceControl]](../../models/sourcecontrol.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Beta. Controls which web sources the research agent searches and visits. Use this to allow specific domains, block specific domains, boost specific domains, filter by recency, or focus web results by country.<br/><br/>`include_domains` and `exclude_domains` cannot be used together. Each domain list is capped at 500 entries. `exclude_domains` also blocks the research agent from visiting pages on those domains during browsing. `boost_domains` gives matching domains a relative ranking boost without filtering out other domains. It can be combined with `exclude_domains` but cannot be combined with `include_domains`.                                                                             |
 | `output_schema`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | [Optional[models.OutputSchema]](../../models/outputschema.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Beta. Requests structured JSON output in output.content using a supported JSON Schema subset. Supported only with research_effort values standard, deep, and exhaustive. Sending output_schema with research_effort: "lite" returns 422.<br/><br/>Schema rules: Root must be a JSON object. Top-level anyOf is not allowed. Every object must define properties and set additionalProperties: false. Every property must be listed in required. Recursive schemas are not supported.<br/><br/>Limits: Max nesting depth 5, max total properties 100, max total enum values 500, max total schema string budget 25,000.                                                                                                 |
 | `retries`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Configuration to override the default retry behavior of the client.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ### Response
 
-**[models.ResearchResponse1](../../models/researchresponse1.md)**
+**[models.ResearchResponse](../../models/researchresponse.md)**
 
 ### Errors
 
@@ -461,97 +458,6 @@ with You(
 | errors.ResearchUnprocessableEntityError | 422                                     | application/json                        |
 | errors.ResearchInternalServerError      | 500                                     | application/json                        |
 | errors.YouDefaultError                  | 4XX, 5XX                                | \*/\*                                   |
-
-## get_research_task
-
-Poll the status of a background research task created with background=true. When the task is completed, the result is included in the response.
-
-### Example Usage
-
-<!-- UsageSnippet language="python" operationID="getResearchTask" method="get" path="/v1/research/{task_id}" -->
-```python
-import os
-from youdotcom import You
-
-
-with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
-) as you:
-
-    res = you.get_research_task(task_id="586a9bc3-2c52-499c-a61d-be3cc9170c51")
-
-    # Handle response
-    print(res)
-
-```
-
-### Parameters
-
-| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `task_id`                                                           | *str*                                                               | :heavy_check_mark:                                                  | The UUID of the research task.                                      |
-| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
-
-### Response
-
-**[models.TaskDetail](../../models/taskdetail.md)**
-
-### Errors
-
-| Error Type                                | Status Code                               | Content Type                              |
-| ----------------------------------------- | ----------------------------------------- | ----------------------------------------- |
-| errors.GetResearchTaskUnauthorizedError   | 401                                       | application/json                          |
-| errors.GetResearchTaskForbiddenError      | 403                                       | application/json                          |
-| errors.GetResearchTaskNotFoundError       | 404                                       | application/json                          |
-| errors.GetResearchTaskInternalServerError | 500                                       | application/json                          |
-| errors.YouDefaultError                    | 4XX, 5XX                                  | \*/\*                                     |
-
-## stream_research_task
-
-Stream real-time updates for a background research task via Server-Sent Events (SSE). Supports reconnection via the from_id query parameter to replay missed events. The connection closes automatically when the task reaches a terminal state.
-
-### Example Usage
-
-<!-- UsageSnippet language="python" operationID="streamResearchTask" method="get" path="/v1/research/{task_id}/stream" -->
-```python
-import os
-from youdotcom import You
-
-
-with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
-) as you:
-
-    res = you.stream_research_task(task_id="b431835b-e51d-453e-a623-25615ac31489", from_id=0)
-
-    with res as event_stream:
-        for event in event_stream:
-            # handle event
-            print(event, flush=True)
-
-```
-
-### Parameters
-
-| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `task_id`                                                           | *str*                                                               | :heavy_check_mark:                                                  | The UUID of the research task.                                      |
-| `from_id`                                                           | *Optional[int]*                                                     | :heavy_minus_sign:                                                  | Resume from a sequence number for reconnection.                     |
-| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
-
-### Response
-
-**[Union[eventstreaming.EventStream[models.ResearchTaskStreamEvent], eventstreaming.EventStreamAsync[models.ResearchTaskStreamEvent]]](../../models/.md)**
-
-### Errors
-
-| Error Type                                   | Status Code                                  | Content Type                                 |
-| -------------------------------------------- | -------------------------------------------- | -------------------------------------------- |
-| errors.StreamResearchTaskUnauthorizedError   | 401                                          | application/json                             |
-| errors.StreamResearchTaskForbiddenError      | 403                                          | application/json                             |
-| errors.StreamResearchTaskNotFoundError       | 404                                          | application/json                             |
-| errors.StreamResearchTaskInternalServerError | 500                                          | application/json                             |
-| errors.YouDefaultError                       | 4XX, 5XX                                     | \*/\*                                        |
 
 ## finance_research
 

@@ -1,4 +1,4 @@
-# AgentRunsBatchResponseInput
+# Input
 
 
 ## Fields

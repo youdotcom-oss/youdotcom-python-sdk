@@ -20,7 +20,6 @@ from youdotcom.models import (
     FinanceResearchEffort,
     ResearchEffort,
     ResearchResponse,
-    TaskResponse,
 )
 
 
@@ -209,46 +208,6 @@ class TestFinanceResearch:
                 )
 
 
-class TestResearchBackground:
-    """Direct coverage for the auto-generated background/stream SDK methods."""
-
-    def test_research_background_returns_task_response(self, server_url, api_key):
-        client = create_test_http_client("post_/v1/research-background")
-
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.research(
-                input="What is the capital of France?",
-                research_effort=ResearchEffort.STANDARD,
-                background=True,
-                server_url=server_url,
-            )
-
-            assert isinstance(res, TaskResponse)
-            assert res.task_id == "00000000-0000-0000-0000-000000000001"
-            assert res.status.value == "queued"
-            assert res.stream_url is not None
-            assert res.created_at is not None
-
-    def test_get_research_task_returns_task_detail(self, server_url, api_key):
-        client = create_test_http_client("get_/v1/research/{task_id}")
-
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            detail = you.get_research_task(
-                task_id="00000000-0000-0000-0000-000000000001",
-                server_url=server_url,
-            )
-
-            assert detail.id == "00000000-0000-0000-0000-000000000001"
-            assert detail.task_type == "research"
-            assert detail.status.value == "completed"
-            assert detail.created_at is not None
-            assert detail.completed_at is not None
-            # result is populated server-side; the Result model uses
-            # extra="allow" so model_dump() recovers the full payload.
-            assert detail.result is not None
-            assert detail.result.model_dump().get("output") is not None
-
-
 # ---------------------------------------------------------------------------
 # 2.4.0 beta params: output_schema (structured output_content) and
 # source_control (domain constraints / freshness / country).
@@ -266,8 +225,8 @@ class TestResearchOutputSchema:
     the request body, so this test uses ``httpx.MockTransport`` to inject a
     realistic server response with ``content_type=object`` and asserts the
     SDK correctly deserializes both the ``content_type`` slot and the
-    structured payload (preserved via ``extra="allow"`` on the ``Content``
-    model).
+    structured payload (preserved via ``additionalProperties: true`` in the
+    overlay, which makes ``Content`` a ``Union[str, Dict[str, Any]]``).
     """
 
     def test_output_schema_sets_content_type_to_object(self, server_url, api_key):
@@ -317,12 +276,12 @@ class TestResearchOutputSchema:
 
         assert isinstance(res, ResearchResponse)
         assert res.output.content_type.value == "object"
-        # With extra="allow" on the Content model, the structured payload
-        # is preserved. res.output.content is a Content instance whose
-        # model_dump() returns the full structured dict.
+        # Content is now Union[str, Dict[str, Any]] — the overlay injected
+        # additionalProperties: true so the structured payload round-trips
+        # as a plain dict.
         assert res.output.content is not None
-        assert res.output.content.model_dump() == structured_payload
-        assert res.output.content.same_entity is True
+        assert res.output.content == structured_payload
+        assert res.output.content["same_entity"] is True
 
 
 class TestResearchSourceControl:

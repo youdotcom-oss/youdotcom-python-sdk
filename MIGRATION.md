@@ -52,26 +52,6 @@ you.search.unified(
 )
 ```
 
-#### Research response is now `Union[ResearchResponse, TaskResponse]`
-
-`you.research()` now returns either `ResearchResponse` (the inline answer, default) or `TaskResponse` (a task handle) depending on the `background` parameter. Code that asserts `isinstance(res, ResearchResponse)` still works for synchronous research, but be aware that:
-
-```python
-# Synchronous (unchanged behaviour)
-res = you.research(input="...", research_effort=ResearchEffort.STANDARD)
-assert isinstance(res, ResearchResponse)  # still True
-
-# New: background-mode returns a TaskResponse
-res = you.research(
-    input="...",
-    research_effort=ResearchEffort.DEEP,
-    background=True,
-)
-assert isinstance(res, TaskResponse)
-```
-
-If you use `You` as a `TypedDict`-style client and only pass synchronous keyword arguments, this change is transparent.
-
 #### Research `output.content` is now `Union[str, object]`
 
 `output.content` is now `Union[str, object]` instead of always `str`. Plain research responses still return a Markdown `str` (with `content_type="text"`). Only when you supply `output_schema=...` does the SDK deserialize `output.content` as a structured JSON object matching your schema (with `content_type="object"`).
@@ -90,12 +70,12 @@ res = you.research(
     },
 )
 assert res.output.content_type.value == "object"
-# The Content model uses extra="allow" so the structured payload is
-# preserved. res.output.content is a Content instance — use model_dump()
-# to get the structured dict, or access fields directly:
-print(res.output.content.model_dump())
+# Content is now Union[str, Dict[str, Any]] — the overlay injects
+# additionalProperties: true so the structured payload round-trips
+# as a plain dict.
+print(res.output.content)
 # {'same_entity': True, 'confidence': 0.95, 'evidence': [...]}
-print(res.output.content.same_entity)  # True
+print(res.output.content["same_entity"])  # True
 ```
 
 Code that does `res.output.content.lower()` or similar string-only operations will still work for typical text responses (the value remains a `str`), but if you opt into `output_schema` you must branch on `content_type` before calling string methods.
@@ -114,25 +94,6 @@ export YDC_API_KEY="your-api-key"
 ```
 
 ### Optional Migrations Worth Adopting
-
-#### Use background mode for heavy research efforts
-
-For `ResearchEffort.DEEP` and `EXHAUSTIVE` calls, prefer background mode + polling or streaming to avoid client-side timeouts:
-
-```python
-# Recommended for long-running research
-res = you.research(
-    input="deep, multi-source question...",
-    research_effort=ResearchEffort.EXHAUSTIVE,
-    background=True,
-)
-
-while True:
-    status = you.get_research_task(task_id=res.task_id)
-    if status.status.value == "completed":
-        break
-    time.sleep(5)
-```
 
 #### Adopt new typed error names
 
@@ -162,7 +123,7 @@ The bare `UnprocessableEntityError` / `SearchUnauthorizedError` / `SearchForbidd
 ### New APIs to Try
 
 - `you.finance_research(input=..., research_effort=FinanceResearchEffort.DEEP)` — finance-optimized index.
-- `you.research(..., background=True)` + `you.get_research_task(task_id)` / `you.stream_research_task(task_id)` — long-running research with poll/stream.
+
 - `you.research(..., source_control={...})` — restrict / boost / exclude domains or filter by recency or country.
 - `you.research(..., output_schema={...})` — structured JSON output.
 - `you.search_post(..., boost_domains=[...])` (POST takes a list) or `you.search.unified(..., boost_domains="nytimes.com,wired.com")` (GET takes a single comma-separated string) — boost (but don't restrict) matching domains in ranking.

@@ -2,27 +2,17 @@
 
 from __future__ import annotations
 from enum import Enum
-from pydantic import ConfigDict, model_serializer
-from typing import List, Optional, Union
+from pydantic import model_serializer
+from typing import Any, Dict, List, Optional, Union
 from typing_extensions import NotRequired, TypeAliasType, TypedDict
 from youdotcom.types import BaseModel, UNSET_SENTINEL
 
 
-class ContentTypedDict(TypedDict):
-    pass
-
-
-class Content(BaseModel):
-    model_config = ConfigDict(extra="allow")
-
-
-ContentUnionTypedDict = TypeAliasType(
-    "ContentUnionTypedDict", Union[ContentTypedDict, str]
-)
+ContentTypedDict = TypeAliasType("ContentTypedDict", Union[str, Dict[str, Any]])
 r"""The comprehensive response with inline citations. When content_type is \"text\", this is a Markdown string with numbered citations that reference the items in the sources array. When content_type is \"object\", this is a structured JSON object matching the requested output_schema."""
 
 
-ContentUnion = TypeAliasType("ContentUnion", Union[Content, str])
+Content = TypeAliasType("Content", Union[str, Dict[str, Any]])
 r"""The comprehensive response with inline citations. When content_type is \"text\", this is a Markdown string with numbered citations that reference the items in the sources array. When content_type is \"object\", this is a structured JSON object matching the requested output_schema."""
 
 
@@ -72,7 +62,7 @@ class Source(BaseModel):
 class OutputTypedDict(TypedDict):
     r"""The research output containing the answer and sources."""
 
-    content: ContentUnionTypedDict
+    content: ContentTypedDict
     r"""The comprehensive response with inline citations. When content_type is \"text\", this is a Markdown string with numbered citations that reference the items in the sources array. When content_type is \"object\", this is a structured JSON object matching the requested output_schema."""
     content_type: ContentType
     r"""The format of the content field."""
@@ -83,7 +73,7 @@ class OutputTypedDict(TypedDict):
 class Output(BaseModel):
     r"""The research output containing the answer and sources."""
 
-    content: ContentUnion
+    content: Content
     r"""The comprehensive response with inline citations. When content_type is \"text\", this is a Markdown string with numbered citations that reference the items in the sources array. When content_type is \"object\", this is a structured JSON object matching the requested output_schema."""
 
     content_type: ContentType

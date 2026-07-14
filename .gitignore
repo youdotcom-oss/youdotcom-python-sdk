@@ -13,3 +13,4 @@ pyrightconfig.json
 .env.local
 _debug/
 dist/
+build/
