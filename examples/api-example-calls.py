@@ -321,10 +321,10 @@ def research_output_schema_request():
 
     assert isinstance(res, ResearchResponse)
     print(f"content_type: {res.output.content_type.value}")
-    # The Content model uses extra="allow" so the structured payload is
-    # preserved. Use model_dump() to get the dict, or access fields
-    # directly via attribute access.
-    structured_content = res.output.content.model_dump()
+    # output.content is Union[str, Dict[str, Any]] via the overlay's
+    # additionalProperties: true. When content_type is "object" it is a
+    # plain dict, so index it directly.
+    structured_content = res.output.content
     print(f"structured payload: {structured_content}")
 
 

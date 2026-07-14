@@ -24,7 +24,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search.unified(query="Your query", count=10, language=models.Language.EN, include_domains="nytimes.com,bbc.com", exclude_domains="spam-site.com,other-site.com", boost_domains="nytimes.com,wired.com", crawl_timeout=10)
+    res = you.search.unified(query="Your query", count=10, language=models.Language.EN, exclude_domains="spam-site.com,other-site.com", boost_domains="nytimes.com,wired.com", crawl_timeout=10)
 
     # Handle response
     print(res)

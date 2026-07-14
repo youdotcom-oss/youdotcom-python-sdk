@@ -50,14 +50,6 @@ pytestmark = pytest.mark.skipif(
 LIVE_TIMEOUT_MS = 90_000
 
 
-def pytest_configure(config):
-    """Register the `slow` marker (used by tests that hit DEEP/EXHAUSTIVE)."""
-    config.addinivalue_line(
-        "markers",
-        "slow: marks tests as slow (DEEP/EXHAUSTIVE research; skip with `-m 'not slow'`)",
-    )
-
-
 @pytest.fixture
 def api_key():
     """Get API key from environment."""

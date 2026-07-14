@@ -141,10 +141,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
-        "nytimes.com",
-        "bbc.com",
-    ], exclude_domains=[
+    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -172,10 +169,7 @@ async def main():
         api_key_auth=os.getenv("YDC_API_KEY", ""),
     ) as you:
 
-        res = await you.search_post_async(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
-            "nytimes.com",
-            "bbc.com",
-        ], exclude_domains=[
+        res = await you.search_post_async(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
             "spam-site.com",
             "other-site.com",
         ], boost_domains=[
@@ -212,10 +206,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
-        "nytimes.com",
-        "bbc.com",
-    ], exclude_domains=[
+    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -359,17 +350,14 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
-        "nytimes.com",
-        "bbc.com",
-    ], exclude_domains=[
+    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
         "nytimes.com",
         "wired.com",
     ], crawl_timeout=10,
-        RetryConfig("backoff", BackoffStrategy(1, 50, 1.1, 100), False))
+        retries=RetryConfig("backoff", BackoffStrategy(1, 50, 1.1, 100), False))
 
     # Handle response
     print(res)
@@ -388,10 +376,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
-        "nytimes.com",
-        "bbc.com",
-    ], exclude_domains=[
+    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -431,10 +416,7 @@ with You(
     res = None
     try:
 
-        res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
-            "nytimes.com",
-            "bbc.com",
-        ], exclude_domains=[
+        res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
             "spam-site.com",
             "other-site.com",
         ], boost_domains=[
@@ -534,10 +516,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
-        "nytimes.com",
-        "bbc.com",
-    ], exclude_domains=[
+    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
