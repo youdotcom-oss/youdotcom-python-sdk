@@ -26,7 +26,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.agents.runs.create(request={
@@ -57,7 +57,7 @@ from youdotcom import You
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.agents.runs.create(request={
@@ -86,7 +86,7 @@ from youdotcom import You
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.agents.runs.create(request={
@@ -110,7 +110,7 @@ from youdotcom import You
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.agents.runs.create(request={
@@ -134,7 +134,7 @@ from youdotcom import You
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.agents.runs.create(request={
@@ -158,7 +158,7 @@ from youdotcom import You
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.agents.runs.create(request={

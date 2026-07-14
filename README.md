@@ -138,7 +138,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -169,7 +169,7 @@ from youdotcom import You, models
 async def main():
 
     async with You(
-        api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+        api_key_auth=os.getenv("YDC_API_KEY", ""),
     ) as you:
 
         res = await you.search_post_async(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -200,7 +200,7 @@ This SDK supports the following security scheme globally:
 
 | Name           | Type   | Scheme  | Environment Variable |
 | -------------- | ------ | ------- | -------------------- |
-| `api_key_auth` | apiKey | API key | `YOU_API_KEY_AUTH`   |
+| `api_key_auth` | apiKey | API key | `YDC_API_KEY`   |
 
 To authenticate with the API the `api_key_auth` parameter must be set when initializing the SDK client instance. For example:
 ```python
@@ -209,7 +209,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -356,7 +356,7 @@ from youdotcom.utils import BackoffStrategy, RetryConfig
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -385,7 +385,7 @@ from youdotcom.utils import BackoffStrategy, RetryConfig
 
 with You(
     retry_config=RetryConfig("backoff", BackoffStrategy(1, 50, 1.1, 100), False),
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -426,7 +426,7 @@ from youdotcom import You, errors, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
     res = None
     try:
@@ -512,7 +512,7 @@ from youdotcom import You, models
 
 with You(
     server_url="https://api.you.com",
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.research(input="Which global cities improved air quality the most over the past 10 years, and what measurable actions contributed?", research_effort=models.ResearchEffort.LITE)
@@ -531,7 +531,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -645,7 +645,7 @@ from youdotcom import You
 def main():
 
     with You(
-        api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+        api_key_auth=os.getenv("YDC_API_KEY", ""),
     ) as you:
         # Rest of application here...
 
@@ -654,7 +654,7 @@ def main():
 async def amain():
 
     async with You(
-        api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+        api_key_auth=os.getenv("YDC_API_KEY", ""),
     ) as you:
         # Rest of application here...
 ```

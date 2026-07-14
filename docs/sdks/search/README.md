@@ -21,7 +21,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.search.unified(query="Your query", count=10, language=models.Language.EN, include_domains="nytimes.com,bbc.com", exclude_domains="spam-site.com,other-site.com", boost_domains="nytimes.com,wired.com", crawl_timeout=10)

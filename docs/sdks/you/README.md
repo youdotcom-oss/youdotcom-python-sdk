@@ -35,7 +35,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -62,7 +62,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -89,7 +89,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -116,7 +116,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -143,7 +143,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -170,7 +170,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -197,7 +197,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, include_domains=[
@@ -263,7 +263,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -281,7 +281,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -299,7 +299,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -317,7 +317,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -335,7 +335,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -353,7 +353,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -371,7 +371,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -389,7 +389,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -407,7 +407,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -425,7 +425,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -473,7 +473,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -491,7 +491,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -509,7 +509,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -527,7 +527,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -545,7 +545,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -563,7 +563,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -581,7 +581,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -599,7 +599,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -617,7 +617,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -635,7 +635,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YOU_API_KEY_AUTH", ""),
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
