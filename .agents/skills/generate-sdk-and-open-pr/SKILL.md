@@ -293,8 +293,12 @@ sed -i '' 's/YOU_API_KEY_AUTH/YDC_API_KEY/g' \
 Verify only `security.py` retains `YOU_API_KEY_AUTH` (the fallback):
 
 ```bash
-grep -rl "YOU_API_KEY_AUTH" --include="*.py" --include="*.md" . | grep -v __pycache__ | grep -v build/ | grep -v examples/
-# Should show only: ./src/youdotcom/utils/security.py
+grep -rl "YOU_API_KEY_AUTH" --include="*.py" --include="*.md" . | grep -v __pycache__ | grep -v build/ | grep -v examples/ | grep -v tests/test_security_env.py
+# Expected runtime-source hit: ./src/youdotcom/utils/security.py
+# Docs and CHANGELOG/MIGRATION/USAGE may also mention YOU_API_KEY_AUTH by
+# name (as the documented 2.3.x fallback being kept). tests/test_security_env.py
+# is excluded because it intentionally references both env vars to lock
+# in the fallback precedence.
 ```
 
 #### 4i-2. Verify server URLs (do NOT change search/contents URLs)

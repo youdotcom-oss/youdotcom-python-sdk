@@ -38,10 +38,13 @@ from youdotcom.models import (
 )
 
 
-# Skip all tests in this file if no API key is provided
+# Skip all tests in this file if no API key is provided.
+# Mirror the SDK's own env-var precedence (YDC_API_KEY first, then
+# YOU_API_KEY_AUTH as the documented 2.3.x fallback) so users on the
+# fallback env var don't get their live suite silently skipped.
 pytestmark = pytest.mark.skipif(
-    not os.getenv("YDC_API_KEY"),
-    reason="YDC_API_KEY environment variable not set"
+    not (os.getenv("YDC_API_KEY") or os.getenv("YOU_API_KEY_AUTH")),
+    reason="YDC_API_KEY or YOU_API_KEY_AUTH environment variable not set"
 )
 
 
@@ -52,8 +55,12 @@ LIVE_TIMEOUT_MS = 90_000
 
 @pytest.fixture
 def api_key():
-    """Get API key from environment."""
-    return os.getenv("YDC_API_KEY")
+    """Get API key from environment.
+
+    Mirrors the SDK's own env-var precedence (`YDC_API_KEY` first, then
+    `YOU_API_KEY_AUTH` as the documented 2.3.x fallback).
+    """
+    return os.getenv("YDC_API_KEY") or os.getenv("YOU_API_KEY_AUTH")
 
 
 @pytest.fixture
