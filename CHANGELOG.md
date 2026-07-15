@@ -49,7 +49,7 @@ you.search.unified(query="...", livecrawl_formats=LiveCrawlFormats.MARKDOWN)
 you.search.unified(query="...", livecrawl_formats=[LiveCrawlFormats.MARKDOWN])
 ```
 
-- **Consolidated error classes for Search**: The bare-from-spec names removed in 2.4.0 (`SearchForbiddenError`, `SearchUnauthorizedError`, `UnprocessableEntityError`, etc.) are replaced for `you.search_post()` only by consolidated `UnprocessableEntityResponseError`, `UnauthorizedResponseError`, and `ForbiddenResponseError`. `you.research()` and `you.finance_research()` keep raising per-endpoint typed errors (`ResearchUnprocessableEntityError`, `FinanceResearchUnprocessableEntityError`, etc.) — those classes are NOT consolidated. Catch Search on the consolidated `*ResponseError` class or `YouDefaultError`; catch Research/Finance Research on the per-endpoint class.
+- **Consolidated error classes for Search**: The bare-from-spec names removed in 2.4.0 (`SearchForbiddenError`, `SearchUnauthorizedError`, `UnprocessableEntityError`, etc.) are replaced for both Search endpoints (`you.search.unified()` GET and `you.search_post()` POST) by consolidated `UnprocessableEntityResponseError`, `UnauthorizedResponseError`, and `ForbiddenResponseError`. `you.research()` and `you.finance_research()` keep raising per-endpoint typed errors (`ResearchUnprocessableEntityError`, `FinanceResearchUnprocessableEntityError`, etc.) — those classes are NOT consolidated. Catch Search on the consolidated `*ResponseError` class or `YouDefaultError`; catch Research/Finance Research on the per-endpoint class.
 
 - **Environment variable renamed to `YDC_API_KEY`**: The SDK now reads the `YDC_API_KEY` environment variable for API key authentication (canonical per `you.com/docs`). The previous `YOU_API_KEY_AUTH` is still accepted as a fallback for 2.3.x users upgrading without code changes. Set `YDC_API_KEY` in your environment and the SDK will pick it up automatically:
 
@@ -66,7 +66,7 @@ export YDC_API_KEY="your-api-key"
 
 - The `unresearched` `ulow` effort level remains internal and is intentionally NOT exposed in the SDK — it is consolidated as internal routing on the server.
 - `you.finance_research()` deliberately does not support `source_control` or `output_schema`. The Finance Research API runs against a finance-optimized index and returns Markdown-formatted answers only.
-- **`pydantic` upper bound pinned to `<2.13`**: Defensive pin to avoid potential breaking changes in pydantic 2.13+. The SDK relies on `model_config = ConfigDict(extra="allow")` (overlay-injected on `Content`, `OutputSchema`, and similar open-ended response/request shapes), `model_dump()`, and `model_serializer` patterns that could shift across minor versions. Will be re-evaluated as pydantic stabilizes.
+- **`pydantic` upper bound pinned to `<2.13`**: Defensive pin to avoid potential breaking changes in pydantic 2.13+. The overlay injects `additionalProperties: true` on open-ended schemas (`Content`, `OutputSchema`), which Speakeasy renders as plain `Dict[str, Any]` type aliases (`Content = Union[str, Dict[str, Any]]`, `output_schema: Optional[Dict[str, Any]]`). The SDK also relies on `model_dump()` and `model_serializer` patterns that could shift across minor pydantic versions. Will be re-evaluated as pydantic stabilizes.
 
 ### Fixed
 
