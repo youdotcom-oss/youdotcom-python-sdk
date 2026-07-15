@@ -62,9 +62,6 @@ func testGetV1SearchGetV1Search0(w http.ResponseWriter, req *http.Request) {
 					},
 					ThumbnailURL: types.String("https://www.somethumbnailsite.com/thumbnail.jpg"),
 					PageAge:      types.MustNewTimeFromString("2025-06-25T11:41:00Z"),
-					Authors: []string{
-						"John Doe",
-					},
 					FaviconURL: types.String("https://someurl.com/favicon"),
 				},
 			},

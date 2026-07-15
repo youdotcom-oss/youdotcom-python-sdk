@@ -24,8 +24,6 @@ class WebResultTypedDict(TypedDict):
     r"""The age of the search result."""
     contents: NotRequired[ContentsTypedDict]
     r"""Contents of the page if livecrawl was enabled."""
-    authors: NotRequired[List[str]]
-    r"""An array of authors of the search result."""
     favicon_url: NotRequired[str]
     r"""The URL of the favicon of the search result's domain."""
 
@@ -52,9 +50,6 @@ class WebResult(BaseModel):
     contents: Optional[Contents] = None
     r"""Contents of the page if livecrawl was enabled."""
 
-    authors: Optional[List[str]] = None
-    r"""An array of authors of the search result."""
-
     favicon_url: Optional[str] = None
     r"""The URL of the favicon of the search result's domain."""
 
@@ -69,7 +64,6 @@ class WebResult(BaseModel):
                 "thumbnail_url",
                 "page_age",
                 "contents",
-                "authors",
                 "favicon_url",
             ]
         )

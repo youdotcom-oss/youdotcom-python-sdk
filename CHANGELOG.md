@@ -51,6 +51,8 @@ you.search.unified(query="...", livecrawl_formats=[LiveCrawlFormats.MARKDOWN])
 
 - **Consolidated error classes for Search**: The bare-from-spec names removed in 2.4.0 (`SearchForbiddenError`, `SearchUnauthorizedError`, `UnprocessableEntityError`, etc.) are replaced for both Search endpoints (`you.search.unified()` GET and `you.search_post()` POST) by consolidated `UnprocessableEntityResponseError`, `UnauthorizedResponseError`, and `ForbiddenResponseError`. `you.research()` and `you.finance_research()` keep raising per-endpoint typed errors (`ResearchUnprocessableEntityError`, `FinanceResearchUnprocessableEntityError`, etc.) — those classes are NOT consolidated. Catch Search on the consolidated `*ResponseError` class or `YouDefaultError`; catch Research/Finance Research on the per-endpoint class.
 
+- **`WebResult.authors` field removed**: The `authors` field has been removed from the web search result model (`WebResult` / `WebResultTypedDict`). The server no longer returns this field. The overlay includes a `remove` action so future regenerations stay aligned.
+
 - **Environment variable renamed to `YDC_API_KEY`**: The SDK now reads the `YDC_API_KEY` environment variable for API key authentication (canonical per `you.com/docs`). The previous `YOU_API_KEY_AUTH` is still accepted as a fallback for 2.3.x users upgrading without code changes. Set `YDC_API_KEY` in your environment and the SDK will pick it up automatically:
 
 ```bash

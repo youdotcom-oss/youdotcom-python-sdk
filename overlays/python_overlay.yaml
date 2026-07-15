@@ -40,3 +40,8 @@ actions:
   - target: $["paths"]["/v1/research"]["post"]["requestBody"]["content"]["application/json"]["schema"]["properties"]["output_schema"]
     update:
       additionalProperties: true
+  # Remove the `authors` field from the web search result schema.
+  # David requested removing it from the v1/v0 web search response spec;
+  # the overlay makes this regen-durable until the upstream spec drops it.
+  - target: $["components"]["schemas"]["WebResult"]["properties"]["authors"]
+    remove: true
