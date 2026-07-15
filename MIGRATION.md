@@ -93,6 +93,10 @@ export YDC_API_KEY="your-api-key"
 # YOU_API_KEY_AUTH still works as a fallback
 ```
 
+#### `WebResult.authors` field removed
+
+The `authors` field has been removed from `WebResult` (it was always optional and never documented). Code that accesses `result.authors` will now raise `AttributeError`.
+
 ### Optional Migrations Worth Adopting
 
 #### Adopt new typed error names
