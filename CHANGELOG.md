@@ -66,7 +66,7 @@ export YDC_API_KEY="your-api-key"
 
 - The `unresearched` `ulow` effort level remains internal and is intentionally NOT exposed in the SDK — it is consolidated as internal routing on the server.
 - `you.finance_research()` deliberately does not support `source_control` or `output_schema`. The Finance Research API runs against a finance-optimized index and returns Markdown-formatted answers only.
-- **`pydantic` upper bound pinned to `<2.13`**: Defensive pin to avoid potential breaking changes in pydantic 2.13+. The overlay injects `additionalProperties: true` on open-ended schemas (`Content`, `OutputSchema`), which Speakeasy renders as plain `Dict[str, Any]` type aliases (`Content = Union[str, Dict[str, Any]]`, `output_schema: Optional[Dict[str, Any]]`). The SDK also relies on `model_dump()` and `model_serializer` patterns that could shift across minor pydantic versions. Will be re-evaluated as pydantic stabilizes.
+- **`pydantic` upper bound removed**: The SDK previously pinned `pydantic <2.13` as a defensive measure. For a published library, upper bounds on core deps create resolver conflicts for downstream consumers who need a newer pydantic for other packages (fastapi, langchain, etc.). The SDK uses only stable pydantic 2.x APIs (`model_dump`, `model_serializer`, `BaseModel`, `pydantic_core.core_schema`), and the overlay's `additionalProperties: true` → `Dict[str, Any]` mechanism is plain Python typing, not a pydantic feature. The lower bound `>=2.11.2` is retained; if a future pydantic release breaks something, CI will catch it and we'll pin reactively.
 
 ### Fixed
 
