@@ -111,18 +111,20 @@ from youdotcom.errors import UnprocessableEntityError
 from youdotcom.errors import (
     ResearchUnprocessableEntityError,  # research-specific
     FinanceResearchUnprocessableEntityError,  # new
-    YouDefaultError,  # safety net
+    YouError,  # safety net — catches every SDK-raised error
 )
 
 try:
     you.research(input="")
 except ResearchUnprocessableEntityError as e:
     ...
-except YouDefaultError as e:
+except YouError as e:
     ...
 ```
 
-The bare `UnprocessableEntityError` / `SearchUnauthorizedError` / `SearchForbiddenError` names are gone. Code that catches on `YouDefaultError` or on `(SomeError, YouDefaultError)` tuples is unaffected.
+The bare `UnprocessableEntityError` / `SearchUnauthorizedError` / `SearchForbiddenError` names are gone.
+
+**Note on the catch-all base class.** Use `errors.YouError`, not `errors.YouDefaultError`, as your catch-all. The typed `*UnauthorizedError`, `*ForbiddenError`, `*UnprocessableEntityError`, and every per-endpoint typed error class extend `YouError` directly rather than `YouDefaultError`. A bare `except YouDefaultError` block will silently miss these. (Catching on `(TypedError, YouDefaultError)` tuples still works as long as the typed class is also listed.) Code that catches on `YouError` or on `(SomeError, YouError)` tuples is unaffected.
 
 ### New APIs to Try
 
