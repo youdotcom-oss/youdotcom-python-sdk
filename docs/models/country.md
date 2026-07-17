@@ -2,6 +2,14 @@
 
 The country code that determines the geographical focus of the web results.
 
+## Example Usage
+
+```python
+from youdotcom.models import Country
+
+value = Country.AR
+```
+
 
 ## Values
 

@@ -1,10 +1,10 @@
-# SearchForbiddenError
+# UnprocessableEntityResponseError
 
-Forbidden. API key lacks scope for this path.
+Unprocessable Entity. Invalid request parameter combination.
 
 
 ## Fields
 
 | Field              | Type               | Required           | Description        |
 | ------------------ | ------------------ | ------------------ | ------------------ |
-| `detail`           | *Optional[str]*    | :heavy_minus_sign: | N/A                |
+| `error`            | *Optional[str]*    | :heavy_minus_sign: | N/A                |

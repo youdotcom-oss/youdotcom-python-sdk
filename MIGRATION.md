@@ -1,6 +1,143 @@
 # Migration Guide
 
-## 1.x → 2.3.0 (Latest)
+## 2.3.0 → 2.4.0 (Latest)
+
+This guide covers breaking changes introduced in 2.4.0. If you are upgrading from 1.x or 2.0, also read the [1.x → 2.0](#1x-to-20) section below.
+
+### Breaking Changes in 2.4.0
+
+#### New `FinanceResearchEffort` enum
+
+The Finance Research API has its own effort enum (`DEEP`, `EXHAUSTIVE`) distinct from the Research API's `ResearchEffort` enum (which is unchanged):
+
+```python
+# Research API (unchanged from 2.3.x)
+from youdotcom.models import ResearchEffort
+you.research(input="...", research_effort=ResearchEffort.DEEP)
+
+# New in 2.4.0: Finance Research API
+from youdotcom.models import FinanceResearchEffort
+you.finance_research(input="...", research_effort=FinanceResearchEffort.DEEP)
+```
+
+`ResearchEffort` keeps the name `ResearchEffort` and values `LITE`, `STANDARD`, `DEEP`, `EXHAUSTIVE`. No migration is required — the OpenAPI spec was promoted to a named schema so the SDK preserves the clean name.
+
+#### `livecrawl_formats` now requires a list
+
+`livecrawl_formats` on the Search API is now strictly typed as `Optional[List[LiveCrawlFormats]]`. Passing a single enum value (silently coerced in earlier versions) raises a `ValidationError` at request time. Wrap the value in a list:
+
+```python
+# Before (2.3.x): single value was accepted
+you.search.unified(
+    query="...",
+    livecrawl=LiveCrawl.WEB,
+    livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+)
+
+# After (2.4.0): must be a list
+you.search.unified(
+    query="...",
+    livecrawl=LiveCrawl.WEB,
+    livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
+)
+```
+
+If you request multiple formats, the list form is the only available form:
+
+```python
+you.search.unified(
+    query="...",
+    livecrawl=LiveCrawl.WEB,
+    livecrawl_formats=[LiveCrawlFormats.HTML, LiveCrawlFormats.MARKDOWN],
+)
+```
+
+#### Research `output.content` is now `Union[str, object]`
+
+`output.content` is now `Union[str, object]` instead of always `str`. Plain research responses still return a Markdown `str` (with `content_type="text"`). Only when you supply `output_schema=...` does the SDK deserialize `output.content` as a structured JSON object matching your schema (with `content_type="object"`).
+
+```python
+res = you.research(
+    input="Are Acme Logistics DE and Acme Logistics NJ the same entity?",
+    output_schema={
+        "type": "object",
+        "properties": {
+            "same_entity": {"type": "boolean"},
+            "confidence": {"type": "number"},
+            "evidence": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": ["same_entity", "confidence", "evidence"],
+    },
+)
+assert res.output.content_type.value == "object"
+# Content is now Union[str, Dict[str, Any]] — the overlay injects
+# additionalProperties: true so the structured payload round-trips
+# as a plain dict.
+print(res.output.content)
+# {'same_entity': True, 'confidence': 0.95, 'evidence': [...]}
+print(res.output.content["same_entity"])  # True
+```
+
+Code that does `res.output.content.lower()` or similar string-only operations will still work for typical text responses (the value remains a `str`), but if you opt into `output_schema` you must branch on `content_type` before calling string methods.
+
+#### Environment variable renamed to `YDC_API_KEY`
+
+The SDK now reads `YDC_API_KEY` (canonical per `you.com/docs`) instead of `YOU_API_KEY_AUTH` for API key authentication. `YOU_API_KEY_AUTH` is still accepted as a fallback, so existing 2.3.x users do not need to change anything immediately. Update your environment to use the canonical name when convenient:
+
+```bash
+# Before (2.3.x)
+export YOU_API_KEY_AUTH="your-api-key"
+
+# After (2.4.0) — preferred
+export YDC_API_KEY="your-api-key"
+# YOU_API_KEY_AUTH still works as a fallback
+```
+
+#### `WebResult.authors` field removed
+
+The `authors` field has been removed from `WebResult` (it was always optional and never documented). Code that accesses `result.authors` will now raise `AttributeError`.
+
+### Optional Migrations Worth Adopting
+
+#### Adopt new typed error names
+
+The catch surface for Research has shifted from bare-class names to per-endpoint classes:
+
+```python
+# Before (2.3.x)
+from youdotcom.errors import UnprocessableEntityError
+
+# After (2.4.0): prefer per-endpoint
+from youdotcom.errors import (
+    ResearchUnprocessableEntityError,  # research-specific
+    FinanceResearchUnprocessableEntityError,  # new
+    YouError,  # safety net — catches every SDK-raised error
+)
+
+try:
+    you.research(input="")
+except ResearchUnprocessableEntityError as e:
+    ...
+except YouError as e:
+    ...
+```
+
+The bare `UnprocessableEntityError` / `SearchUnauthorizedError` / `SearchForbiddenError` names are gone.
+
+**Note on the catch-all base class.** Use `errors.YouError`, not `errors.YouDefaultError`, as your catch-all. The typed `*UnauthorizedError`, `*ForbiddenError`, `*UnprocessableEntityError`, and every per-endpoint typed error class extend `YouError` directly rather than `YouDefaultError`. A bare `except YouDefaultError` block will silently miss these. (Catching on `(TypedError, YouDefaultError)` tuples still works as long as the typed class is also listed.) Code that catches on `YouError` or on `(SomeError, YouError)` tuples is unaffected.
+
+### New APIs to Try
+
+- `you.finance_research(input=..., research_effort=FinanceResearchEffort.DEEP)` — finance-optimized index.
+
+- `you.research(..., source_control={...})` — restrict / boost / exclude domains or filter by recency or country.
+- `you.research(..., output_schema={...})` — structured JSON output.
+- `you.search_post(..., boost_domains=[...])` (POST takes a list) or `you.search.unified(..., boost_domains="nytimes.com,wired.com")` (GET takes a single comma-separated string) — boost (but don't restrict) matching domains in ranking.
+- `you.contents.generate(..., max_age=86400)` — require cached content younger than 24 hours.
+
+---
+
+## 1.x → 2.3.0
 
 This guide covers breaking changes introduced in 2.3.0. If you are upgrading from 1.x, also read the [1.x → 2.0](#1x-to-20) section below.
 

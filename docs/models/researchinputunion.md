@@ -1,4 +1,4 @@
-# Input2
+# ResearchInputUnion
 
 The input value that caused the error.
 

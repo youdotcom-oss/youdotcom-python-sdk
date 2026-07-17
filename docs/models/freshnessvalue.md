@@ -1,4 +1,4 @@
-# SearchFreshness
+# FreshnessValue
 
 Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
 

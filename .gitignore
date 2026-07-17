@@ -11,3 +11,6 @@ pyrightconfig.json
 .speakeasy/reports
 .env
 .env.local
+_debug/
+dist/
+build/

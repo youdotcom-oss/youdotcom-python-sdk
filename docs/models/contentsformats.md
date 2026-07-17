@@ -1,5 +1,13 @@
 # ContentsFormats
 
+## Example Usage
+
+```python
+from youdotcom.models import ContentsFormats
+
+value = ContentsFormats.HTML
+```
+
 
 ## Values
 

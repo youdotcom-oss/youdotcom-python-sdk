@@ -1,11 +1,15 @@
 import os
+import json
 import pytest
+import httpx
 
 from tests.test_client import create_test_http_client
 from youdotcom import You
 from youdotcom.errors import (
-    SearchForbiddenError,
-    SearchUnauthorizedError,
+    ForbiddenResponseError,
+    UnauthorizedResponseError,
+    UnprocessableEntityResponseError,
+    YouDefaultError,
 )
 from youdotcom.models import (
     Country,
@@ -23,7 +27,7 @@ def server_url():
 
 @pytest.fixture
 def api_key():
-    return os.getenv("YOU_API_KEY_AUTH", "test-api-key")
+    return "test-api-key"
 
 
 class TestSearchBasic:
@@ -72,13 +76,13 @@ class TestSearchFilters:
 
     def test_search_with_livecrawl(self, server_url, api_key):
         client = create_test_http_client("get_/v1/search")
-        
+
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             res = you.search.unified(
                 query="machine learning tutorials",
                 count=3,
                 livecrawl=LiveCrawl.WEB,
-                livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
                 server_url=server_url,
             )
             
@@ -91,7 +95,7 @@ class TestSearchFilters:
 
     def test_search_all_parameters(self, server_url, api_key):
         client = create_test_http_client("get_/v1/search")
-        
+
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             res = you.search.unified(
                 query="quantum computing",
@@ -101,7 +105,7 @@ class TestSearchFilters:
                 country=Country.GB,
                 safesearch=SafeSearch.STRICT,
                 livecrawl=LiveCrawl.WEB,
-                livecrawl_formats=LiveCrawlFormats.HTML,
+                livecrawl_formats=[LiveCrawlFormats.HTML],
                 server_url=server_url,
             )
             
@@ -116,13 +120,13 @@ class TestSearchFilters:
     def test_search_news_with_livecrawl(self, server_url, api_key):
         """Test that news results can have contents when livecrawl is enabled (new in 2.2.0)."""
         client = create_test_http_client("get_/v1/search")
-        
+
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             res = you.search.unified(
                 query="technology news",
                 count=5,
                 livecrawl=LiveCrawl.NEWS,
-                livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
                 server_url=server_url,
             )
             
@@ -139,13 +143,13 @@ class TestSearchFilters:
     def test_search_livecrawl_all_with_news_contents(self, server_url, api_key):
         """Test livecrawl=ALL returns contents for both web and news results."""
         client = create_test_http_client("get_/v1/search")
-        
+
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             res = you.search.unified(
                 query="breaking tech news",
                 count=3,
                 livecrawl=LiveCrawl.ALL,
-                livecrawl_formats=LiveCrawlFormats.HTML,
+                livecrawl_formats=[LiveCrawlFormats.HTML],
                 server_url=server_url,
             )
             
@@ -168,12 +172,110 @@ class TestSearchErrors:
         client = create_test_http_client("get_/v1/search-unauthorized")
         
         with You(server_url=server_url, client=client, api_key_auth="invalid") as you:
-            with pytest.raises((SearchUnauthorizedError, SearchForbiddenError)):
+            with pytest.raises((UnauthorizedResponseError, ForbiddenResponseError, YouDefaultError)):
                 you.search.unified(query="test", server_url=server_url)
 
     def test_forbidden(self, server_url, api_key):
         client = create_test_http_client("get_/v1/search-forbidden")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            with pytest.raises(SearchForbiddenError):
+            with pytest.raises((ForbiddenResponseError, YouDefaultError)):
                 you.search.unified(query="test", server_url=server_url)
+
+
+# ---------------------------------------------------------------------------
+# POST-side error tests: search_post() must raise the same consolidated
+# *ResponseError classes as search.unified() (GET).  Uses MockTransport
+# because the mockserver has no POST /v1/search handler.
+# ---------------------------------------------------------------------------
+
+
+class TestSearchPostErrors:
+    """Verify search_post() raises the consolidated *ResponseError classes.
+
+    The CHANGELOG documents that both Search endpoints (GET and POST) raise
+    the consolidated error classes. These tests lock that contract for the
+    POST path so a regen that mis-wires POST errors would fail CI.
+    """
+
+    def test_post_unauthorized(self):
+        def handler(request):
+            return httpx.Response(
+                401,
+                headers={"content-type": "application/json"},
+                content=json.dumps({"message": "Invalid or expired API key"}),
+            )
+
+        transport = httpx.MockTransport(handler)
+        sdk_client = httpx.Client(transport=transport)
+        you = You(server_url="http://mock.local", client=sdk_client, api_key_auth="invalid")
+        with pytest.raises((UnauthorizedResponseError, YouDefaultError)):
+            you.search_post(query="test")
+        sdk_client.close()
+
+    def test_post_forbidden(self):
+        def handler(request):
+            return httpx.Response(
+                403,
+                headers={"content-type": "application/json"},
+                content=json.dumps({"message": "Forbidden"}),
+            )
+
+        transport = httpx.MockTransport(handler)
+        sdk_client = httpx.Client(transport=transport)
+        you = You(server_url="http://mock.local", client=sdk_client, api_key_auth="test")
+        with pytest.raises((ForbiddenResponseError, YouDefaultError)):
+            you.search_post(query="test")
+        sdk_client.close()
+
+    def test_post_unprocessable(self):
+        def handler(request):
+            return httpx.Response(
+                422,
+                headers={"content-type": "application/json"},
+                content=json.dumps({"message": "include_domains and exclude_domains cannot be combined"}),
+            )
+
+        transport = httpx.MockTransport(handler)
+        sdk_client = httpx.Client(transport=transport)
+        you = You(server_url="http://mock.local", client=sdk_client, api_key_auth="test")
+        with pytest.raises((UnprocessableEntityResponseError, YouDefaultError)):
+            you.search_post(
+                query="test",
+                include_domains=["example.com"],
+                exclude_domains=["spam.com"],
+            )
+        sdk_client.close()
+
+
+class TestSearchPostBoostDomains:
+    """Verify search_post() forwards boost_domains in the request body."""
+
+    def test_post_boost_domains_forwarded(self):
+        def handler(request):
+            body = json.loads(request.content)
+            assert "boost_domains" in body
+            assert "python.org" in body["boost_domains"]
+            return httpx.Response(
+                200,
+                headers={"content-type": "application/json"},
+                content=json.dumps({
+                    "results": {
+                        "web": [
+                            {"url": "https://python.org", "title": "Python", "description": "Python.org"}
+                        ],
+                    },
+                    "metadata": {"q": "test", "latency": 0.1},
+                }),
+            )
+
+        transport = httpx.MockTransport(handler)
+        sdk_client = httpx.Client(transport=transport)
+        you = You(server_url="http://mock.local", client=sdk_client, api_key_auth="test")
+        res = you.search_post(
+            query="Python type hints",
+            boost_domains=["python.org", "realpython.com"],
+        )
+        assert res.results is not None
+        sdk_client.close()
+

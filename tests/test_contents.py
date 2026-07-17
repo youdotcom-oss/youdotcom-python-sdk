@@ -17,7 +17,7 @@ def server_url():
 
 @pytest.fixture
 def api_key():
-    return os.getenv("YOU_API_KEY_AUTH", "test-api-key")
+    return "test-api-key"
 
 
 class TestContentsBasic:
@@ -134,6 +134,21 @@ class TestContentsBasic:
                 urls=["https://www.example.com"],
                 formats=[ContentsFormats.HTML],
                 crawl_timeout=30,  # Set timeout to 30 seconds
+                server_url=server_url,
+            )
+            
+            assert isinstance(res, list)
+            assert len(res) > 0
+
+    def test_max_age(self, server_url, api_key):
+        """Test the max_age parameter (cache freshness control, new in 2.4.0)."""
+        client = create_test_http_client("post_/v1/contents")
+        
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            res = you.contents.generate(
+                urls=["https://www.example.com"],
+                formats=[ContentsFormats.MARKDOWN],
+                max_age=86400,  # 1 day in seconds
                 server_url=server_url,
             )
             

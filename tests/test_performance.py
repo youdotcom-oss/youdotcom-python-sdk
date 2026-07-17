@@ -386,7 +386,7 @@ class TestSearchPerformance:
                     query="AI research",
                     count=3,
                     livecrawl=LiveCrawl.WEB,
-                    livecrawl_formats=LiveCrawlFormats.HTML,
+                    livecrawl_formats=[LiveCrawlFormats.HTML],
                     server_url=server_url,
                 )
             
@@ -405,7 +405,7 @@ class TestSearchPerformance:
                     query="documentation guides",
                     count=3,
                     livecrawl=LiveCrawl.WEB,
-                    livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                    livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
                     server_url=server_url,
                 )
             
@@ -448,7 +448,7 @@ class TestSearchPerformance:
                     freshness=Freshness.WEEK,
                     country=Country.GB,
                     livecrawl=LiveCrawl.WEB,
-                    livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                    livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
                     server_url=server_url,
                 )
             
@@ -467,7 +467,7 @@ class TestSearchPerformance:
                     query="technology news",
                     count=5,
                     livecrawl=LiveCrawl.NEWS,
-                    livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                    livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
                     server_url=server_url,
                 )
             
@@ -486,7 +486,7 @@ class TestSearchPerformance:
                     query="breaking tech news",
                     count=3,
                     livecrawl=LiveCrawl.ALL,
-                    livecrawl_formats=LiveCrawlFormats.HTML,
+                    livecrawl_formats=[LiveCrawlFormats.HTML],
                     server_url=server_url,
                 )
             

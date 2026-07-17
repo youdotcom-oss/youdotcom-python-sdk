@@ -21,6 +21,8 @@ class ContentsRequestTypedDict(TypedDict):
     r"""Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available."""
     crawl_timeout: NotRequired[int]
     r"""Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds."""
+    max_age: NotRequired[Nullable[int]]
+    r"""Maximum allowed age of cached content in seconds. When set, cached content older than this threshold is ignored and the page is re-fetched. Must be 0 or greater. Default: null (no age limit, cached content is returned regardless of age)."""
 
 
 class ContentsRequest(BaseModel):
@@ -33,18 +35,34 @@ class ContentsRequest(BaseModel):
     crawl_timeout: Optional[int] = 10
     r"""Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds."""
 
+    max_age: OptionalNullable[int] = None
+    r"""Maximum allowed age of cached content in seconds. When set, cached content older than this threshold is ignored and the page is re-fetched. Must be 0 or greater. Default: null (no age limit, cached content is returned regardless of age)."""
+
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
-        optional_fields = set(["urls", "formats", "crawl_timeout"])
+        optional_fields = set(["urls", "formats", "crawl_timeout", "max_age"])
+        nullable_fields = set(["max_age"])
+        null_default_fields = set(["max_age"])
         serialized = handler(self)
         m = {}
 
         for n, f in type(self).model_fields.items():
             k = f.alias or n
-            val = serialized.get(k)
+            val = serialized.get(k, serialized.get(n))
+            is_nullable_and_explicitly_set = (
+                k in nullable_fields
+                and (
+                    self.__pydantic_fields_set__.intersection({n})
+                    or k in null_default_fields
+                )  # pylint: disable=no-member
+            )
 
             if val != UNSET_SENTINEL:
-                if val is not None or k not in optional_fields:
+                if (
+                    val is not None
+                    or k not in optional_fields
+                    or is_nullable_and_explicitly_set
+                ):
                     m[k] = val
 
         return m
@@ -88,7 +106,7 @@ class ContentsResponse(BaseModel):
 
         for n, f in type(self).model_fields.items():
             k = f.alias or n
-            val = serialized.get(k)
+            val = serialized.get(k, serialized.get(n))
             is_nullable_and_explicitly_set = (
                 k in nullable_fields
                 and (self.__pydantic_fields_set__.intersection({n}))  # pylint: disable=no-member

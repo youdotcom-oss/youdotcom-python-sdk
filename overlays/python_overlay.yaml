@@ -2,8 +2,13 @@ overlay: 1.0.0
 x-speakeasy-jsonpath: rfc9535
 info:
   title: Python Specific Modifications
-  version: 1.0.0
+  version: 1.1.0
 actions:
+  # Restore the top-level spec title — the frontend spec changed info.title
+  # to "You.com Finance Research API" which mislabels the entire SDK in the
+  # regenerated README summary. Keep it as "You.com API".
+  - target: $["info"]["title"]
+    update: "You.com API"
   - target: $["paths"]["/v1/contents"]["post"]
     update:
       tags:
@@ -19,3 +24,24 @@ actions:
       tags:
         - agents.runs
       x-speakeasy-name-override: create
+  # Allow extras on the anonymous object branch of `output.content` so
+  # `output_schema=` requests preserve the structured payload through SDK
+  # unmarshal (today: `class Content(BaseModel): pass` drops everything
+  # due to pydantic `extra="ignore"`). Reviewed as part of Step 4i-9.
+  - target: $["components"]["schemas"]["ResearchResponse"]["properties"]["output"]["properties"]["content"]["oneOf"][1]
+    update:
+      additionalProperties: true
+  # Same fix for the REQUEST side: `output_schema` is an inline `type: object`
+  # schema (no `$ref`), so Speakeasy generates an empty `OutputSchema` pydantic
+  # class that drops all `additionalProperties` (i.e., the JSON Schema fields the
+  # server actually consumes). Without this overlay, the request body arrives
+  # at the server as `{}` and we get a 422 ("Structured output schema root must
+  # be an object"). Reviewed as part of 2.4.0 final QA.
+  - target: $["paths"]["/v1/research"]["post"]["requestBody"]["content"]["application/json"]["schema"]["properties"]["output_schema"]
+    update:
+      additionalProperties: true
+  # Remove the `authors` field from the web search result schema.
+  # David requested removing it from the v1/v0 web search response spec;
+  # the overlay makes this regen-durable until the upstream spec drops it.
+  - target: $["components"]["schemas"]["WebResult"]["properties"]["authors"]
+    remove: true

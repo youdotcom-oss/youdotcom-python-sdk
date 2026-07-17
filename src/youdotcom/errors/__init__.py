@@ -26,6 +26,24 @@ if TYPE_CHECKING:
         ContentsUnauthorizedError,
         ContentsUnauthorizedErrorData,
     )
+    from .finance_researchop import (
+        FinanceResearchForbiddenError,
+        FinanceResearchForbiddenErrorData,
+        FinanceResearchInternalServerError,
+        FinanceResearchInternalServerErrorData,
+        FinanceResearchUnauthorizedError,
+        FinanceResearchUnauthorizedErrorData,
+        FinanceResearchUnprocessableEntityError,
+        FinanceResearchUnprocessableEntityErrorData,
+    )
+    from .forbidden_response_error import (
+        ForbiddenResponseError,
+        ForbiddenResponseErrorData,
+    )
+    from .internalservererror_response import (
+        InternalServerErrorResponse,
+        InternalServerErrorResponseData,
+    )
     from .no_response_error import NoResponseError
     from .researchop import (
         ResearchForbiddenError,
@@ -34,17 +52,17 @@ if TYPE_CHECKING:
         ResearchInternalServerErrorData,
         ResearchUnauthorizedError,
         ResearchUnauthorizedErrorData,
-        UnprocessableEntityError,
-        UnprocessableEntityErrorData,
+        ResearchUnprocessableEntityError,
+        ResearchUnprocessableEntityErrorData,
     )
     from .responsevalidationerror import ResponseValidationError
-    from .searchop import (
-        SearchForbiddenError,
-        SearchForbiddenErrorData,
-        SearchInternalServerError,
-        SearchInternalServerErrorData,
-        SearchUnauthorizedError,
-        SearchUnauthorizedErrorData,
+    from .unauthorized_response_error import (
+        UnauthorizedResponseError,
+        UnauthorizedResponseErrorData,
+    )
+    from .unprocessableentity_response_error import (
+        UnprocessableEntityResponseError,
+        UnprocessableEntityResponseErrorData,
     )
     from .youdefaulterror import YouDefaultError
 
@@ -61,6 +79,18 @@ __all__ = [
     "ContentsInternalServerErrorData",
     "ContentsUnauthorizedError",
     "ContentsUnauthorizedErrorData",
+    "FinanceResearchForbiddenError",
+    "FinanceResearchForbiddenErrorData",
+    "FinanceResearchInternalServerError",
+    "FinanceResearchInternalServerErrorData",
+    "FinanceResearchUnauthorizedError",
+    "FinanceResearchUnauthorizedErrorData",
+    "FinanceResearchUnprocessableEntityError",
+    "FinanceResearchUnprocessableEntityErrorData",
+    "ForbiddenResponseError",
+    "ForbiddenResponseErrorData",
+    "InternalServerErrorResponse",
+    "InternalServerErrorResponseData",
     "NoResponseError",
     "ResearchForbiddenError",
     "ResearchForbiddenErrorData",
@@ -68,15 +98,13 @@ __all__ = [
     "ResearchInternalServerErrorData",
     "ResearchUnauthorizedError",
     "ResearchUnauthorizedErrorData",
+    "ResearchUnprocessableEntityError",
+    "ResearchUnprocessableEntityErrorData",
     "ResponseValidationError",
-    "SearchForbiddenError",
-    "SearchForbiddenErrorData",
-    "SearchInternalServerError",
-    "SearchInternalServerErrorData",
-    "SearchUnauthorizedError",
-    "SearchUnauthorizedErrorData",
-    "UnprocessableEntityError",
-    "UnprocessableEntityErrorData",
+    "UnauthorizedResponseError",
+    "UnauthorizedResponseErrorData",
+    "UnprocessableEntityResponseError",
+    "UnprocessableEntityResponseErrorData",
     "YouDefaultError",
     "YouError",
 ]
@@ -94,6 +122,18 @@ _dynamic_imports: dict[str, str] = {
     "ContentsInternalServerErrorData": ".contentsop",
     "ContentsUnauthorizedError": ".contentsop",
     "ContentsUnauthorizedErrorData": ".contentsop",
+    "FinanceResearchForbiddenError": ".finance_researchop",
+    "FinanceResearchForbiddenErrorData": ".finance_researchop",
+    "FinanceResearchInternalServerError": ".finance_researchop",
+    "FinanceResearchInternalServerErrorData": ".finance_researchop",
+    "FinanceResearchUnauthorizedError": ".finance_researchop",
+    "FinanceResearchUnauthorizedErrorData": ".finance_researchop",
+    "FinanceResearchUnprocessableEntityError": ".finance_researchop",
+    "FinanceResearchUnprocessableEntityErrorData": ".finance_researchop",
+    "ForbiddenResponseError": ".forbidden_response_error",
+    "ForbiddenResponseErrorData": ".forbidden_response_error",
+    "InternalServerErrorResponse": ".internalservererror_response",
+    "InternalServerErrorResponseData": ".internalservererror_response",
     "NoResponseError": ".no_response_error",
     "ResearchForbiddenError": ".researchop",
     "ResearchForbiddenErrorData": ".researchop",
@@ -101,15 +141,13 @@ _dynamic_imports: dict[str, str] = {
     "ResearchInternalServerErrorData": ".researchop",
     "ResearchUnauthorizedError": ".researchop",
     "ResearchUnauthorizedErrorData": ".researchop",
-    "UnprocessableEntityError": ".researchop",
-    "UnprocessableEntityErrorData": ".researchop",
+    "ResearchUnprocessableEntityError": ".researchop",
+    "ResearchUnprocessableEntityErrorData": ".researchop",
     "ResponseValidationError": ".responsevalidationerror",
-    "SearchForbiddenError": ".searchop",
-    "SearchForbiddenErrorData": ".searchop",
-    "SearchInternalServerError": ".searchop",
-    "SearchInternalServerErrorData": ".searchop",
-    "SearchUnauthorizedError": ".searchop",
-    "SearchUnauthorizedErrorData": ".searchop",
+    "UnauthorizedResponseError": ".unauthorized_response_error",
+    "UnauthorizedResponseErrorData": ".unauthorized_response_error",
+    "UnprocessableEntityResponseError": ".unprocessableentity_response_error",
+    "UnprocessableEntityResponseErrorData": ".unprocessableentity_response_error",
     "YouDefaultError": ".youdefaulterror",
 }
 

@@ -429,8 +429,6 @@ type Web struct {
 	ThumbnailURL *string `json:"thumbnail_url,omitempty"`
 	// The age of the search result.
 	PageAge *time.Time `json:"page_age,omitempty"`
-	// An array of authors of the search result.
-	Authors []string `json:"authors,omitempty"`
 	// The URL of the favicon of the search result's domain.
 	FaviconURL *string `json:"favicon_url,omitempty"`
 }
@@ -486,13 +484,6 @@ func (o *Web) GetPageAge() *time.Time {
 		return nil
 	}
 	return o.PageAge
-}
-
-func (o *Web) GetAuthors() []string {
-	if o == nil {
-		return nil
-	}
-	return o.Authors
 }
 
 func (o *Web) GetFaviconURL() *string {

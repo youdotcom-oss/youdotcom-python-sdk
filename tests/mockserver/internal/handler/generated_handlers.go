@@ -16,5 +16,6 @@ func GeneratedHandlers(ctx context.Context, dir *logging.HTTPFileDirectory, rt *
 		NewGeneratedHandler(ctx, http.MethodPost, "/v1/agents/runs", pathPostV1AgentsRuns(dir, rt)),
 		NewGeneratedHandler(ctx, http.MethodPost, "/v1/contents", pathPostV1Contents(dir, rt)),
 		NewGeneratedHandler(ctx, http.MethodPost, "/v1/research", pathPostV1Research(dir, rt)),
+		NewGeneratedHandler(ctx, http.MethodPost, "/v1/finance_research", pathPostV1FinanceResearch(dir, rt)),
 	}
 }

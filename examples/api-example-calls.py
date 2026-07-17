@@ -41,6 +41,8 @@ from youdotcom.models import (
     ContentsFormats,
     WebSearchTool,
     ResearchEffort,
+    FinanceResearchEffort,
+    FinanceResearchResponse,
     ResearchResponse,
 )
 from youdotcom.utils import eventstreaming
@@ -210,7 +212,7 @@ def search_request():
         query="artificial intelligence in farming",
         count=1,
         livecrawl=LiveCrawl.WEB,
-        livecrawl_formats=LiveCrawlFormats.MARKDOWN
+        livecrawl_formats=[LiveCrawlFormats.MARKDOWN]
     )
 
     print("Metadata:")
@@ -284,12 +286,116 @@ def research_request():
 
     assert isinstance(res, ResearchResponse)
     print("Research Answer:")
+    # `output.content` is a string when content_type is "text"
     print(res.output.content[:500] + "..." if len(res.output.content) > 500 else res.output.content)
 
     if res.output.sources:
         print(f"\nSources ({len(res.output.sources)}):")
         for source in res.output.sources:
             print(f"  - {source.title or 'Untitled'}: {source.url}")
+
+
+def research_output_schema_request():
+    """
+    Research API with `output_schema` for structured JSON output.
+    """
+    print("\n🚀 Running Research with output_schema...\n")
+
+    assert you is not None, "SDK client not initialized"
+
+    res = you.research(
+        input="Are \"Acme Logistics LLC\" (Delaware) and \"Acme Logistics\" (Newark, NJ) the same business?",
+        research_effort=ResearchEffort.STANDARD,
+        output_schema={
+            "type": "object",
+            "properties": {
+                "same_entity": {"type": "boolean"},
+                "confidence": {"type": "number"},
+                "evidence": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["same_entity", "confidence", "evidence"],
+            "additionalProperties": False,
+        },
+    )
+
+    assert isinstance(res, ResearchResponse)
+    print(f"content_type: {res.output.content_type.value}")
+    # output.content is Union[str, Dict[str, Any]] via the overlay's
+    # additionalProperties: true. When content_type is "object" it is a
+    # plain dict, so index it directly.
+    structured_content = res.output.content
+    print(f"structured payload: {structured_content}")
+
+
+def finance_research_request():
+    """
+    Finance Research API endpoint for finance-focused multi-step research.
+    Returns a Markdown answer with citations from financial sources (SEC filings,
+    earnings releases, analyst coverage, market data) instead of the open web.
+    """
+    print("\n🚀 Running Finance Research Request...\n")
+
+    assert you is not None, "SDK client not initialized"
+
+    res = you.finance_research(
+        input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?",
+        research_effort=FinanceResearchEffort.DEEP,
+    )
+
+    assert isinstance(res, FinanceResearchResponse)
+    print("Finance Answer:")
+    # Finance Research always returns `content` as a Markdown string (content_type: "text").
+    print(res.output.content[:500] + "..." if len(res.output.content) > 500 else res.output.content)
+
+    if res.output.sources:
+        print(f"\nSources ({len(res.output.sources)}):")
+        for source in res.output.sources:
+            print(f"  - {source.title or 'Untitled'}: {source.url}")
+
+
+def search_request_with_boost():
+    """
+    Search API: use `boost_domains` to prefer certain domains in ranking
+    without excluding other domains. Useful when you want sources-with-preference
+    rather than a strict allow-list (`include_domains`).
+    """
+    print("\n🚀 Running Search Request (boost_domains)...\n")
+
+    assert you is not None, "SDK client not initialized"
+
+    results = you.search.unified(
+        query="latest advances in fusion energy research",
+        count=5,
+        boost_domains="nature.com,science.org,arxiv.org",
+    )
+
+    print("Top results:")
+    if results.results and results.results.web:
+        for result in results.results.web[:5]:
+            print(f"  - {result.title or 'Untitled'}: {result.url}")
+
+
+def content_request_with_max_age():
+    """
+    Contents API: use `max_age` to control cache freshness (in seconds).
+    Pass `max_age=0` to always re-fetch, or e.g. `max_age=86400` to require
+    cached content less than 24 hours old.
+    """
+    print("\n🚀 Running Content Request (max_age)...\n")
+
+    assert you is not None, "SDK client not initialized"
+
+    results = you.contents.generate(
+        urls=["https://example.com/page"],
+        formats=[ContentsFormats.MARKDOWN],
+        crawl_timeout=20,
+        max_age=86400,  # require cache less than 24 hours old
+    )
+
+    for result in results:
+        print(f"  URL: {result.url}")
+        if result.markdown:
+            print(f"  Markdown preview: {result.markdown[:120]}...")
 
 
 # Available functions menu
@@ -299,8 +405,12 @@ FUNCTIONS = [
     {"name": "Advanced Batch Request", "fn": advanced_batch_request},
     {"name": "Custom Batch Request", "fn": custom_batch_request},
     {"name": "Search Request", "fn": search_request},
+    {"name": "Search Request (boost_domains)", "fn": search_request_with_boost},
     {"name": "Content Request", "fn": content_request},
+    {"name": "Content Request (max_age)", "fn": content_request_with_max_age},
     {"name": "Research Request", "fn": research_request},
+    {"name": "Research with output_schema", "fn": research_output_schema_request},
+    {"name": "Finance Research Request", "fn": finance_research_request},
 ]
 
 

@@ -1,6 +1,6 @@
 [project]
 name = "youdotcom"
-version = "2.3.0"
+version = "2.4.0"
 description = "The official You.com Python SDK."
 authors = [{ name = "You.com" },]
 readme = "README.md"
@@ -34,6 +34,9 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 pythonpath = ["src"]
+markers = [
+    "slow: marks tests as slow (DEEP/EXHAUSTIVE research); skip with '-m \"not slow\"'",
+]
 
 [tool.mypy]
 disable_error_code = "misc"

@@ -29,7 +29,7 @@ def server_url():
 
 @pytest.fixture
 def api_key():
-    return os.getenv("YOU_API_KEY_AUTH", "test-api-key")
+    return "test-api-key"
 
 
 class TestExpressAgent:

@@ -5,8 +5,6 @@ from enum import Enum
 
 
 class Freshness(str, Enum):
-    r"""Specifies the freshness of the results to return."""
-
     DAY = "day"
     WEEK = "week"
     MONTH = "month"

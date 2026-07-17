@@ -5,6 +5,88 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-07-14
+
+### Added
+
+- **Finance Research API**: New `you.finance_research()` method on the main `You` client. The Finance Research API searches a finance-optimized index — SEC filings, earnings transcripts, analyst coverage, market data, and financial news — instead of the open web. Use it for earnings analysis, due diligence, and market research.
+
+```python
+from youdotcom import You
+from youdotcom.models import FinanceResearchEffort
+
+you = You()
+res = you.finance_research(
+    input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?",
+    research_effort=FinanceResearchEffort.DEEP,
+)
+print(res.output.content)
+for source in res.output.sources:
+    print(f"  - {source.title or 'Untitled'}: {source.url}")
+```
+
+- **Research `source_control` (beta)**: New optional `source_control` object on `you.research()` for constraining the research agent's web sources. Supports `include_domains`, `exclude_domains`, `boost_domains`, `freshness`, and `country`. `include_domains` and `exclude_domains` cannot be combined (returns `422`); `boost_domains` combines with `exclude_domains` but not `include_domains`.
+
+- **Research `output_schema` (beta)**: New optional `output_schema` object on `you.research()` for requesting structured JSON output in `output.content`. Response `content_type` becomes `"object"` and `output.content` is a structured dict matching the schema. Supported on `standard`, `deep`, and `exhaustive` effort levels (sending it with `lite` returns `422`).
+
+- **Search API `boost_domains`**: New optional parameter on `you.search_post()` and on the underlying `you.search.unified()` (also accessible via `GET /v1/search`). Boost (but don't restrict) results from specified domains. Up to 500 domains per request. Cannot be combined with `include_domains`.
+
+- **Contents API `max_age`**: New optional `max_age` parameter (integer seconds, ≥0, nullable) for controlling cache freshness. When set, cached content older than the threshold is ignored and the page is re-fetched. Default `null` (no age limit).
+
+### Changed
+
+- **`Research.output.content` is now `Union[str, object]`**: When an `output_schema` is supplied, the server returns a structured JSON object and `content_type` becomes `"object"`. The overlay injects `additionalProperties: true` so `output.content` round-trips as a plain `dict` matching the requested schema. Text responses (`content_type="text"`) return `output.content` as a `str`. Check `output.content_type` to deserialise correctly: `text` → str, `object` → dict.
+
+- **New `FinanceResearchEffort` enum**: The Finance Research API has its own effort enum (`DEEP`, `EXHAUSTIVE`) distinct from the Research API's `ResearchEffort`. Both have clean names — `ResearchEffort` is unchanged from 2.3.x.
+
+- **Livecrawl formats parameter now requires a list**: The `livecrawl_formats` parameter is now strictly typed as `Optional[List[LiveCrawlFormats]]`. Passing a single enum value (which worked in prior versions) now raises a validation error. Wrap the value in a list:
+
+```python
+# Before (2.3.x)
+you.search.unified(query="...", livecrawl_formats=LiveCrawlFormats.MARKDOWN)
+
+# After (2.4.0)
+you.search.unified(query="...", livecrawl_formats=[LiveCrawlFormats.MARKDOWN])
+```
+
+- **Consolidated error classes for Search**: The bare-from-spec names removed in 2.4.0 (`SearchForbiddenError`, `SearchUnauthorizedError`, `UnprocessableEntityError`, etc.) are replaced for both Search endpoints (`you.search.unified()` GET and `you.search_post()` POST) by consolidated `UnprocessableEntityResponseError`, `UnauthorizedResponseError`, and `ForbiddenResponseError`. `you.research()` and `you.finance_research()` keep raising per-endpoint typed errors (`ResearchUnprocessableEntityError`, `FinanceResearchUnprocessableEntityError`, etc.) — those classes are NOT consolidated. Catch Search on the consolidated `*ResponseError` class or `YouDefaultError`; catch Research/Finance Research on the per-endpoint class.
+
+- **`WebResult.authors` field removed**: The `authors` field has been removed from the web search result model (`WebResult` / `WebResultTypedDict`). The server no longer returns this field. The overlay includes a `remove` action so future regenerations stay aligned.
+
+- **Environment variable renamed to `YDC_API_KEY`**: The SDK now reads the `YDC_API_KEY` environment variable for API key authentication (canonical per `you.com/docs`). The previous `YOU_API_KEY_AUTH` is still accepted as a fallback for 2.3.x users upgrading without code changes. Set `YDC_API_KEY` in your environment and the SDK will pick it up automatically:
+
+```bash
+# Before (2.3.x)
+export YOU_API_KEY_AUTH="your-api-key"
+
+# After (2.4.0) — preferred
+export YDC_API_KEY="your-api-key"
+# YOU_API_KEY_AUTH still works as a fallback
+```
+
+### Notes
+
+- The `unresearched` `ulow` effort level remains internal and is intentionally NOT exposed in the SDK — it is consolidated as internal routing on the server.
+- `you.finance_research()` deliberately does not support `source_control` or `output_schema`. The Finance Research API runs against a finance-optimized index and returns Markdown-formatted answers only.
+- **`pydantic` upper bound removed**: The SDK previously pinned `pydantic <2.13` as a defensive measure. For a published library, upper bounds on core deps create resolver conflicts for downstream consumers who need a newer pydantic for other packages (fastapi, langchain, etc.). The SDK uses only stable pydantic 2.x APIs (`model_dump`, `model_serializer`, `BaseModel`, `pydantic_core.core_schema`), and the overlay's `additionalProperties: true` → `Dict[str, Any]` mechanism is plain Python typing, not a pydantic feature. The lower bound `>=2.11.2` is retained; if a future pydantic release breaks something, CI will catch it and we'll pin reactively.
+
+### Fixed
+
+- **`output_schema` requests no longer send an empty `{}` body**: the Research request body declares `output_schema` as an inline `type: object` schema (no `$ref`, no `properties`). Speakeasy was emitting `class OutputSchema(BaseModel): r"""..."""` — a docstring-only body — so pydantic's `extra="ignore"` stripped every JSON Schema field on serialize, leaving the server to receive `{}` and return 422 (`Structured output schema root must be an object`). The overlay now injects `additionalProperties: true` on the inline schema (mirror of the response-side `Content` fix), so `OutputSchema` round-trips as `Optional[Dict[str, Any]]` and the JSON Schema reaches the server intact. Regression caught before release by `tests/test_live.py::TestLiveResearchOutputSchema::test_research_output_schema_structured_payload` against prod.
+
+### Hand-maintained additions
+
+Two files in the SDK are hand-maintained rather than fully regenerated each cycle:
+
+- **`src/youdotcom/utils/security.py`** — generated with a `Code generated ... DO NOT EDIT` header (Speakeasy will overwrite on regen). The hand-edit below MUST be re-applied after every regen (or moved into the Speakeasy overlay / `x-speakeasy-env-var` extension).
+- **`src/youdotcom/_hooks/registration.py`** — generated-once per its file header (`This file is only ever generated once on the first generation and then is free to be modified`); Speakeasy does **not** overwrite it on subsequent regens, so the hand-edit below is regen-safe and will survive.
+
+    - **`security.py` env-var precedence**: `get_security_from_env` reads `YDC_API_KEY` first and falls back to `YOU_API_KEY_AUTH` for backward compatibility with the 2.3.x env-var name. Covered by `tests/test_security_env.py`. Future regens that drop the fallback will lose `2.3.x` users — re-apply the precedence chain after regen, or move it into the Speakeasy overlay.
+
+    - **`YDCUserAgentOverrideHook` honors custom `user_agent`** (regen-safe; lives in `registration.py`): Previously the hook unconditionally rewrote `User-Agent` to `youdotcom-python-sdk/{sdk_version}`. Now it detects when `sdk_configuration.user_agent` has been overridden away from the speakeasy default prefix (`speakeasy-sdk/`) and passes the custom value through. Integrations (langchain-youdotcom, youdotcom-temporal, n8n-nodes-youdotcom) can now simply set `client.sdk_configuration.user_agent = "<integration>/<version>"` after construction instead of swapping hooks.
+
+---
+
 ## [2.3.0] - 2026-02-27
 
 ### Added

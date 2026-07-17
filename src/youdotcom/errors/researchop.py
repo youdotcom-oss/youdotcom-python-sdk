@@ -30,19 +30,19 @@ class ResearchInternalServerError(YouError):
         object.__setattr__(self, "data", data)
 
 
-class UnprocessableEntityErrorData(BaseModel):
+class ResearchUnprocessableEntityErrorData(BaseModel):
     detail: Optional[List[models_researchop.ResearchDetail]] = None
 
 
 @dataclass(unsafe_hash=True)
-class UnprocessableEntityError(YouError):
+class ResearchUnprocessableEntityError(YouError):
     r"""Unprocessable Entity. Request validation failed."""
 
-    data: UnprocessableEntityErrorData = field(hash=False)
+    data: ResearchUnprocessableEntityErrorData = field(hash=False)
 
     def __init__(
         self,
-        data: UnprocessableEntityErrorData,
+        data: ResearchUnprocessableEntityErrorData,
         raw_response: httpx.Response,
         body: Optional[str] = None,
     ):

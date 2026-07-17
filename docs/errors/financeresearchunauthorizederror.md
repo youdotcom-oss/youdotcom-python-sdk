@@ -1,4 +1,4 @@
-# SearchUnauthorizedError
+# FinanceResearchUnauthorizedError
 
 Unauthorized. Problems with API key.
 

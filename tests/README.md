@@ -88,7 +88,7 @@ The `test_live.py` file contains tests that run against the real You.com API. Th
 
 ```bash
 # Run live tests with your API key
-YOU_API_KEY_AUTH="your-api-key" pytest tests/test_live.py -v
+YDC_API_KEY="your-api-key" pytest tests/test_live.py -v
 
 # Run all tests except live tests
 pytest tests/ --ignore=tests/test_live.py -v

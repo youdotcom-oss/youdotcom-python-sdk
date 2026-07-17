@@ -8,6 +8,14 @@ Available levels:
 - `deep`: Spends more time researching and cross-referencing sources. Use this when accuracy and thoroughness matter more than speed.
 - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex research tasks where you want the highest quality result.
 
+## Example Usage
+
+```python
+from youdotcom.models import ResearchEffort
+
+value = ResearchEffort.LITE
+```
+
 
 ## Values
 

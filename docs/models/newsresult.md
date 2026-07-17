@@ -1,4 +1,4 @@
-# News
+# NewsResult
 
 
 ## Fields

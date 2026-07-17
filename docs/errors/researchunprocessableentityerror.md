@@ -1,4 +1,4 @@
-# UnprocessableEntityError
+# ResearchUnprocessableEntityError
 
 Unprocessable Entity. Request validation failed.
 

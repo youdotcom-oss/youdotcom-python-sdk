@@ -1,4 +1,4 @@
-# SearchInternalServerError
+# FinanceResearchInternalServerError
 
 Internal Server Error during authentication/authorization middleware.
 

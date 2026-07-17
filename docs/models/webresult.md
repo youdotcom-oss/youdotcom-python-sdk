@@ -1,4 +1,4 @@
-# Web
+# WebResult
 
 
 ## Fields
@@ -12,5 +12,4 @@
 | `thumbnail_url`                                                                       | *Optional[str]*                                                                       | :heavy_minus_sign:                                                                    | URL of the thumbnail.                                                                 | https://www.somethumbnailsite.com/thumbnail.jpg                                       |
 | `page_age`                                                                            | [date](https://docs.python.org/3/library/datetime.html#date-objects)                  | :heavy_minus_sign:                                                                    | The age of the search result.                                                         | 2025-06-25T11:41:00                                                                   |
 | `contents`                                                                            | [Optional[models.Contents]](../models/contents.md)                                    | :heavy_minus_sign:                                                                    | Contents of the page if livecrawl was enabled.                                        |                                                                                       |
-| `authors`                                                                             | List[*str*]                                                                           | :heavy_minus_sign:                                                                    | An array of authors of the search result.                                             |                                                                                       |
 | `favicon_url`                                                                         | *Optional[str]*                                                                       | :heavy_minus_sign:                                                                    | The URL of the favicon of the search result's domain.                                 | https://someurl.com/favicon                                                           |

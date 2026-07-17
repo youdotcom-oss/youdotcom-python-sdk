@@ -2,12 +2,17 @@
 Live API tests for You.com Python SDK.
 
 These tests run against the real You.com API to verify SDK functionality.
-Set the YOU_API_KEY_AUTH environment variable before running:
+Set the YDC_API_KEY environment variable before running:
 
-    YOU_API_KEY_AUTH="your-api-key" pytest tests/test_live.py -v
+    YDC_API_KEY="your-api-key" pytest tests/test_live.py -v
 
 To skip these tests, run pytest with the --ignore flag:
     pytest tests/ --ignore=tests/test_live.py -v
+
+The DEEP/EXHAUSTIVE research calls are slow on prod (30-90s); skip them
+with `-m "not slow"` for a fast smoke run:
+
+    pytest tests/test_live.py -v -m "not slow"
 """
 
 import os
@@ -29,26 +34,42 @@ from youdotcom.models import (
     AgentRunsBatchResponse,
     ResearchEffort,
     ResearchResponse,
+    FinanceResearchEffort,
 )
 
 
-# Skip all tests in this file if no API key is provided
+# Skip all tests in this file if no API key is provided.
+# Mirror the SDK's own env-var precedence (YDC_API_KEY first, then
+# YOU_API_KEY_AUTH as the documented 2.3.x fallback) so users on the
+# fallback env var don't get their live suite silently skipped.
 pytestmark = pytest.mark.skipif(
-    not os.getenv("YOU_API_KEY_AUTH"),
-    reason="YOU_API_KEY_AUTH environment variable not set"
+    not (os.getenv("YDC_API_KEY") or os.getenv("YOU_API_KEY_AUTH")),
+    reason="YDC_API_KEY or YOU_API_KEY_AUTH environment variable not set"
 )
+
+
+# 2.4.0 bumped livecrawl_formats to a strict list type and research can
+# legitimately take 20-30s for DEEP/EXHAUSTIVE effort. Generous timeout.
+LIVE_TIMEOUT_MS = 90_000
 
 
 @pytest.fixture
 def api_key():
-    """Get API key from environment."""
-    return os.getenv("YOU_API_KEY_AUTH")
+    """Get API key from environment.
+
+    Mirrors the SDK's own env-var precedence (`YDC_API_KEY` first, then
+    `YOU_API_KEY_AUTH` as the documented 2.3.x fallback).
+    """
+    return os.getenv("YDC_API_KEY") or os.getenv("YOU_API_KEY_AUTH")
 
 
 @pytest.fixture
 def you_client(api_key):
-    """Create a You client for live testing."""
-    return You(api_key_auth=api_key)
+    """Create a You client for live testing with a generous timeout."""
+    return You(
+        api_key_auth=api_key,
+        timeout_ms=LIVE_TIMEOUT_MS,
+    )
 
 
 class TestLiveSearch:
@@ -89,11 +110,11 @@ class TestLiveSearch:
                 query="machine learning tutorials",
                 count=3,
                 livecrawl=LiveCrawl.WEB,
-                livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
             )
-            
+
             assert res.results is not None
-            
+
             # Web results may have contents
             if res.results.web:
                 for result in res.results.web:
@@ -101,7 +122,7 @@ class TestLiveSearch:
                     if result.contents:
                         # At least one of html or markdown should be present
                         assert result.contents.markdown or result.contents.html
-    
+
     def test_search_with_livecrawl_news(self, you_client):
         """Test search with livecrawl for news results (new in 2.2.0)."""
         with you_client as you:
@@ -109,11 +130,11 @@ class TestLiveSearch:
                 query="technology news today",
                 count=3,
                 livecrawl=LiveCrawl.NEWS,
-                livecrawl_formats=LiveCrawlFormats.MARKDOWN,
+                livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
             )
-            
+
             assert res.results is not None
-            
+
             # News results can now have contents field (new in 2.2.0)
             if res.results.news:
                 for news_item in res.results.news:
@@ -121,7 +142,7 @@ class TestLiveSearch:
                     if news_item.contents:
                         # At least one of html or markdown should be present
                         assert news_item.contents.markdown or news_item.contents.html
-    
+
     def test_search_with_livecrawl_all(self, you_client):
         """Test search with livecrawl=ALL for both web and news."""
         with you_client as you:
@@ -129,7 +150,7 @@ class TestLiveSearch:
                 query="breaking tech news",
                 count=3,
                 livecrawl=LiveCrawl.ALL,
-                livecrawl_formats=LiveCrawlFormats.HTML,
+                livecrawl_formats=[LiveCrawlFormats.HTML],
             )
             
             assert res.results is not None
@@ -224,6 +245,7 @@ class TestLiveAgents:
             assert res.output is not None
             assert len(res.output) > 0
     
+    @pytest.mark.slow
     def test_advanced_agent_with_research(self, you_client):
         """Test Advanced agent with ResearchTool."""
         with you_client as you:
@@ -258,11 +280,12 @@ class TestLiveResearch:
             assert res.output.content is not None
             assert len(res.output.content) > 0
 
+    @pytest.mark.slow
     def test_research_deep_effort(self, you_client):
-        """Test research with deep effort level."""
+        """Test research with deep effort level (may be slow on prod)."""
         with you_client as you:
             res = you.research(
-                input="Explain the tradeoffs between transformer and SSM architectures",
+                input="Briefly describe transformer attention vs SSM state spaces",
                 research_effort=ResearchEffort.DEEP,
             )
 
@@ -271,11 +294,12 @@ class TestLiveResearch:
             assert res.output.content is not None
             assert len(res.output.content) > 0
 
+    @pytest.mark.slow
     def test_research_exhaustive_effort(self, you_client):
-        """Test research with exhaustive effort level."""
+        """Test research with exhaustive effort level (slow on prod)."""
         with you_client as you:
             res = you.research(
-                input="Compare global approaches to AI regulation across the US, EU, and China",
+                input="Compare solar vs wind vs nuclear cost trends 2020-2026 in 2 sentences",
                 research_effort=ResearchEffort.EXHAUSTIVE,
             )
 
@@ -299,6 +323,128 @@ class TestLiveResearch:
             assert len(res.output.sources) > 0
             for source in res.output.sources:
                 assert source.url is not None
+
+
+class TestLiveResearchOutputSchema:
+    """Live test for Research `output_schema` parameter (beta feature).
+
+    Smoke-tests prod to ensure the overlay-generated
+    `Content = Union[str, Dict[str, Any]]` round-trips structured payloads.
+    """
+
+    def test_research_output_schema_structured_payload(self, you_client):
+        """output_schema returns a structured object in `output.content`.
+
+        output_schema only works with research_effort >= standard (lite returns 422).
+        Per the server's schema rules, every property must be listed in `required`.
+        """
+        with you_client as you:
+            res = you.research(
+                input="Are Acme Logistics DE and Acme Logistics NJ the same entity?",
+                research_effort=ResearchEffort.STANDARD,
+                output_schema={
+                    "type": "object",
+                    "properties": {
+                        "same_entity": {"type": "boolean"},
+                        "confidence": {"type": "number"},
+                        "reason": {"type": "string"},
+                    },
+                    "required": ["same_entity", "confidence", "reason"],
+                    "additionalProperties": False,
+                },
+            )
+
+            assert isinstance(res, ResearchResponse)
+            assert res.output is not None
+            assert res.output.content_type is not None
+            assert res.output.content_type.value == "object"
+            assert isinstance(res.output.content, dict)
+            assert "same_entity" in res.output.content
+
+
+class TestLiveResearchSourceControl:
+    """Live test for Research `source_control` parameter (beta feature).
+
+    `source_control` constrains which web sources the research agent searches;
+    this smoke test exercises the basic `boost_domains` sub-parameter.
+    """
+
+    def test_research_source_control_with_boost_domains(self, you_client):
+        """source_control.boost_domains doesn't restrict, only boosts."""
+        with you_client as you:
+            res = you.research(
+                input="latest news about Python 3.13 release",
+                research_effort=ResearchEffort.LITE,
+                source_control={
+                    "boost_domains": ["python.org", "docs.python.org"],
+                },
+            )
+
+            assert isinstance(res, ResearchResponse)
+            assert res.output is not None
+            assert res.output.content is not None
+            assert len(res.output.content) > 0
+
+
+class TestLiveFinanceResearch:
+    """Live tests for the Finance Research API."""
+
+    @pytest.mark.slow
+    def test_finance_research_basic(self, you_client):
+        """Test finance_research returns Markdown answer + sources."""
+        with you_client as you:
+            res = you.finance_research(
+                input="Latest NVIDIA earnings call summary FY2026 Q1",
+                research_effort=FinanceResearchEffort.DEEP,
+            )
+
+            assert res.output is not None
+            # content is text for finance_research
+            assert res.output.content is not None
+            assert len(res.output.content) > 0
+            # sources is informational
+            if res.output.sources:
+                for source in res.output.sources:
+                    assert source.url is not None
+
+
+class TestLiveContentsMaxAge:
+    """Live test for Contents `max_age` parameter.
+
+    `max_age` controls cache freshness — when set, cached content older
+    than the threshold is ignored and the page is re-fetched.
+    """
+
+    def test_contents_with_max_age(self, you_client):
+        """max_age is accepted as an optional parameter."""
+        with you_client as you:
+            res = you.contents.generate(
+                urls=["https://www.example.com"],
+                formats=[ContentsFormats.MARKDOWN],
+                max_age=86400,  # 1 day
+            )
+
+            assert isinstance(res, list)
+            assert len(res) > 0
+
+
+class TestLiveSearchBoostDomains:
+    """Live test for Search `boost_domains` parameter.
+
+    `boost_domains` prefers certain domains in ranking without excluding
+    other domains — for a more permissive alternative to `include_domains`.
+    """
+
+    def test_search_post_boost_domains_list(self, you_client):
+        """search_post accepts a Python list of boost domains."""
+        with you_client as you:
+            res = you.search_post(
+                query="Python type hints vs TypeScript inference",
+                count=5,
+                boost_domains=["python.org", "realpython.com"],
+            )
+
+            assert res.results is not None
 
 
 if __name__ == "__main__":
