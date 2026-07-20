@@ -1,0 +1,12 @@
+# TaskResponse
+
+
+## Fields
+
+| Field                                                                | Type                                                                 | Required                                                             | Description                                                          | Example                                                              |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `task_id`                                                            | *str*                                                                | :heavy_check_mark:                                                   | Unique identifier for the task.                                      |                                                                      |
+| `type`                                                               | *str*                                                                | :heavy_check_mark:                                                   | Task type.                                                           | research                                                             |
+| `status`                                                             | [models.TaskResponseStatus](../models/taskresponsestatus.md)         | :heavy_check_mark:                                                   | Current status of the task.                                          | queued                                                               |
+| `stream_url`                                                         | *str*                                                                | :heavy_check_mark:                                                   | URL to stream task events via SSE.                                   | /v1/research/a1b2c3d4-0000-0000-0000-000000000000/stream             |
+| `created_at`                                                         | [date](https://docs.python.org/3/library/datetime.html#date-objects) | :heavy_check_mark:                                                   | When the task was created.                                           |                                                                      |

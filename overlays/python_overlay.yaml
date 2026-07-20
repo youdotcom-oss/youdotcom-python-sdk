@@ -45,3 +45,20 @@ actions:
   # the overlay makes this regen-durable until the upstream spec drops it.
   - target: $["components"]["schemas"]["WebResult"]["properties"]["authors"]
     remove: true
+  # Background-mode research: TaskDetail.result is an inline object schema
+  # that Speakeasy generates as `class Result(BaseModel): pass`, which
+  # round-trips as an empty dict. Inject additionalProperties: true so the
+  # full ResearchResponse payload (output.content, sources, etc.) survives
+  # deserialization. The Result model in taskdetail.py already has
+  # extra="allow"; this overlay ensures future regens preserve it.
+  - target: $["components"]["schemas"]["TaskDetail"]["properties"]["result"]
+    update:
+      additionalProperties: true
+  # Same fix for TaskDetail.input: the server stores the original request
+  # as a Dict[str, Any] (input, research_effort, source_control, etc.) but
+  # Speakeasy generates an empty TaskDetailInput BaseModel that drops all
+  # fields. Inject additionalProperties: true so the input round-trips.
+  # The TaskDetailInput model in taskdetail.py already has extra="allow".
+  - target: $["components"]["schemas"]["TaskDetail"]["properties"]["input"]
+    update:
+      additionalProperties: true

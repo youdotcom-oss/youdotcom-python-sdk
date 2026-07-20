@@ -1,6 +1,80 @@
 # Migration Guide
 
-## 2.3.0 → 2.4.0 (Latest)
+## 2.4.0 → 2.5.0 (Latest)
+
+### New Background Mode for Research
+
+The `you.research()` method now accepts `background=True` to queue long-running research tasks asynchronously. The return type changes from `ResearchResponse` to `Union[ResearchResponse, TaskResponse]` (exposed as the `ResearchResult` alias).
+
+**Synchronous mode (default, unchanged):**
+
+```python
+from youdotcom.models import ResearchResponse
+res = you.research(input="...", research_effort=ResearchEffort.DEEP)
+# res is ResearchResponse — same as 2.4.0
+assert isinstance(res, ResearchResponse)
+```
+
+**Background mode (new):**
+
+```python
+from youdotcom.models import TaskResponse, TaskDetail
+
+# Submit and get a task handle
+res = you.research(input="...", research_effort=ResearchEffort.DEEP, background=True)
+assert isinstance(res, TaskResponse)
+print(res.task_id, res.stream_url)
+
+# Poll for completion
+detail = you.get_research_task(task_id=res.task_id)
+if detail.status.value == "completed":
+    payload = detail.result.model_dump()  # extra="allow" preserves the full ResearchResponse
+    print(payload["output"]["content"])
+
+# Or stream events with the tolerant helper (recommended)
+from youdotcom.research_helpers import stream_research
+for event in stream_research(you, task_id=res.task_id):
+    print(event.event, event.data)
+    if event.event in ("response.done", "completed", "error", "failed", "cancelled"):
+        break
+```
+
+**Or use the convenience helpers:**
+
+```python
+from youdotcom.research_helpers import (
+    research_background, poll_research_task, research_and_wait,
+    stream_research,
+)
+
+# Option 1: Submit and wait in one call (simplest)
+# Streams SSE events until the task completes, then fetches the result.
+detail = research_and_wait(
+    you, input="...", research_effort=ResearchEffort.DEEP,
+)
+
+# Option 2: Submit, then poll manually
+task = research_background(you, input="...", research_effort=ResearchEffort.DEEP)
+detail = poll_research_task(you, task_id=task.task_id)
+
+# Option 3: Stream SSE events with a tolerant decoder
+# (recommended over you.stream_research_task for real tasks, since
+# the server emits intermediate event types not in the strict enum)
+for event in stream_research(you, task_id=task.task_id):
+    print(event.event, event.data)
+    if event.event in ("response.done", "completed"):
+        break
+```
+
+> **Note on streaming:** The generated `you.stream_research_task()` method uses a strict pydantic decoder that validates event names against a fixed `Event` enum. The server emits intermediate workflow events (e.g. `response.created`, `response.starting`, `response.output_item.added`) that are not in this enum, which causes `ResponseValidationError` on the first intermediate event. The `stream_research()` helper uses a tolerant decoder that surfaces unknown event names as raw dicts instead of crashing. For real research tasks, prefer `stream_research()`.
+
+### No Breaking Changes for Existing Code
+
+If you do not use `background=True`, your existing `you.research()` calls are unchanged at runtime. The return is still `ResearchResponse` when `background` is omitted or `False`.
+
+> **Type-level note for statically-typed callers:** The return type of `you.research()` widened from `ResearchResponse` to `Union[ResearchResponse, TaskResponse]`. If your code accesses `res.output` directly (or passes the result where a `ResearchResponse` is expected), `mypy`/`pyright` will flag it because `TaskResponse` has no `output` field. Add an `isinstance(res, ResearchResponse)` narrow or use `cast(ResearchResponse, res)` to satisfy type checkers. This only affects type checking, not runtime behavior.
+
+## 2.3.0 → 2.4.0
 
 This guide covers breaking changes introduced in 2.4.0. If you are upgrading from 1.x or 2.0, also read the [1.x → 2.0](#1x-to-20) section below.
 

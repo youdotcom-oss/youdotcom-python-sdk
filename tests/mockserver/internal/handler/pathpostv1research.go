@@ -28,6 +28,8 @@ func pathPostV1Research(dir *logging.HTTPFileDirectory, rt *tracking.RequestTrac
 		switch fmt.Sprintf("%s[%d]", test, count) {
 		case "post_/v1/research[0]":
 			dir.HandlerFunc("post_/v1/research", testPostV1ResearchSuccess)(w, req)
+		case "post_/v1/research-background[0]":
+			dir.HandlerFunc("post_/v1/research-background", testPostV1ResearchBackground)(w, req)
 		case "post_/v1/research-unauthorized[0]":
 			testPostV1ResearchUnauthorized(w, req)
 		case "post_/v1/research-forbidden[0]":
@@ -77,6 +79,13 @@ func testPostV1ResearchSuccess(w http.ResponseWriter, req *http.Request) {
 	effort, _ := requestBody["research_effort"].(string)
 	if effort == "" {
 		effort = "standard"
+	}
+
+	// When `background: true` is set, return a TaskResponse shape so the SDK
+	// can deserialize the async task handle instead of an inline ResearchResponse.
+	if background, _ := requestBody["background"].(bool); background {
+		respondTaskResponse(w, "research", "queued", "/v1/research/00000000-0000-0000-0000-000000000001/stream")
+		return
 	}
 
 	respBody := buildResearchResponse(input, effort, requestBody)
@@ -142,6 +151,42 @@ func testPostV1ResearchUnauthorized(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusUnauthorized)
 	_, _ = w.Write([]byte(`{"message":"Invalid or expired API key"}`))
+}
+
+// respondTaskResponse writes a TaskResponse payload used by background-mode
+// research.
+func respondTaskResponse(w http.ResponseWriter, typeValue, statusValue, streamPathSuffix string) {
+	respBody := map[string]interface{}{
+		"task_id":    "00000000-0000-0000-0000-000000000001",
+		"type":       typeValue,
+		"status":     statusValue,
+		"stream_url": streamPathSuffix,
+		"created_at": "2026-07-09T00:00:00Z",
+	}
+	respBodyBytes, err := json.Marshal(respBody)
+	if err != nil {
+		http.Error(w, "Unable to encode response body as JSON: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(respBodyBytes)
+}
+
+// testPostV1ResearchBackground handles the explicit `post_/v1/research-background`
+// test name and returns a TaskResponse shape for background-mode submission.
+func testPostV1ResearchBackground(w http.ResponseWriter, req *http.Request) {
+	if err := assert.SecurityHeader(req, "X-API-Key", false); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	if err := assert.ContentType(req, "application/json", true); err != nil {
+		log.Printf("assertion error: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	respondTaskResponse(w, "research", "queued", "/v1/research/00000000-0000-0000-0000-000000000001/stream")
 }
 
 func testPostV1ResearchForbidden(w http.ResponseWriter, req *http.Request) {
