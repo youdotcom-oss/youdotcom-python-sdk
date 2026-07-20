@@ -230,6 +230,8 @@ with You(
 
 * [search_post](docs/sdks/you/README.md#search_post) - Returns a list of unified search results from web and news sources
 * [research](docs/sdks/you/README.md#research) - Returns comprehensive research-grade answers with multi-step reasoning
+* [get_research_task](docs/sdks/you/README.md#get_research_task) - Get the status of a background research task
+* [stream_research_task](docs/sdks/you/README.md#stream_research_task) - Stream updates for a background research task
 * [finance_research](docs/sdks/you/README.md#finance_research) - Returns comprehensive finance-grade research answers with multi-step reasoning
 
 ### [Agents.Runs](docs/sdks/runs/README.md)
@@ -445,7 +447,7 @@ with You(
 **Primary error:**
 * [`YouError`](./src/youdotcom/errors/youerror.py): The base class for HTTP error responses.
 
-<details><summary>Less common errors (23)</summary>
+<details><summary>Less common errors (31)</summary>
 
 <br />
 
@@ -456,24 +458,32 @@ with You(
 
 
 **Inherit from [`YouError`](./src/youdotcom/errors/youerror.py)**:
-* [`UnauthorizedResponseError`](./src/youdotcom/errors/unauthorizedresponseerror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 2 of 6 methods.*
-* [`ForbiddenResponseError`](./src/youdotcom/errors/forbiddenresponseerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 2 of 6 methods.*
-* [`UnprocessableEntityResponseError`](./src/youdotcom/errors/unprocessableentityresponseerror.py): Unprocessable Entity. Invalid request parameter combination. Status code `422`. Applicable to 2 of 6 methods.*
-* [`InternalServerErrorResponse`](./src/youdotcom/errors/internalservererrorresponse.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 2 of 6 methods.*
-* [`AgentRuns400ResponseError`](./src/youdotcom/errors/agentruns400responseerror.py): The message returned by the error. Status code `400`. Applicable to 1 of 6 methods.*
-* [`ResearchUnauthorizedError`](./src/youdotcom/errors/researchunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 6 methods.*
-* [`FinanceResearchUnauthorizedError`](./src/youdotcom/errors/financeresearchunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 6 methods.*
-* [`ContentsUnauthorizedError`](./src/youdotcom/errors/contentsunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 6 methods.*
-* [`AgentRuns401ResponseError`](./src/youdotcom/errors/agentruns401responseerror.py): The message returned by the error. Status code `401`. Applicable to 1 of 6 methods.*
-* [`ResearchForbiddenError`](./src/youdotcom/errors/researchforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 6 methods.*
-* [`FinanceResearchForbiddenError`](./src/youdotcom/errors/financeresearchforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 6 methods.*
-* [`ContentsForbiddenError`](./src/youdotcom/errors/contentsforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 6 methods.*
-* [`ResearchUnprocessableEntityError`](./src/youdotcom/errors/researchunprocessableentityerror.py): Unprocessable Entity. Request validation failed. Status code `422`. Applicable to 1 of 6 methods.*
-* [`FinanceResearchUnprocessableEntityError`](./src/youdotcom/errors/financeresearchunprocessableentityerror.py): Unprocessable Entity. Request validation failed. Status code `422`. Applicable to 1 of 6 methods.*
-* [`AgentRuns422ResponseError`](./src/youdotcom/errors/agentruns422responseerror.py): Unprocessable Entity - Invalid request data. Status code `422`. Applicable to 1 of 6 methods.*
-* [`ResearchInternalServerError`](./src/youdotcom/errors/researchinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 6 methods.*
-* [`FinanceResearchInternalServerError`](./src/youdotcom/errors/financeresearchinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 6 methods.*
-* [`ContentsInternalServerError`](./src/youdotcom/errors/contentsinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 6 methods.*
+* [`UnauthorizedResponseError`](./src/youdotcom/errors/unauthorizedresponseerror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 2 of 8 methods.*
+* [`ForbiddenResponseError`](./src/youdotcom/errors/forbiddenresponseerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 2 of 8 methods.*
+* [`UnprocessableEntityResponseError`](./src/youdotcom/errors/unprocessableentityresponseerror.py): Unprocessable Entity. Invalid request parameter combination. Status code `422`. Applicable to 2 of 8 methods.*
+* [`InternalServerErrorResponse`](./src/youdotcom/errors/internalservererrorresponse.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 2 of 8 methods.*
+* [`AgentRuns400ResponseError`](./src/youdotcom/errors/agentruns400responseerror.py): The message returned by the error. Status code `400`. Applicable to 1 of 8 methods.*
+* [`ResearchUnauthorizedError`](./src/youdotcom/errors/researchunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
+* [`FinanceResearchUnauthorizedError`](./src/youdotcom/errors/financeresearchunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
+* [`ContentsUnauthorizedError`](./src/youdotcom/errors/contentsunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
+* [`AgentRuns401ResponseError`](./src/youdotcom/errors/agentruns401responseerror.py): The message returned by the error. Status code `401`. Applicable to 1 of 8 methods.*
+* [`ResearchForbiddenError`](./src/youdotcom/errors/researchforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
+* [`FinanceResearchForbiddenError`](./src/youdotcom/errors/financeresearchforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
+* [`ContentsForbiddenError`](./src/youdotcom/errors/contentsforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
+* [`ResearchUnprocessableEntityError`](./src/youdotcom/errors/researchunprocessableentityerror.py): Unprocessable Entity. Request validation failed. Status code `422`. Applicable to 1 of 8 methods.*
+* [`FinanceResearchUnprocessableEntityError`](./src/youdotcom/errors/financeresearchunprocessableentityerror.py): Unprocessable Entity. Request validation failed. Status code `422`. Applicable to 1 of 8 methods.*
+* [`AgentRuns422ResponseError`](./src/youdotcom/errors/agentruns422responseerror.py): Unprocessable Entity - Invalid request data. Status code `422`. Applicable to 1 of 8 methods.*
+* [`ResearchInternalServerError`](./src/youdotcom/errors/researchinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
+* [`FinanceResearchInternalServerError`](./src/youdotcom/errors/financeresearchinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
+* [`ContentsInternalServerError`](./src/youdotcom/errors/contentsinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
+* [`GetResearchTaskUnauthorizedError`](./src/youdotcom/errors/getresearchtaskop.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
+* [`GetResearchTaskForbiddenError`](./src/youdotcom/errors/getresearchtaskop.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
+* [`GetResearchTaskNotFoundError`](./src/youdotcom/errors/getresearchtaskop.py): Not Found. Task does not exist or does not belong to the caller. Status code `404`. Applicable to 1 of 8 methods.*
+* [`GetResearchTaskInternalServerError`](./src/youdotcom/errors/getresearchtaskop.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
+* [`StreamResearchTaskUnauthorizedError`](./src/youdotcom/errors/streamresearchtaskop.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
+* [`StreamResearchTaskForbiddenError`](./src/youdotcom/errors/streamresearchtaskop.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
+* [`StreamResearchTaskNotFoundError`](./src/youdotcom/errors/streamresearchtaskop.py): Not Found. Task does not exist or does not belong to the caller. Status code `404`. Applicable to 1 of 8 methods.*
+* [`StreamResearchTaskInternalServerError`](./src/youdotcom/errors/streamresearchtaskop.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
 * [`ResponseValidationError`](./src/youdotcom/errors/responsevalidationerror.py): Type mismatch between the response data and the expected Pydantic model. Provides access to the Pydantic validation error via the `cause` attribute.
 
 </details>

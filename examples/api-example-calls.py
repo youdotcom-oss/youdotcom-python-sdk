@@ -19,6 +19,7 @@ Setup Instructions:
 """
 
 from typing import Optional
+import time
 from youdotcom import You
 from youdotcom.models import (
     ResearchTool,
@@ -44,6 +45,7 @@ from youdotcom.models import (
     FinanceResearchEffort,
     FinanceResearchResponse,
     ResearchResponse,
+    TaskResponse,
 )
 from youdotcom.utils import eventstreaming
 
@@ -295,6 +297,79 @@ def research_request():
             print(f"  - {source.title or 'Untitled'}: {source.url}")
 
 
+def research_background_request():
+    """
+    Research API with background mode: returns a task handle instead of the final answer.
+    Poll status with `you.get_research_task(task_id)` or stream events with
+    `you.stream_research_task(task_id)`.
+    """
+    print("\n🚀 Running Research Background Request...\n")
+
+    assert you is not None, "SDK client not initialized"
+
+    res = you.research(
+        input="Compare the profitability of NVIDIA, AMD, and Intel over the past 5 fiscal years.",
+        research_effort=ResearchEffort.DEEP,
+        background=True,
+    )
+
+    assert isinstance(res, TaskResponse)
+    print(f"Queued task {res.task_id} (status: {res.status.value})")
+    print(f"Stream URL: {res.stream_url}")
+
+    # Optional: poll until completion
+    print("\nPolling for completion...")
+    while True:
+        status_res = you.get_research_task(task_id=res.task_id)
+        status = status_res.status.value
+        print(f"  status: {status}")
+        if status in ("completed", "failed", "cancelled"):
+            break
+        time.sleep(5)
+
+    if status == "completed":
+        # The Result model uses extra="allow", so model_dump() recovers
+        # the full ResearchResponse payload from the task detail.
+        print("\nFinal answer (preview):")
+        payload = status_res.result.model_dump() if status_res.result else {}
+        content = payload.get("output", {}).get("content", "")
+        if isinstance(content, str):
+            print(content[:500] + ("..." if len(content) > 500 else ""))
+
+
+def research_and_wait_example():
+    """
+    Research API with the research_and_wait helper: submit in background
+    mode and wait for completion in one call. Returns the final TaskDetail.
+    """
+    from youdotcom.research_helpers import research_and_wait
+    from youdotcom.models import TaskDetail
+
+    print("\n🚀 Running Research and Wait (Helper)...\n")
+
+    assert you is not None, "SDK client not initialized"
+
+    try:
+        detail = research_and_wait(
+            you,
+            interval_s=3.0,
+            timeout_s=120.0,
+            input="Compare the profitability of NVIDIA, AMD, and Intel over the past 5 fiscal years.",
+            research_effort=ResearchEffort.DEEP,
+        )
+    except TypeError:
+        print("  Background mode not enabled on server. Skipping.")
+        return
+
+    assert isinstance(detail, TaskDetail)
+    print(f"Task completed: {detail.status.value}")
+    if detail.result:
+        payload = detail.result.model_dump()
+        content = payload.get("output", {}).get("content", "")
+        if isinstance(content, str):
+            print(f"\nAnswer (preview):\n{content[:500]}...")
+
+
 def research_output_schema_request():
     """
     Research API with `output_schema` for structured JSON output.
@@ -409,6 +484,8 @@ FUNCTIONS = [
     {"name": "Content Request", "fn": content_request},
     {"name": "Content Request (max_age)", "fn": content_request_with_max_age},
     {"name": "Research Request", "fn": research_request},
+    {"name": "Research Background Mode", "fn": research_background_request},
+    {"name": "Research and Wait (Helper)", "fn": research_and_wait_example},
     {"name": "Research with output_schema", "fn": research_output_schema_request},
     {"name": "Finance Research Request", "fn": finance_research_request},
 ]
