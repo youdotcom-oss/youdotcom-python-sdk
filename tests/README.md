@@ -55,6 +55,10 @@ pytest tests/ -v
 - `test_search.py` - Tests for the Search API (`/v1/search`)
 - `test_contents.py` - Tests for the Contents API (`/v1/contents`)
 - `test_runs.py` - Tests for the Agents/Runs API (`/v1/agents/runs`)
+- `test_research.py` - Tests for the Research API (`/v1/research`) including background mode, output_schema, and source_control
+- `test_research_helpers.py` - Tests for the hand-maintained `research_helpers` module (background submission, polling, streaming, research_and_wait)
+- `test_security_env.py` - Tests for environment variable precedence (`YDC_API_KEY` / `YOU_API_KEY_AUTH`)
+- `test_user_agent_hook.py` - Tests for the `YDCUserAgentOverrideHook` custom user-agent pass-through
 - `test_performance.py` - Performance/instrumentation tests measuring SDK overhead
 - `test_live.py` - Live API tests that run against the real You.com API (requires API key)
 
@@ -81,6 +85,21 @@ Tests are organized into logical classes using pytest:
 - Custom agents (UUID-based)
 - Tool configurations and verbosity
 - Error handling (unauthorized, forbidden, empty input)
+
+**Research API**:
+- Basic research functionality (standard, deep, exhaustive effort)
+- Background mode (task submission, get_research_task, status polling)
+- Output schema (structured JSON output, content_type object)
+- Source control (include/exclude/boost domains, freshness, country)
+- Error handling (unauthorized, forbidden, unprocessable entity, 422 combos)
+- Stream research task (SSE success path + 404/401/403 error paths)
+
+**Research Helpers**:
+- research_background / research_background_async (TaskResponse return)
+- poll_research_task / poll_research_task_async (terminal status)
+- research_and_wait / research_and_wait_async (submit + wait)
+- stream_research_events_raw / stream_research_events_raw_async (tolerant SSE)
+- RawStreamEvent decoder (_decode_raw_event)
 
 ### Running Live Tests
 
@@ -115,7 +134,9 @@ The tests use a mock server located in `tests/mockserver/`. This server contains
 
 The mock server supports:
 - Success responses for all endpoints
-- Error responses (401 Unauthorized, 403 Forbidden)
+- Error responses (401 Unauthorized, 403 Forbidden, 404 Not Found)
+- Background research task endpoints (GET /v1/research/{task_id}, GET /v1/research/{task_id}/stream)
+- SSE streaming for research task updates
 - Multiple test scenarios per endpoint
 
 See [mockserver/README.md](mockserver/README.md) for more details.

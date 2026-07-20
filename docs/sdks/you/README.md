@@ -18,6 +18,8 @@ Comprehensive API for You.com services:
 
 * [search_post](#search_post) - Returns a list of unified search results from web and news sources
 * [research](#research) - Returns comprehensive research-grade answers with multi-step reasoning
+* [get_research_task](#get_research_task) - Get the status of a background research task
+* [stream_research_task](#stream_research_task) - Stream updates for a background research task
 * [finance_research](#finance_research) - Returns comprehensive finance-grade research answers with multi-step reasoning
 
 ## search_post
@@ -437,6 +439,97 @@ with You(
 | errors.ResearchUnprocessableEntityError | 422                                     | application/json                        |
 | errors.ResearchInternalServerError      | 500                                     | application/json                        |
 | errors.YouDefaultError                  | 4XX, 5XX                                | \*/\*                                   |
+
+## get_research_task
+
+Poll the status of a background research task created with background=true. When the task is completed, the result is included in the response.
+
+### Example Usage
+
+<!-- UsageSnippet language="python" operationID="getResearchTask" method="get" path="/v1/research/{task_id}" -->
+```python
+import os
+from youdotcom import You
+
+
+with You(
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
+) as you:
+
+    res = you.get_research_task(task_id="586a9bc3-2c52-499c-a61d-be3cc9170c51")
+
+    # Handle response
+    print(res)
+
+```
+
+### Parameters
+
+| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `task_id`                                                           | *str*                                                               | :heavy_check_mark:                                                  | The UUID of the research task.                                      |
+| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
+
+### Response
+
+**[models.TaskDetail](../../models/taskdetail.md)**
+
+### Errors
+
+| Error Type                                | Status Code                               | Content Type                              |
+| ----------------------------------------- | ----------------------------------------- | ----------------------------------------- |
+| errors.GetResearchTaskUnauthorizedError   | 401                                       | application/json                          |
+| errors.GetResearchTaskForbiddenError      | 403                                       | application/json                          |
+| errors.GetResearchTaskNotFoundError       | 404                                       | application/json                          |
+| errors.GetResearchTaskInternalServerError | 500                                       | application/json                          |
+| errors.YouDefaultError                    | 4XX, 5XX                                  | \*/\*                                     |
+
+## stream_research_task
+
+Stream real-time updates for a background research task via Server-Sent Events (SSE). Supports reconnection via the from_id query parameter to replay missed events. The connection closes automatically when the task reaches a terminal state.
+
+### Example Usage
+
+<!-- UsageSnippet language="python" operationID="streamResearchTask" method="get" path="/v1/research/{task_id}/stream" -->
+```python
+import os
+from youdotcom import You
+
+
+with You(
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
+) as you:
+
+    res = you.stream_research_task(task_id="b431835b-e51d-453e-a623-25615ac31489", from_id=0)
+
+    with res as event_stream:
+        for event in event_stream:
+            # handle event
+            print(event, flush=True)
+
+```
+
+### Parameters
+
+| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `task_id`                                                           | *str*                                                               | :heavy_check_mark:                                                  | The UUID of the research task.                                      |
+| `from_id`                                                           | *Optional[int]*                                                     | :heavy_minus_sign:                                                  | Resume from a sequence number for reconnection.                     |
+| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
+
+### Response
+
+**[Union[eventstreaming.EventStream[models.ResearchTaskStreamEvent], eventstreaming.EventStreamAsync[models.ResearchTaskStreamEvent]]](../../models/.md)**
+
+### Errors
+
+| Error Type                                   | Status Code                                  | Content Type                                 |
+| -------------------------------------------- | -------------------------------------------- | -------------------------------------------- |
+| errors.StreamResearchTaskUnauthorizedError   | 401                                          | application/json                             |
+| errors.StreamResearchTaskForbiddenError      | 403                                          | application/json                             |
+| errors.StreamResearchTaskNotFoundError       | 404                                          | application/json                             |
+| errors.StreamResearchTaskInternalServerError | 500                                          | application/json                             |
+| errors.YouDefaultError                       | 4XX, 5XX                                     | \*/\*                                        |
 
 ## finance_research
 

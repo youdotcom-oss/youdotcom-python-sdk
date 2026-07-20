@@ -5,7 +5,7 @@ import pytest
 import httpx
 
 from tests.test_client import create_test_http_client
-from youdotcom import You
+from youdotcom import You, errors
 from youdotcom.errors import (
     FinanceResearchUnauthorizedError,
     FinanceResearchUnprocessableEntityError,
@@ -20,7 +20,9 @@ from youdotcom.models import (
     FinanceResearchEffort,
     ResearchEffort,
     ResearchResponse,
+    TaskResponse,
 )
+from youdotcom.utils import eventstreaming
 
 
 @pytest.fixture
@@ -206,6 +208,151 @@ class TestFinanceResearch:
                     input="test",
                     server_url=server_url,
                 )
+
+
+# ---------------------------------------------------------------------------
+# 2.5.0 background mode: queue task, poll status, stream events.
+# ---------------------------------------------------------------------------
+
+class TestResearchBackground:
+    """Direct coverage for the auto-generated background/stream SDK methods."""
+
+    def test_research_background_returns_task_response(self, server_url, api_key):
+        client = create_test_http_client("post_/v1/research-background")
+
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            res = you.research(
+                input="What is the capital of France?",
+                research_effort=ResearchEffort.STANDARD,
+                background=True,
+                server_url=server_url,
+            )
+
+            assert isinstance(res, TaskResponse)
+            assert res.task_id == "00000000-0000-0000-0000-000000000001"
+            assert res.status.value == "queued"
+            assert res.stream_url is not None
+            assert res.created_at is not None
+
+    def test_get_research_task_returns_task_detail(self, server_url, api_key):
+        client = create_test_http_client("get_/v1/research/{task_id}")
+
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            detail = you.get_research_task(
+                task_id="00000000-0000-0000-0000-000000000001",
+                server_url=server_url,
+            )
+
+            assert detail.id == "00000000-0000-0000-0000-000000000001"
+            assert detail.task_type == "research"
+            assert detail.status.value == "completed"
+            assert detail.created_at is not None
+            assert detail.completed_at is not None
+            # result is populated server-side; the Result model uses
+            # extra="allow" so model_dump() recovers the full payload.
+            assert detail.result is not None
+            assert detail.result.model_dump().get("output") is not None
+            # input is populated server-side; the TaskDetailInput model uses
+            # extra="allow" so model_dump() recovers the original request fields.
+            assert detail.input is not None
+            assert detail.input.model_dump().get("input") == "Compare NVIDIA, AMD, and Intel revenue over 5 years"
+            assert detail.input.model_dump().get("research_effort") == "deep"
+
+    def test_research_background_false_returns_research_response(self, server_url, api_key):
+        """When background=False (explicit), return type is ResearchResponse, not TaskResponse."""
+        client = create_test_http_client("post_/v1/research")
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            res = you.research(
+                input="What is the capital of France?",
+                research_effort=ResearchEffort.STANDARD,
+                background=False,
+                server_url=server_url,
+            )
+            assert isinstance(res, ResearchResponse)
+            assert not isinstance(res, TaskResponse)
+
+    @pytest.mark.asyncio
+    async def test_get_research_task_async_returns_task_detail(self, server_url, api_key):
+        async_client = httpx.AsyncClient(
+            headers={
+                "x-speakeasy-test-name": "get_/v1/research/{task_id}",
+                "x-speakeasy-test-instance-id": str(uuid.uuid4()),
+            },
+            follow_redirects=True,
+        )
+        async with You(server_url=server_url, async_client=async_client, api_key_auth=api_key) as you:
+            detail = await you.get_research_task_async(
+                task_id="00000000-0000-0000-0000-000000000001",
+                server_url=server_url,
+            )
+            assert detail.id == "00000000-0000-0000-0000-000000000001"
+            assert detail.status.value == "completed"
+
+
+class TestResearchBackgroundErrors:
+    """Error path coverage for get_research_task()."""
+
+    def test_get_research_task_not_found(self, server_url, api_key):
+        client = create_test_http_client("get_/v1/research/{task_id}-not-found")
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            with pytest.raises(errors.GetResearchTaskNotFoundError):
+                you.get_research_task(task_id="nonexistent", server_url=server_url)
+
+    def test_get_research_task_unauthorized(self, server_url):
+        client = create_test_http_client("get_/v1/research/{task_id}-unauthorized")
+        with You(server_url=server_url, client=client, api_key_auth="bad-key") as you:
+            with pytest.raises(errors.GetResearchTaskUnauthorizedError):
+                you.get_research_task(task_id="test", server_url=server_url)
+
+    def test_get_research_task_forbidden(self, server_url, api_key):
+        client = create_test_http_client("get_/v1/research/{task_id}-forbidden")
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            with pytest.raises(errors.GetResearchTaskForbiddenError):
+                you.get_research_task(task_id="test", server_url=server_url)
+
+    def test_get_research_task_internal_error(self, server_url, api_key):
+        client = create_test_http_client("get_/v1/research/{task_id}-internal-error")
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            with pytest.raises(errors.GetResearchTaskInternalServerError):
+                you.get_research_task(task_id="test", server_url=server_url)
+
+
+class TestStreamResearchTask:
+    """Direct SDK-level coverage for stream_research_task()."""
+
+    def test_stream_research_task_returns_event_stream(self, server_url, api_key):
+        client = create_test_http_client("get_/v1/research/{task_id}/stream")
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            stream = you.stream_research_task(
+                task_id="00000000-0000-0000-0000-000000000001",
+                server_url=server_url,
+            )
+            assert isinstance(stream, eventstreaming.EventStream)
+            events = []
+            with stream as s:
+                for chunk in s:
+                    events.append(chunk.data)
+            # The mockserver emits connected + response.done events
+            assert len(events) >= 2
+
+    def test_stream_research_task_not_found(self, server_url, api_key):
+        client = create_test_http_client("get_/v1/research/{task_id}/stream-not-found")
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            with pytest.raises(errors.StreamResearchTaskNotFoundError):
+                you.stream_research_task(task_id="nonexistent", server_url=server_url)
+
+    def test_stream_research_task_unauthorized(self, server_url):
+        client = create_test_http_client("get_/v1/research/{task_id}/stream-unauthorized")
+        with You(server_url=server_url, client=client, api_key_auth="bad-key") as you:
+            with pytest.raises(errors.StreamResearchTaskUnauthorizedError):
+                you.stream_research_task(task_id="test", server_url=server_url)
+
+    def test_stream_research_task_forbidden(self, server_url, api_key):
+        # Requires the forbidden case added in Phase 3.10.1
+        client = create_test_http_client("get_/v1/research/{task_id}/stream-forbidden")
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            with pytest.raises(errors.StreamResearchTaskForbiddenError):
+                you.stream_research_task(task_id="test", server_url=server_url)
 
 
 # ---------------------------------------------------------------------------
