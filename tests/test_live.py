@@ -565,8 +565,10 @@ class TestLiveResearchBackground:
                     input="What is the capital of France?",
                     research_effort=ResearchEffort.LITE,
                 )
-            except TypeError:
-                pytest.skip("Background mode not enabled on server")
+            except TypeError as e:
+                if "TaskResponse" in str(e):
+                    pytest.skip("Background mode not enabled on server")
+                raise
 
             assert isinstance(detail, TaskDetail)
             assert detail.status.value == "completed"
@@ -587,8 +589,10 @@ class TestLiveResearchBackgroundHelpers:
                     input="What is the capital of France?",
                     research_effort=ResearchEffort.LITE,
                 )
-            except TypeError:
-                pytest.skip("Background mode not enabled on server")
+            except TypeError as e:
+                if "TaskResponse" in str(e):
+                    pytest.skip("Background mode not enabled on server")
+                raise
 
             assert isinstance(task, TaskResponse)
             assert task.task_id is not None
@@ -609,8 +613,10 @@ class TestLiveResearchBackgroundHelpers:
                     input="What is the capital of France?",
                     research_effort=ResearchEffort.LITE,
                 )
-            except TypeError:
-                pytest.skip("Background mode not enabled on server")
+            except TypeError as e:
+                if "TaskResponse" in str(e):
+                    pytest.skip("Background mode not enabled on server")
+                raise
 
             assert isinstance(task, TaskResponse)
 

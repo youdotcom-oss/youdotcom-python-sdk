@@ -1,5 +1,7 @@
 """Tests for research background-mode helpers in youdotcom.research_helpers."""
 
+import asyncio
+import json
 import os
 import uuid
 
@@ -25,6 +27,112 @@ from youdotcom.research_helpers import (
     stream_research_async,
     _decode_raw_event,
 )
+
+
+# ---------------------------------------------------------------------------
+# Shared test helpers: handler factories + mock stream classes.
+# ---------------------------------------------------------------------------
+
+_TASK_RESPONSE_JSON = json.dumps({
+    "task_id": "00000000-0000-0000-0000-000000000001",
+    "type": "research",
+    "status": "queued",
+    "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
+    "created_at": "2026-07-09T00:00:00Z",
+})
+
+_DEFAULT_RESULT = {"output": {"content": "done", "content_type": "text", "sources": []}}
+
+_CONNECTED_CHUNK = b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n'
+
+
+def _make_task_detail_json(status: str = "completed", result: dict | None = None) -> str:
+    """Build a TaskDetail JSON body for GET /v1/research/{task_id} responses."""
+    detail: dict = {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "task_type": "research",
+        "status": status,
+        "created_at": "2026-07-09T00:00:00Z",
+        "updated_at": "2026-07-09T00:02:30Z",
+    }
+    if status == "completed":
+        detail["completed_at"] = "2026-07-09T00:02:30Z"
+    if result is not None:
+        detail["result"] = result
+    return json.dumps(detail)
+
+
+class _AsyncChunks(httpx.AsyncByteStream):
+    """Wrap a list of bytes chunks in an AsyncByteStream for MockTransport
+    + AsyncClient streaming responses."""
+
+    def __init__(self, chunks: list[bytes]):
+        self._chunks = chunks
+
+    async def __aiter__(self):
+        for chunk in self._chunks:
+            yield chunk
+
+
+class _BlockingStream(httpx.SyncByteStream):
+    """Yields one event then raises ReadTimeout to simulate a stalled server
+    that stops sending data within the read timeout."""
+
+    def __iter__(self):
+        yield _CONNECTED_CHUNK
+        raise httpx.ReadTimeout("read timeout")
+
+
+class _BlockingAsyncStream(httpx.AsyncByteStream):
+    """Yields one event then blocks so asyncio.wait_for times out."""
+
+    async def __aiter__(self):
+        yield _CONNECTED_CHUNK
+        await asyncio.sleep(100)
+
+
+def _make_wait_handler(
+    *,
+    stream_chunks: list[bytes] | None = None,
+    stream_obj: httpx.SyncByteStream | httpx.AsyncByteStream | None = None,
+    final_status: str = "completed",
+    final_result: dict | None = _DEFAULT_RESULT,
+    is_async: bool = False,
+):
+    """Create a MockTransport handler for research_and_wait tests.
+
+    Returns SSE stream, POST TaskResponse, and GET TaskDetail responses.
+    Pass ``stream_obj`` for custom stream behavior (e.g. ``_BlockingStream``).
+    Pass ``stream_chunks`` for simple list-of-bytes streams.
+    """
+    final_json = _make_task_detail_json(status=final_status, result=final_result)
+
+    def handler(request):
+        url = str(request.url)
+        if url.endswith("/stream") or "/stream?" in url:
+            if stream_obj is not None:
+                return httpx.Response(
+                    200, headers={"content-type": "text/event-stream"}, stream=stream_obj,
+                )
+            if stream_chunks is not None:
+                if is_async:
+                    return httpx.Response(
+                        200, headers={"content-type": "text/event-stream"},
+                        stream=_AsyncChunks(stream_chunks),
+                    )
+                return httpx.Response(
+                    200, headers={"content-type": "text/event-stream"}, content=stream_chunks,
+                )
+            return httpx.Response(200, content="{}")
+        if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
+            return httpx.Response(
+                200, headers={"content-type": "application/json"}, content=_TASK_RESPONSE_JSON,
+            )
+        return httpx.Response(
+            200, headers={"content-type": "application/json"}, content=final_json,
+        )
+
+    return handler
 
 
 @pytest.fixture
@@ -210,52 +318,14 @@ class TestResearchAndWait:
     def test_research_and_wait_returns_completed_detail(self):
         """research_and_wait submits, streams until terminal event,
         then fetches the final TaskDetail."""
-        import json
-
-        def handler(request):
-            url = str(request.url)
-            if url.endswith("/stream") or "/stream?" in url:
-                chunks = [
-                    b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n',
-                    b'id: 1\nevent: response.done\ndata: {"type":"response.done","task_id":"abc","status":"completed","sequence":1}\n\n',
-                ]
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "text/event-stream"},
-                    content=chunks,
-                )
-            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "application/json"},
-                    content=json.dumps({
-                        "task_id": "00000000-0000-0000-0000-000000000001",
-                        "type": "research",
-                        "status": "queued",
-                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
-                        "created_at": "2026-07-09T00:00:00Z",
-                    }),
-                )
-            # GET /v1/research/{task_id} — final fetch after terminal event
-            return httpx.Response(
-                200,
-                headers={"content-type": "application/json"},
-                content=json.dumps({
-                    "id": "00000000-0000-0000-0000-000000000001",
-                    "task_type": "research",
-                    "status": "completed",
-                    "created_at": "2026-07-09T00:00:00Z",
-                    "updated_at": "2026-07-09T00:02:30Z",
-                    "completed_at": "2026-07-09T00:02:30Z",
-                    "result": {"output": {"content": "done", "content_type": "text", "sources": []}},
-                }),
-            )
-
+        handler = _make_wait_handler(stream_chunks=[
+            _CONNECTED_CHUNK,
+            b'id: 1\nevent: response.done\ndata: {"type":"response.done","task_id":"abc","status":"completed","sequence":1}\n\n',
+        ])
         transport = httpx.MockTransport(handler)
-        sdk_client = httpx.Client(transport=transport)
         you = You(
             server_url="http://mock.local",
-            client=sdk_client,
+            client=httpx.Client(transport=transport),
             api_key_auth="test-api-key",
         )
 
@@ -272,39 +342,18 @@ class TestResearchAndWait:
     def test_research_and_wait_error_event_raises_runtime_error(self):
         """research_and_wait raises RuntimeError when the stream emits an
         error terminal event."""
-        import json
-
-        def handler(request):
-            url = str(request.url)
-            if url.endswith("/stream") or "/stream?" in url:
-                chunks = [
-                    b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n',
-                    b'id: 1\nevent: error\ndata: {"type":"error","task_id":"abc","message":"internal error"}\n\n',
-                ]
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "text/event-stream"},
-                    content=chunks,
-                )
-            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "application/json"},
-                    content=json.dumps({
-                        "task_id": "00000000-0000-0000-0000-000000000001",
-                        "type": "research",
-                        "status": "queued",
-                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
-                        "created_at": "2026-07-09T00:00:00Z",
-                    }),
-                )
-            return httpx.Response(200, content="{}")
-
+        handler = _make_wait_handler(
+            stream_chunks=[
+                _CONNECTED_CHUNK,
+                b'id: 1\nevent: error\ndata: {"type":"error","task_id":"abc","message":"internal error"}\n\n',
+            ],
+            final_status="running",
+            final_result=None,
+        )
         transport = httpx.MockTransport(handler)
-        sdk_client = httpx.Client(transport=transport)
         you = You(
             server_url="http://mock.local",
-            client=sdk_client,
+            client=httpx.Client(transport=transport),
             api_key_auth="test-api-key",
         )
 
@@ -318,55 +367,17 @@ class TestResearchAndWait:
 
     def test_research_and_wait_timeout_raises_timeout_error(self):
         """research_and_wait raises TimeoutError when the stream never sends
-        a terminal event within timeout_s."""
-        import json
-        import time as _time
-
-        class _BlockingStream(httpx.SyncByteStream):
-            """Yields one event then blocks so the consumer thread
-            is still alive when the join timeout expires."""
-            def __iter__(self):
-                yield b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n'
-                _time.sleep(100)
-
-        def handler(request):
-            url = str(request.url)
-            if url.endswith("/stream") or "/stream?" in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "text/event-stream"},
-                    stream=_BlockingStream(),
-                )
-            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "application/json"},
-                    content=json.dumps({
-                        "task_id": "00000000-0000-0000-0000-000000000001",
-                        "type": "research",
-                        "status": "queued",
-                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
-                        "created_at": "2026-07-09T00:00:00Z",
-                    }),
-                )
-            # Final GET on timeout — task still running
-            return httpx.Response(
-                200,
-                headers={"content-type": "application/json"},
-                content=json.dumps({
-                    "id": "00000000-0000-0000-0000-000000000001",
-                    "task_type": "research",
-                    "status": "running",
-                    "created_at": "2026-07-09T00:00:00Z",
-                    "updated_at": "2026-07-09T00:00:10Z",
-                }),
-            )
-
+        a terminal event within timeout_s. The _BlockingStream simulates a
+        stalled server by raising httpx.ReadTimeout after the first event."""
+        handler = _make_wait_handler(
+            stream_obj=_BlockingStream(),
+            final_status="running",
+            final_result=None,
+        )
         transport = httpx.MockTransport(handler)
-        sdk_client = httpx.Client(transport=transport)
         you = You(
             server_url="http://mock.local",
-            client=sdk_client,
+            client=httpx.Client(transport=transport),
             api_key_auth="test-api-key",
         )
 
@@ -379,56 +390,16 @@ class TestResearchAndWait:
             )
 
     def test_research_and_wait_timeout_falls_back_to_get(self):
-        """When the stream times out but the task has completed, the final
-        GET fallback returns the completed detail."""
-        import json
-        import time as _time
-
-        class _BlockingStream(httpx.SyncByteStream):
-            def __iter__(self):
-                yield b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n'
-                _time.sleep(100)
-
-        def handler(request):
-            url = str(request.url)
-            if url.endswith("/stream") or "/stream?" in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "text/event-stream"},
-                    stream=_BlockingStream(),
-                )
-            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "application/json"},
-                    content=json.dumps({
-                        "task_id": "00000000-0000-0000-0000-000000000001",
-                        "type": "research",
-                        "status": "queued",
-                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
-                        "created_at": "2026-07-09T00:00:00Z",
-                    }),
-                )
-            # Final GET on timeout — task completed despite no terminal event
-            return httpx.Response(
-                200,
-                headers={"content-type": "application/json"},
-                content=json.dumps({
-                    "id": "00000000-0000-0000-0000-000000000001",
-                    "task_type": "research",
-                    "status": "completed",
-                    "created_at": "2026-07-09T00:00:00Z",
-                    "updated_at": "2026-07-09T00:02:30Z",
-                    "completed_at": "2026-07-09T00:02:30Z",
-                    "result": {"output": {"content": "done", "content_type": "text", "sources": []}},
-                }),
-            )
-
+        """When the stream times out (ReadTimeout) but the task has completed,
+        the final GET fallback returns the completed detail."""
+        handler = _make_wait_handler(
+            stream_obj=_BlockingStream(),
+            final_status="completed",
+        )
         transport = httpx.MockTransport(handler)
-        sdk_client = httpx.Client(transport=transport)
         you = You(
             server_url="http://mock.local",
-            client=sdk_client,
+            client=httpx.Client(transport=transport),
             api_key_auth="test-api-key",
         )
 
@@ -445,52 +416,14 @@ class TestResearchAndWait:
     def test_research_and_wait_stream_close_falls_back_to_get(self):
         """When the stream closes without a terminal event, research_and_wait
         does a final GET and returns the detail if completed."""
-        import json
-
-        def handler(request):
-            url = str(request.url)
-            if url.endswith("/stream") or "/stream?" in url:
-                # Only a connected event, no terminal event
-                chunks = [
-                    b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n',
-                ]
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "text/event-stream"},
-                    content=chunks,
-                )
-            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "application/json"},
-                    content=json.dumps({
-                        "task_id": "00000000-0000-0000-0000-000000000001",
-                        "type": "research",
-                        "status": "queued",
-                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
-                        "created_at": "2026-07-09T00:00:00Z",
-                    }),
-                )
-            # GET returns completed — the fallback should return this
-            return httpx.Response(
-                200,
-                headers={"content-type": "application/json"},
-                content=json.dumps({
-                    "id": "00000000-0000-0000-0000-000000000001",
-                    "task_type": "research",
-                    "status": "completed",
-                    "created_at": "2026-07-09T00:00:00Z",
-                    "updated_at": "2026-07-09T00:02:30Z",
-                    "completed_at": "2026-07-09T00:02:30Z",
-                    "result": {"output": {"content": "done", "content_type": "text", "sources": []}},
-                }),
-            )
-
+        handler = _make_wait_handler(
+            stream_chunks=[_CONNECTED_CHUNK],
+            final_status="completed",
+        )
         transport = httpx.MockTransport(handler)
-        sdk_client = httpx.Client(transport=transport)
         you = You(
             server_url="http://mock.local",
-            client=sdk_client,
+            client=httpx.Client(transport=transport),
             api_key_auth="test-api-key",
         )
 
@@ -507,49 +440,15 @@ class TestResearchAndWait:
     def test_research_and_wait_stream_close_task_running_raises_timeout(self):
         """When the stream closes without a terminal event and the final GET
         shows the task is still running, research_and_wait raises TimeoutError."""
-        import json
-
-        def handler(request):
-            url = str(request.url)
-            if url.endswith("/stream") or "/stream?" in url:
-                chunks = [
-                    b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n',
-                ]
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "text/event-stream"},
-                    content=chunks,
-                )
-            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "application/json"},
-                    content=json.dumps({
-                        "task_id": "00000000-0000-0000-0000-000000000001",
-                        "type": "research",
-                        "status": "queued",
-                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
-                        "created_at": "2026-07-09T00:00:00Z",
-                    }),
-                )
-            # GET returns running — task hasn't completed
-            return httpx.Response(
-                200,
-                headers={"content-type": "application/json"},
-                content=json.dumps({
-                    "id": "00000000-0000-0000-0000-000000000001",
-                    "task_type": "research",
-                    "status": "running",
-                    "created_at": "2026-07-09T00:00:00Z",
-                    "updated_at": "2026-07-09T00:00:10Z",
-                }),
-            )
-
+        handler = _make_wait_handler(
+            stream_chunks=[_CONNECTED_CHUNK],
+            final_status="running",
+            final_result=None,
+        )
         transport = httpx.MockTransport(handler)
-        sdk_client = httpx.Client(transport=transport)
         you = You(
             server_url="http://mock.local",
-            client=sdk_client,
+            client=httpx.Client(transport=transport),
             api_key_auth="test-api-key",
         )
 
@@ -560,6 +459,10 @@ class TestResearchAndWait:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+
+
+# ---------------------------------------------------------------------------
+# Stream research tolerant decoder: verify that
 #   (a) helper accepts documented event types as before;
 #   (b) helper accepts unknown event types without raising
 #       pydantic.ValidationError, surfacing them as RawStreamEvent(event="...").
@@ -647,72 +550,95 @@ class TestDecodeRawEvent:
 # ---------------------------------------------------------------------------
 
 class TestStreamResearchTypedErrors:
-    def test_404_raises_not_found_error(self):
-        import json
+    """Verify stream_research[_async] raise the same typed errors as the
+    generated stream_research_task method for each status-code branch."""
 
+    @staticmethod
+    def _make_error_handler(status_code: int, body: dict | None = None):
+        """Create a MockTransport handler that always returns an error response."""
+        content = json.dumps(body or {"detail": "error"})
         def handler(request):
             return httpx.Response(
-                404,
+                status_code,
                 headers={"content-type": "application/json"},
-                content=json.dumps({"detail": "Task not found"}),
+                content=content,
             )
+        return handler
 
-        transport = httpx.MockTransport(handler)
-        sdk_client = httpx.Client(transport=transport)
-        you = You(
+    @staticmethod
+    def _sync_you(handler):
+        return You(
             server_url="http://mock.local",
-            client=sdk_client,
+            client=httpx.Client(transport=httpx.MockTransport(handler)),
             api_key_auth="test-api-key",
         )
 
-        from youdotcom.errors import StreamResearchTaskNotFoundError
-        with pytest.raises(StreamResearchTaskNotFoundError):
-            list(stream_research(you, "00000000-0000-0000-0000-000000000001"))
+    @staticmethod
+    def _async_you(handler):
+        return You(
+            server_url="http://mock.local",
+            async_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+            api_key_auth="test-api-key",
+        )
+
+    _TASK = "00000000-0000-0000-0000-000000000001"
 
     def test_401_raises_unauthorized_error(self):
-        import json
-
-        def handler(request):
-            return httpx.Response(
-                401,
-                headers={"content-type": "application/json"},
-                content=json.dumps({"detail": "Invalid API key"}),
-            )
-
-        transport = httpx.MockTransport(handler)
-        sdk_client = httpx.Client(transport=transport)
-        you = You(
-            server_url="http://mock.local",
-            client=sdk_client,
-            api_key_auth="test-api-key",
-        )
-
         from youdotcom.errors import StreamResearchTaskUnauthorizedError
         with pytest.raises(StreamResearchTaskUnauthorizedError):
-            list(stream_research(you, "00000000-0000-0000-0000-000000000001"))
+            list(stream_research(self._sync_you(self._make_error_handler(401)), self._TASK))
+
+    def test_403_raises_forbidden_error(self):
+        from youdotcom.errors import StreamResearchTaskForbiddenError
+        with pytest.raises(StreamResearchTaskForbiddenError):
+            list(stream_research(self._sync_you(self._make_error_handler(403)), self._TASK))
+
+    def test_404_raises_not_found_error(self):
+        from youdotcom.errors import StreamResearchTaskNotFoundError
+        with pytest.raises(StreamResearchTaskNotFoundError):
+            list(stream_research(self._sync_you(self._make_error_handler(404)), self._TASK))
+
+    def test_500_raises_internal_server_error(self):
+        from youdotcom.errors import StreamResearchTaskInternalServerError
+        with pytest.raises(StreamResearchTaskInternalServerError):
+            list(stream_research(self._sync_you(self._make_error_handler(500)), self._TASK))
+
+    def test_4xx_fallback_raises_default_error(self):
+        from youdotcom.errors import YouDefaultError
+        with pytest.raises(YouDefaultError):
+            list(stream_research(self._sync_you(self._make_error_handler(400)), self._TASK))
+
+    def test_5xx_fallback_raises_default_error(self):
+        from youdotcom.errors import YouDefaultError
+        with pytest.raises(YouDefaultError):
+            list(stream_research(self._sync_you(self._make_error_handler(502)), self._TASK))
+
+    @pytest.mark.asyncio
+    async def test_async_401_raises_unauthorized_error(self):
+        from youdotcom.errors import StreamResearchTaskUnauthorizedError
+        with pytest.raises(StreamResearchTaskUnauthorizedError):
+            async for _ in stream_research_async(self._async_you(self._make_error_handler(401)), self._TASK):
+                pass
+
+    @pytest.mark.asyncio
+    async def test_async_403_raises_forbidden_error(self):
+        from youdotcom.errors import StreamResearchTaskForbiddenError
+        with pytest.raises(StreamResearchTaskForbiddenError):
+            async for _ in stream_research_async(self._async_you(self._make_error_handler(403)), self._TASK):
+                pass
 
     @pytest.mark.asyncio
     async def test_async_404_raises_not_found_error(self):
-        import json
-
-        def handler(request):
-            return httpx.Response(
-                404,
-                headers={"content-type": "application/json"},
-                content=json.dumps({"detail": "Task not found"}),
-            )
-
-        transport = httpx.MockTransport(handler)
-        sdk_async_client = httpx.AsyncClient(transport=transport)
-        you = You(
-            server_url="http://mock.local",
-            async_client=sdk_async_client,
-            api_key_auth="test-api-key",
-        )
-
         from youdotcom.errors import StreamResearchTaskNotFoundError
         with pytest.raises(StreamResearchTaskNotFoundError):
-            async for _ in stream_research_async(you, "00000000-0000-0000-0000-000000000001"):
+            async for _ in stream_research_async(self._async_you(self._make_error_handler(404)), self._TASK):
+                pass
+
+    @pytest.mark.asyncio
+    async def test_async_500_raises_internal_server_error(self):
+        from youdotcom.errors import StreamResearchTaskInternalServerError
+        with pytest.raises(StreamResearchTaskInternalServerError):
+            async for _ in stream_research_async(self._async_you(self._make_error_handler(500)), self._TASK):
                 pass
 
 
@@ -866,18 +792,6 @@ class TestPollResearchTaskAsyncErrorPaths:
 # TestResearchAndWaitStreamMode. These also exercise the try/finally cleanup
 # path (replacing the broken contextlib.aclosing that called aclose()).
 
-class _AsyncChunks(httpx.AsyncByteStream):
-    """Wrap a list of bytes chunks in an AsyncByteStream for MockTransport
-    + AsyncClient streaming responses (httpx MockTransport returns sync
-    streams by default, which AsyncClient rejects for stream=True)."""
-
-    def __init__(self, chunks: list[bytes]):
-        self._chunks = chunks
-
-    async def __aiter__(self):
-        for chunk in self._chunks:
-            yield chunk
-
 
 class TestStreamResearchEventsTolerantAsync:
     @pytest.mark.asyncio
@@ -930,51 +844,17 @@ class TestResearchAndWaitAsync:
     @pytest.mark.asyncio
     async def test_async_research_and_wait_returns_completed_detail(self):
         """Async research_and_wait: submit, stream until terminal, fetch detail."""
-        import json
-
-        def handler(request):
-            url = str(request.url)
-            if url.endswith("/stream") or "/stream?" in url:
-                chunks = [
-                    b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n',
-                    b'id: 1\nevent: response.done\ndata: {"type":"response.done","task_id":"abc","status":"completed","sequence":1}\n\n',
-                ]
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "text/event-stream"},
-                    stream=_AsyncChunks(chunks),
-                )
-            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "application/json"},
-                    content=json.dumps({
-                        "task_id": "00000000-0000-0000-0000-000000000001",
-                        "type": "research",
-                        "status": "queued",
-                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
-                        "created_at": "2026-07-09T00:00:00Z",
-                    }),
-                )
-            return httpx.Response(
-                200,
-                headers={"content-type": "application/json"},
-                content=json.dumps({
-                    "id": "00000000-0000-0000-0000-000000000001",
-                    "task_type": "research",
-                    "status": "completed",
-                    "created_at": "2026-07-09T00:00:00Z",
-                    "updated_at": "2026-07-09T00:02:30Z",
-                    "completed_at": "2026-07-09T00:02:30Z",
-                    "result": {"output": {"content": "done", "content_type": "text", "sources": []}},
-                }),
-            )
-
+        handler = _make_wait_handler(
+            stream_chunks=[
+                _CONNECTED_CHUNK,
+                b'id: 1\nevent: response.done\ndata: {"type":"response.done","task_id":"abc","status":"completed","sequence":1}\n\n',
+            ],
+            is_async=True,
+        )
         transport = httpx.MockTransport(handler)
-        sdk_async_client = httpx.AsyncClient(transport=transport)
         you = You(
             server_url="http://mock.local",
-            async_client=sdk_async_client,
+            async_client=httpx.AsyncClient(transport=transport),
             api_key_auth="test-api-key",
         )
 
@@ -991,39 +871,19 @@ class TestResearchAndWaitAsync:
     @pytest.mark.asyncio
     async def test_async_research_and_wait_error_event_raises_runtime_error(self):
         """Async research_and_wait raises RuntimeError on error terminal event."""
-        import json
-
-        def handler(request):
-            url = str(request.url)
-            if url.endswith("/stream") or "/stream?" in url:
-                chunks = [
-                    b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n',
-                    b'id: 1\nevent: error\ndata: {"type":"error","task_id":"abc","message":"internal error"}\n\n',
-                ]
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "text/event-stream"},
-                    stream=_AsyncChunks(chunks),
-                )
-            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "application/json"},
-                    content=json.dumps({
-                        "task_id": "00000000-0000-0000-0000-000000000001",
-                        "type": "research",
-                        "status": "queued",
-                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
-                        "created_at": "2026-07-09T00:00:00Z",
-                    }),
-                )
-            return httpx.Response(200, content="{}")
-
+        handler = _make_wait_handler(
+            stream_chunks=[
+                _CONNECTED_CHUNK,
+                b'id: 1\nevent: error\ndata: {"type":"error","task_id":"abc","message":"internal error"}\n\n',
+            ],
+            final_status="running",
+            final_result=None,
+            is_async=True,
+        )
         transport = httpx.MockTransport(handler)
-        sdk_async_client = httpx.AsyncClient(transport=transport)
         you = You(
             server_url="http://mock.local",
-            async_client=sdk_async_client,
+            async_client=httpx.AsyncClient(transport=transport),
             api_key_auth="test-api-key",
         )
 
@@ -1038,54 +898,18 @@ class TestResearchAndWaitAsync:
     @pytest.mark.asyncio
     async def test_async_research_and_wait_timeout_raises_timeout_error(self):
         """Async research_and_wait raises TimeoutError when the stream never
-        sends a terminal event and the task is still running."""
-        import asyncio
-        import json
-
-        class _BlockingAsyncStream(httpx.AsyncByteStream):
-            """Yields one event then blocks so asyncio.wait_for times out."""
-            async def __aiter__(self):
-                yield b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n'
-                await asyncio.sleep(100)
-
-        def handler(request):
-            url = str(request.url)
-            if url.endswith("/stream") or "/stream?" in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "text/event-stream"},
-                    stream=_BlockingAsyncStream(),
-                )
-            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "application/json"},
-                    content=json.dumps({
-                        "task_id": "00000000-0000-0000-0000-000000000001",
-                        "type": "research",
-                        "status": "queued",
-                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
-                        "created_at": "2026-07-09T00:00:00Z",
-                    }),
-                )
-            # Final GET on timeout — task still running
-            return httpx.Response(
-                200,
-                headers={"content-type": "application/json"},
-                content=json.dumps({
-                    "id": "00000000-0000-0000-0000-000000000001",
-                    "task_type": "research",
-                    "status": "running",
-                    "created_at": "2026-07-09T00:00:00Z",
-                    "updated_at": "2026-07-09T00:00:10Z",
-                }),
-            )
-
+        sends a terminal event and the task is still running. asyncio.wait_for
+        cancels the blocked _consume() coroutine."""
+        handler = _make_wait_handler(
+            stream_obj=_BlockingAsyncStream(),
+            final_status="running",
+            final_result=None,
+            is_async=True,
+        )
         transport = httpx.MockTransport(handler)
-        sdk_async_client = httpx.AsyncClient(transport=transport)
         you = You(
             server_url="http://mock.local",
-            async_client=sdk_async_client,
+            async_client=httpx.AsyncClient(transport=transport),
             api_key_auth="test-api-key",
         )
 
@@ -1101,54 +925,15 @@ class TestResearchAndWaitAsync:
     async def test_async_research_and_wait_timeout_falls_back_to_get(self):
         """When the async stream times out but the task completed, the final
         GET fallback returns the completed detail."""
-        import asyncio
-        import json
-
-        class _BlockingAsyncStream(httpx.AsyncByteStream):
-            async def __aiter__(self):
-                yield b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n'
-                await asyncio.sleep(100)
-
-        def handler(request):
-            url = str(request.url)
-            if url.endswith("/stream") or "/stream?" in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "text/event-stream"},
-                    stream=_BlockingAsyncStream(),
-                )
-            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "application/json"},
-                    content=json.dumps({
-                        "task_id": "00000000-0000-0000-0000-000000000001",
-                        "type": "research",
-                        "status": "queued",
-                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
-                        "created_at": "2026-07-09T00:00:00Z",
-                    }),
-                )
-            # Final GET on timeout — task completed
-            return httpx.Response(
-                200,
-                headers={"content-type": "application/json"},
-                content=json.dumps({
-                    "id": "00000000-0000-0000-0000-000000000001",
-                    "task_type": "research",
-                    "status": "completed",
-                    "created_at": "2026-07-09T00:00:00Z",
-                    "updated_at": "2026-07-09T00:02:30Z",
-                    "completed_at": "2026-07-09T00:02:30Z",
-                    "result": {"output": {"content": "done", "content_type": "text", "sources": []}},
-                }),
-            )
-
+        handler = _make_wait_handler(
+            stream_obj=_BlockingAsyncStream(),
+            final_status="completed",
+            is_async=True,
+        )
         transport = httpx.MockTransport(handler)
-        sdk_async_client = httpx.AsyncClient(transport=transport)
         you = You(
             server_url="http://mock.local",
-            async_client=sdk_async_client,
+            async_client=httpx.AsyncClient(transport=transport),
             api_key_auth="test-api-key",
         )
 
@@ -1166,50 +951,15 @@ class TestResearchAndWaitAsync:
     async def test_async_research_and_wait_stream_close_falls_back_to_get(self):
         """When the stream closes without a terminal event, async
         research_and_wait does a final GET and returns the detail if completed."""
-        import json
-
-        def handler(request):
-            url = str(request.url)
-            if url.endswith("/stream") or "/stream?" in url:
-                chunks = [
-                    b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n',
-                ]
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "text/event-stream"},
-                    stream=_AsyncChunks(chunks),
-                )
-            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "application/json"},
-                    content=json.dumps({
-                        "task_id": "00000000-0000-0000-0000-000000000001",
-                        "type": "research",
-                        "status": "queued",
-                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
-                        "created_at": "2026-07-09T00:00:00Z",
-                    }),
-                )
-            return httpx.Response(
-                200,
-                headers={"content-type": "application/json"},
-                content=json.dumps({
-                    "id": "00000000-0000-0000-0000-000000000001",
-                    "task_type": "research",
-                    "status": "completed",
-                    "created_at": "2026-07-09T00:00:00Z",
-                    "updated_at": "2026-07-09T00:02:30Z",
-                    "completed_at": "2026-07-09T00:02:30Z",
-                    "result": {"output": {"content": "done", "content_type": "text", "sources": []}},
-                }),
-            )
-
+        handler = _make_wait_handler(
+            stream_chunks=[_CONNECTED_CHUNK],
+            final_status="completed",
+            is_async=True,
+        )
         transport = httpx.MockTransport(handler)
-        sdk_async_client = httpx.AsyncClient(transport=transport)
         you = You(
             server_url="http://mock.local",
-            async_client=sdk_async_client,
+            async_client=httpx.AsyncClient(transport=transport),
             api_key_auth="test-api-key",
         )
 
@@ -1227,48 +977,16 @@ class TestResearchAndWaitAsync:
     async def test_async_research_and_wait_stream_close_task_running_raises_timeout(self):
         """When the stream closes without a terminal event and the final GET
         shows the task is still running, async research_and_wait raises TimeoutError."""
-        import json
-
-        def handler(request):
-            url = str(request.url)
-            if url.endswith("/stream") or "/stream?" in url:
-                chunks = [
-                    b'id: 0\nevent: connected\ndata: {"type":"connected","task_id":"abc","status":"running"}\n\n',
-                ]
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "text/event-stream"},
-                    stream=_AsyncChunks(chunks),
-                )
-            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
-                return httpx.Response(
-                    200,
-                    headers={"content-type": "application/json"},
-                    content=json.dumps({
-                        "task_id": "00000000-0000-0000-0000-000000000001",
-                        "type": "research",
-                        "status": "queued",
-                        "stream_url": "/v1/research/00000000-0000-0000-0000-000000000001/stream",
-                        "created_at": "2026-07-09T00:00:00Z",
-                    }),
-                )
-            return httpx.Response(
-                200,
-                headers={"content-type": "application/json"},
-                content=json.dumps({
-                    "id": "00000000-0000-0000-0000-000000000001",
-                    "task_type": "research",
-                    "status": "running",
-                    "created_at": "2026-07-09T00:00:00Z",
-                    "updated_at": "2026-07-09T00:00:10Z",
-                }),
-            )
-
+        handler = _make_wait_handler(
+            stream_chunks=[_CONNECTED_CHUNK],
+            final_status="running",
+            final_result=None,
+            is_async=True,
+        )
         transport = httpx.MockTransport(handler)
-        sdk_async_client = httpx.AsyncClient(transport=transport)
         you = You(
             server_url="http://mock.local",
-            async_client=sdk_async_client,
+            async_client=httpx.AsyncClient(transport=transport),
             api_key_auth="test-api-key",
         )
 

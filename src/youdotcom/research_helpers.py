@@ -24,10 +24,11 @@ from __future__ import annotations
 
 import asyncio
 import json
-import threading
 import time
 from dataclasses import dataclass
 from typing import Any, AsyncIterator, Iterator, Mapping, Optional
+
+import httpx
 
 import youdotcom.models as _models
 from youdotcom import errors as _errors
@@ -45,6 +46,16 @@ _TERMINAL_TASK_STATUSES = frozenset({"completed", "failed", "cancelled"})
 _TERMINAL_STREAM_EVENTS_OK = frozenset({"response.done", "complete", "completed"})
 _TERMINAL_STREAM_EVENTS_ERR = frozenset({"error", "failed", "cancelled"})
 
+# Typed-error branches for stream open: (status, content_type, DataClass, ErrorClass).
+# Mirrors the generated stream_research_task error handling so callers of
+# stream_research get the same structured exceptions as the generated method.
+_STREAM_ERROR_BRANCHES = (
+    ("401", "application/json", _errors.StreamResearchTaskUnauthorizedErrorData, _errors.StreamResearchTaskUnauthorizedError),
+    ("403", "application/json", _errors.StreamResearchTaskForbiddenErrorData, _errors.StreamResearchTaskForbiddenError),
+    ("404", "application/json", _errors.StreamResearchTaskNotFoundErrorData, _errors.StreamResearchTaskNotFoundError),
+    ("500", "application/json", _errors.StreamResearchTaskInternalServerErrorData, _errors.StreamResearchTaskInternalServerError),
+)
+
 
 @dataclass
 class RawStreamEvent:
@@ -56,13 +67,11 @@ class RawStreamEvent:
             against the documented enum.
         data: Parsed JSON payload when the data line is valid JSON,
             otherwise the raw string.
-        retry: Optional ``retry:`` directive from the server, if any.
     """
 
     id: Optional[str]
     event: Optional[str]
     data: Any
-    retry: Optional[int]
 
 
 def _decode_raw_event(raw_json: str) -> RawStreamEvent:
@@ -74,12 +83,11 @@ def _decode_raw_event(raw_json: str) -> RawStreamEvent:
     """
     parsed = json.loads(raw_json)
     if not isinstance(parsed, dict):
-        return RawStreamEvent(id=None, event=None, data=parsed, retry=None)
+        return RawStreamEvent(id=None, event=None, data=parsed)
     return RawStreamEvent(
         id=parsed.get("id"),
         event=parsed.get("event"),
         data=parsed.get("data"),
-        retry=parsed.get("retry"),
     )
 
 
@@ -114,17 +122,23 @@ async def research_background_async(client: You, **kwargs: Any) -> TaskResponse:
     return res
 
 
-def _poll_detail(
+def poll_research_task(
     client: You,
-    *,
     task_id: str,
-    interval_s: float,
-    timeout_s: float,
-    deadline: float,
+    *,
+    interval_s: float = _DEFAULT_POLL_INTERVAL_S,
+    timeout_s: float = _DEFAULT_POLL_TIMEOUT_S,
     server_url: Optional[str] = None,
     timeout_ms: Optional[int] = None,
     http_headers: Optional[Mapping[str, str]] = None,
 ) -> TaskDetail:
+    """Poll ``GET /v1/research/{task_id}`` until ``status == "completed"``.
+
+    Raises ``RuntimeError`` if the task ends in a non-completed terminal state
+    (``failed`` / ``cancelled``) and ``TimeoutError`` if ``timeout_s`` elapses
+    before completion.
+    """
+    deadline = time.monotonic() + timeout_s
     while True:
         detail = client.get_research_task(
             task_id=task_id,
@@ -146,7 +160,7 @@ def _poll_detail(
         time.sleep(interval_s)
 
 
-def poll_research_task(
+async def poll_research_task_async(
     client: You,
     task_id: str,
     *,
@@ -156,35 +170,8 @@ def poll_research_task(
     timeout_ms: Optional[int] = None,
     http_headers: Optional[Mapping[str, str]] = None,
 ) -> TaskDetail:
-    """Poll ``GET /v1/research/{task_id}`` until ``status == "completed"``.
-
-    Raises ``RuntimeError`` if the task ends in a non-completed terminal state
-    (``failed`` / ``cancelled``) and ``TimeoutError`` if ``timeout_s`` elapses
-    before completion.
-    """
-    return _poll_detail(
-        client,
-        task_id=task_id,
-        interval_s=interval_s,
-        timeout_s=timeout_s,
-        deadline=time.monotonic() + timeout_s,
-        server_url=server_url,
-        timeout_ms=timeout_ms,
-        http_headers=http_headers,
-    )
-
-
-async def _poll_detail_async(
-    client: You,
-    *,
-    task_id: str,
-    interval_s: float,
-    timeout_s: float,
-    deadline: float,
-    server_url: Optional[str] = None,
-    timeout_ms: Optional[int] = None,
-    http_headers: Optional[Mapping[str, str]] = None,
-) -> TaskDetail:
+    """Async variant of :func:`poll_research_task`."""
+    deadline = time.monotonic() + timeout_s
     while True:
         detail = await client.get_research_task_async(
             task_id=task_id,
@@ -206,26 +193,119 @@ async def _poll_detail_async(
         await asyncio.sleep(interval_s)
 
 
-async def poll_research_task_async(
+def _resolve_from_final_get(
     client: You,
     task_id: str,
+    result: Optional[str],
+    timeout_s: float,
     *,
-    interval_s: float = _DEFAULT_POLL_INTERVAL_S,
-    timeout_s: float = _DEFAULT_POLL_TIMEOUT_S,
     server_url: Optional[str] = None,
     timeout_ms: Optional[int] = None,
     http_headers: Optional[Mapping[str, str]] = None,
+    timed_out: bool = False,
 ) -> TaskDetail:
-    """Async variant of :func:`poll_research_task`."""
-    return await _poll_detail_async(
-        client,
+    """Fetch the final ``TaskDetail`` and resolve based on the stream result.
+
+    Called after the SSE stream terminates (terminal event, timeout, or close
+    without terminal event). When ``result`` is ``"ok"``, verifies the task is
+    completed. When ``result`` is a non-None error event name, raises
+    ``RuntimeError``. When ``result`` is None (timeout or stream close),
+    performs a final GET and returns the detail if completed, raises
+    ``RuntimeError`` for terminal non-completed, or ``TimeoutError`` if still
+    running.
+    """
+    if result == "ok":
+        detail = client.get_research_task(
+            task_id=task_id,
+            server_url=server_url,
+            timeout_ms=timeout_ms,
+            http_headers=http_headers,
+        )
+        if detail.status.value != "completed":
+            raise RuntimeError(
+                f"research task {task_id} stream signalled completion "
+                f"but GET returned status={detail.status.value}"
+            )
+        return detail
+    if result is not None:
+        raise RuntimeError(
+            f"research task {task_id} ended in non-completed state: {result}"
+        )
+    # result is None: timeout or stream close without terminal event
+    detail = client.get_research_task(
         task_id=task_id,
-        interval_s=interval_s,
-        timeout_s=timeout_s,
-        deadline=time.monotonic() + timeout_s,
         server_url=server_url,
         timeout_ms=timeout_ms,
         http_headers=http_headers,
+    )
+    status = detail.status.value
+    if status == "completed":
+        return detail
+    if status in _TERMINAL_TASK_STATUSES:
+        raise RuntimeError(
+            f"research task {task_id} ended in non-completed state: {status}"
+        )
+    if timed_out:
+        raise TimeoutError(
+            f"research task {task_id} did not complete within {timeout_s}s "
+            f"(status: {status})"
+        )
+    raise TimeoutError(
+        f"research task {task_id} stream closed without terminal event "
+        f"and task is still {status}"
+    )
+
+
+async def _resolve_from_final_get_async(
+    client: You,
+    task_id: str,
+    result: Optional[str],
+    timeout_s: float,
+    *,
+    server_url: Optional[str] = None,
+    timeout_ms: Optional[int] = None,
+    http_headers: Optional[Mapping[str, str]] = None,
+    timed_out: bool = False,
+) -> TaskDetail:
+    """Async counterpart of :func:`_resolve_from_final_get`."""
+    if result == "ok":
+        detail = await client.get_research_task_async(
+            task_id=task_id,
+            server_url=server_url,
+            timeout_ms=timeout_ms,
+            http_headers=http_headers,
+        )
+        if detail.status.value != "completed":
+            raise RuntimeError(
+                f"research task {task_id} stream signalled completion "
+                f"but GET returned status={detail.status.value}"
+            )
+        return detail
+    if result is not None:
+        raise RuntimeError(
+            f"research task {task_id} ended in non-completed state: {result}"
+        )
+    detail = await client.get_research_task_async(
+        task_id=task_id,
+        server_url=server_url,
+        timeout_ms=timeout_ms,
+        http_headers=http_headers,
+    )
+    status = detail.status.value
+    if status == "completed":
+        return detail
+    if status in _TERMINAL_TASK_STATUSES:
+        raise RuntimeError(
+            f"research task {task_id} ended in non-completed state: {status}"
+        )
+    if timed_out:
+        raise TimeoutError(
+            f"research task {task_id} did not complete within {timeout_s}s "
+            f"(status: {status})"
+        )
+    raise TimeoutError(
+        f"research task {task_id} stream closed without terminal event "
+        f"and task is still {status}"
     )
 
 
@@ -239,7 +319,12 @@ def research_and_wait(
 
     Submits via :func:`research_background`, then opens the SSE stream
     and reads events until a terminal event arrives. Fetches the final
-    ``TaskDetail`` via one ``get_research_task`` call.
+    ``TaskDetail`` via a ``get_research_task`` call (a second GET is
+    issued in timeout/stream-close fallback paths).
+
+    The stream is opened with a read timeout of ``timeout_s`` so that a
+    stalled server raises ``httpx.ReadTimeout`` deterministically instead
+    of leaking a blocked consumer thread.
 
     Parameters:
         timeout_s: Maximum seconds to wait for a terminal stream event.
@@ -262,95 +347,32 @@ def research_and_wait(
     http_headers = kwargs.get("http_headers")
     task = research_background(client, **kwargs)
 
+    # Use timeout_s as the stream read timeout so iter_bytes raises
+    # httpx.ReadTimeout deterministically if the server stops sending data.
+    stream_timeout_ms = int(timeout_s * 1000)
     stream = _open_raw_stream(
         client, task.task_id, http_headers=http_headers,
-        server_url=server_url, timeout_ms=timeout_ms,
+        server_url=server_url, timeout_ms=stream_timeout_ms,
     )
     result: Optional[str] = None
-    thread_exc: Optional[BaseException] = None
-    consumer: Optional[threading.Thread] = None
+    timed_out = False
     try:
-        def _consume() -> None:
-            nonlocal result, thread_exc
-            try:
-                for evt in stream:
-                    if evt.event in _TERMINAL_STREAM_EVENTS_OK:
-                        result = "ok"
-                        return
-                    if evt.event in _TERMINAL_STREAM_EVENTS_ERR:
-                        result = evt.event
-                        return
-            except BaseException as exc:  # pylint: disable=broad-except
-                thread_exc = exc
-
-        consumer = threading.Thread(target=_consume, daemon=True)
-        consumer.start()
-        consumer.join(timeout=timeout_s)
-        timed_out = consumer.is_alive()
+        for evt in stream:
+            if evt.event in _TERMINAL_STREAM_EVENTS_OK:
+                result = "ok"
+                break
+            if evt.event in _TERMINAL_STREAM_EVENTS_ERR:
+                result = evt.event
+                break
+    except httpx.TimeoutException:
+        timed_out = True
     finally:
         stream.close()
-        if consumer is not None:
-            consumer.join(timeout=2.0)
 
-    if timed_out:
-        # Stream didn't emit a terminal event within timeout_s. The task
-        # may have completed anyway (the SSE stream doesn't always emit
-        # terminal events for tasks that complete mid-stream). Do a final
-        # GET to check the actual status before raising.
-        detail = client.get_research_task(
-            task_id=task.task_id,
-            server_url=server_url,
-            timeout_ms=timeout_ms,
-            http_headers=http_headers,
-        )
-        status = detail.status.value
-        if status == "completed":
-            return detail
-        if status in _TERMINAL_TASK_STATUSES:
-            raise RuntimeError(
-                f"research task {task.task_id} ended in non-completed state: {status}"
-            )
-        raise TimeoutError(
-            f"research task {task.task_id} did not complete within {timeout_s}s "
-            f"(status: {status})"
-        )
-    if thread_exc is not None:
-        raise thread_exc
-    if result == "ok":
-        detail = client.get_research_task(
-            task_id=task.task_id,
-            server_url=server_url,
-            timeout_ms=timeout_ms,
-            http_headers=http_headers,
-        )
-        if detail.status.value != "completed":
-            raise RuntimeError(
-                f"research task {task.task_id} stream signalled completion "
-                f"but GET returned status={detail.status.value}"
-            )
-        return detail
-    if result is not None:
-        raise RuntimeError(
-            f"research task {task.task_id} ended in non-completed state: {result}"
-        )
-    # Stream closed without a terminal event — the task may have completed
-    # mid-stream. Do a final GET to check the actual status.
-    detail = client.get_research_task(
-        task_id=task.task_id,
-        server_url=server_url,
-        timeout_ms=timeout_ms,
-        http_headers=http_headers,
-    )
-    status = detail.status.value
-    if status == "completed":
-        return detail
-    if status in _TERMINAL_TASK_STATUSES:
-        raise RuntimeError(
-            f"research task {task.task_id} ended in non-completed state: {status}"
-        )
-    raise TimeoutError(
-        f"research task {task.task_id} stream closed without terminal event "
-        f"and task is still {status}"
+    return _resolve_from_final_get(
+        client, task.task_id, result, timeout_s,
+        server_url=server_url, timeout_ms=timeout_ms, http_headers=http_headers,
+        timed_out=timed_out,
     )
 
 
@@ -378,64 +400,17 @@ async def research_and_wait_async(
                 return evt.event
         return None
 
+    timed_out = False
     try:
         result = await asyncio.wait_for(_consume(), timeout=timeout_s)
-    except asyncio.TimeoutError as exc:
-        # Stream didn't emit a terminal event within timeout_s. The task
-        # may have completed anyway — do a final GET to check.
-        detail = await client.get_research_task_async(
-            task_id=task.task_id,
-            server_url=server_url,
-            timeout_ms=timeout_ms,
-            http_headers=http_headers,
-        )
-        status = detail.status.value
-        if status == "completed":
-            return detail
-        if status in _TERMINAL_TASK_STATUSES:
-            raise RuntimeError(
-                f"research task {task.task_id} ended in non-completed state: {status}"
-            ) from exc
-        raise TimeoutError(
-            f"research task {task.task_id} did not complete within {timeout_s}s "
-            f"(status: {status})"
-        ) from exc
+    except asyncio.TimeoutError:
+        timed_out = True
+        result = None
 
-    if result == "ok":
-        detail = await client.get_research_task_async(
-            task_id=task.task_id,
-            server_url=server_url,
-            timeout_ms=timeout_ms,
-            http_headers=http_headers,
-        )
-        if detail.status.value != "completed":
-            raise RuntimeError(
-                f"research task {task.task_id} stream signalled completion "
-                f"but GET returned status={detail.status.value}"
-            )
-        return detail
-    if result is not None:
-        raise RuntimeError(
-            f"research task {task.task_id} ended in non-completed state: {result}"
-        )
-    # Stream closed without a terminal event — the task may have completed
-    # mid-stream. Do a final GET to check the actual status.
-    detail = await client.get_research_task_async(
-        task_id=task.task_id,
-        server_url=server_url,
-        timeout_ms=timeout_ms,
-        http_headers=http_headers,
-    )
-    status = detail.status.value
-    if status == "completed":
-        return detail
-    if status in _TERMINAL_TASK_STATUSES:
-        raise RuntimeError(
-            f"research task {task.task_id} ended in non-completed state: {status}"
-        )
-    raise TimeoutError(
-        f"research task {task.task_id} stream closed without terminal event "
-        f"and task is still {status}"
+    return await _resolve_from_final_get_async(
+        client, task.task_id, result, timeout_s,
+        server_url=server_url, timeout_ms=timeout_ms, http_headers=http_headers,
+        timed_out=timed_out,
     )
 
 
@@ -448,30 +423,11 @@ def _raise_stream_error(http_res: Any) -> None:
     method instead of a generic ``RuntimeError``.
     """
     response_data: Any = None
-    if match_response(http_res, "401", "application/json"):
-        text = stream_to_text(http_res)
-        response_data = unmarshal_json_response(
-            _errors.StreamResearchTaskUnauthorizedErrorData, http_res, text
-        )
-        raise _errors.StreamResearchTaskUnauthorizedError(response_data, http_res, text)
-    if match_response(http_res, "403", "application/json"):
-        text = stream_to_text(http_res)
-        response_data = unmarshal_json_response(
-            _errors.StreamResearchTaskForbiddenErrorData, http_res, text
-        )
-        raise _errors.StreamResearchTaskForbiddenError(response_data, http_res, text)
-    if match_response(http_res, "404", "application/json"):
-        text = stream_to_text(http_res)
-        response_data = unmarshal_json_response(
-            _errors.StreamResearchTaskNotFoundErrorData, http_res, text
-        )
-        raise _errors.StreamResearchTaskNotFoundError(response_data, http_res, text)
-    if match_response(http_res, "500", "application/json"):
-        text = stream_to_text(http_res)
-        response_data = unmarshal_json_response(
-            _errors.StreamResearchTaskInternalServerErrorData, http_res, text
-        )
-        raise _errors.StreamResearchTaskInternalServerError(response_data, http_res, text)
+    for status, content_type, data_cls, err_cls in _STREAM_ERROR_BRANCHES:
+        if match_response(http_res, status, content_type):
+            text = stream_to_text(http_res)
+            response_data = unmarshal_json_response(data_cls, http_res, text)
+            raise err_cls(response_data, http_res, text)
     if match_response(http_res, "4XX", "*") or match_response(http_res, "5XX", "*"):
         text = stream_to_text(http_res)
         raise _errors.YouDefaultError("API error occurred", http_res, text)
@@ -482,35 +438,63 @@ def _raise_stream_error(http_res: Any) -> None:
 async def _raise_stream_error_async(http_res: Any) -> None:
     """Async counterpart of :func:`_raise_stream_error`."""
     response_data: Any = None
-    if match_response(http_res, "401", "application/json"):
-        text = await stream_to_text_async(http_res)
-        response_data = unmarshal_json_response(
-            _errors.StreamResearchTaskUnauthorizedErrorData, http_res, text
-        )
-        raise _errors.StreamResearchTaskUnauthorizedError(response_data, http_res, text)
-    if match_response(http_res, "403", "application/json"):
-        text = await stream_to_text_async(http_res)
-        response_data = unmarshal_json_response(
-            _errors.StreamResearchTaskForbiddenErrorData, http_res, text
-        )
-        raise _errors.StreamResearchTaskForbiddenError(response_data, http_res, text)
-    if match_response(http_res, "404", "application/json"):
-        text = await stream_to_text_async(http_res)
-        response_data = unmarshal_json_response(
-            _errors.StreamResearchTaskNotFoundErrorData, http_res, text
-        )
-        raise _errors.StreamResearchTaskNotFoundError(response_data, http_res, text)
-    if match_response(http_res, "500", "application/json"):
-        text = await stream_to_text_async(http_res)
-        response_data = unmarshal_json_response(
-            _errors.StreamResearchTaskInternalServerErrorData, http_res, text
-        )
-        raise _errors.StreamResearchTaskInternalServerError(response_data, http_res, text)
+    for status, content_type, data_cls, err_cls in _STREAM_ERROR_BRANCHES:
+        if match_response(http_res, status, content_type):
+            text = await stream_to_text_async(http_res)
+            response_data = unmarshal_json_response(data_cls, http_res, text)
+            raise err_cls(response_data, http_res, text)
     if match_response(http_res, "4XX", "*") or match_response(http_res, "5XX", "*"):
         text = await stream_to_text_async(http_res)
         raise _errors.YouDefaultError("API error occurred", http_res, text)
     text = await stream_to_text_async(http_res)
     raise _errors.YouDefaultError("Unexpected response received", http_res, text)
+
+
+def _stream_build_kwargs(
+    client: You,
+    task_id: str,
+    *,
+    http_headers: Optional[Mapping[str, str]],
+    from_id: int,
+    server_url: Optional[str],
+    timeout_ms: Optional[int],
+) -> dict[str, Any]:
+    """Build common kwargs dict for ``_build_request[_async]``."""
+    # pylint: disable=protected-access
+    base_url = server_url if server_url is not None else client._get_url(None, None)
+    if timeout_ms is None:
+        timeout_ms = client.sdk_configuration.timeout_ms
+    return {
+        "method": "GET",
+        "path": "/v1/research/{task_id}/stream",
+        "base_url": base_url,
+        "url_variables": None,
+        "request": _models.StreamResearchTaskRequest(task_id=task_id, from_id=from_id),
+        "request_body_required": False,
+        "request_has_path_params": True,
+        "request_has_query_params": True,
+        "user_agent_header": "user-agent",
+        "accept_header_value": "text/event-stream",
+        "http_headers": http_headers,
+        "security": client.sdk_configuration.security,
+        "allow_empty_value": None,
+        "timeout_ms": timeout_ms,
+    }
+
+
+def _stream_hook_ctx(client: You, base_url: str) -> HookContext:
+    """Build the shared ``HookContext`` for stream-open requests."""
+    return HookContext(
+        config=client.sdk_configuration,
+        base_url=base_url or "",
+        operation_id="streamResearchTask",
+        oauth2_scopes=None,
+        security_source=get_security_from_env(
+            client.sdk_configuration.security, _models.Security
+        ),
+        tags=None,
+        extensions=None,
+    )
 
 
 def _open_raw_stream(
@@ -528,41 +512,21 @@ def _open_raw_stream(
     wires :func:`_decode_raw_event` into the ``EventStream`` instead of the
     strict pydantic ``ResearchTaskStreamEvent`` decoder.
     """
-    # pylint: disable=protected-access
-    base_url = server_url if server_url is not None else client._get_url(None, None)
-    if timeout_ms is None:
-        timeout_ms = client.sdk_configuration.timeout_ms
-    req = client._build_request(
-        method="GET",
-        path="/v1/research/{task_id}/stream",
-        base_url=base_url,
-        url_variables=None,
-        request=_models.StreamResearchTaskRequest(task_id=task_id, from_id=from_id),
-        request_body_required=False,
-        request_has_path_params=True,
-        request_has_query_params=True,
-        user_agent_header="user-agent",
-        accept_header_value="text/event-stream",
-        http_headers=http_headers,
-        security=client.sdk_configuration.security,
-        allow_empty_value=None,
-        timeout_ms=timeout_ms,
+    kwargs = _stream_build_kwargs(
+        client, task_id, http_headers=http_headers, from_id=from_id,
+        server_url=server_url, timeout_ms=timeout_ms,
     )
+    base_url = kwargs["base_url"]
+    # pylint: disable=protected-access
+    req = client._build_request(**kwargs)
     http_res = client.do_request(
-        hook_ctx=HookContext(
-            config=client.sdk_configuration,
-            base_url=base_url or "",
-            operation_id="streamResearchTask",
-            oauth2_scopes=None,
-            security_source=get_security_from_env(
-                client.sdk_configuration.security, _models.Security
-            ),
-            tags=None,
-            extensions=None,
-        ),
+        hook_ctx=_stream_hook_ctx(client, base_url),
         request=req,
         is_error_status_code=lambda c: match_status_codes(["4XX", "5XX"], c),
         stream=True,
+        # Diverges from generated stream_research_task which retries
+        # [429,500,502,503,504] on stream-open. We skip retries so a
+        # transient 5xx doesn't silently reopen a half-consumed stream.
         retry_config=None,
     )
     if not match_response(http_res, "200", "text/event-stream"):
@@ -614,38 +578,15 @@ async def _open_raw_stream_async(
     timeout_ms: Optional[int] = None,
 ) -> eventstreaming.EventStreamAsync[RawStreamEvent]:
     """Async counterpart of :func:`_open_raw_stream`."""
-    # pylint: disable=protected-access
-    base_url = server_url if server_url is not None else client._get_url(None, None)
-    if timeout_ms is None:
-        timeout_ms = client.sdk_configuration.timeout_ms
-    req = client._build_request_async(
-        method="GET",
-        path="/v1/research/{task_id}/stream",
-        base_url=base_url,
-        url_variables=None,
-        request=_models.StreamResearchTaskRequest(task_id=task_id, from_id=from_id),
-        request_body_required=False,
-        request_has_path_params=True,
-        request_has_query_params=True,
-        user_agent_header="user-agent",
-        accept_header_value="text/event-stream",
-        http_headers=http_headers,
-        security=client.sdk_configuration.security,
-        allow_empty_value=None,
-        timeout_ms=timeout_ms,
+    kwargs = _stream_build_kwargs(
+        client, task_id, http_headers=http_headers, from_id=from_id,
+        server_url=server_url, timeout_ms=timeout_ms,
     )
+    base_url = kwargs["base_url"]
+    # pylint: disable=protected-access
+    req = client._build_request_async(**kwargs)
     http_res = await client.do_request_async(
-        hook_ctx=HookContext(
-            config=client.sdk_configuration,
-            base_url=base_url or "",
-            operation_id="streamResearchTask",
-            oauth2_scopes=None,
-            security_source=get_security_from_env(
-                client.sdk_configuration.security, _models.Security
-            ),
-            tags=None,
-            extensions=None,
-        ),
+        hook_ctx=_stream_hook_ctx(client, base_url),
         request=req,
         is_error_status_code=lambda c: match_status_codes(["4XX", "5XX"], c),
         stream=True,
