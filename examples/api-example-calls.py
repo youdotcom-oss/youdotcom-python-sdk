@@ -356,9 +356,11 @@ def research_and_wait_example():
             input="Compare the profitability of NVIDIA, AMD, and Intel over the past 5 fiscal years.",
             research_effort=ResearchEffort.DEEP,
         )
-    except TypeError:
-        print("  Background mode not enabled on server. Skipping.")
-        return
+    except TypeError as e:
+        if "TaskResponse" in str(e):
+            print("  Background mode not enabled on server. Skipping.")
+            return
+        raise
 
     assert isinstance(detail, TaskDetail)
     print(f"Task completed: {detail.status.value}")

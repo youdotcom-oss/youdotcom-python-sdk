@@ -35,7 +35,7 @@ if detail.status.value == "completed":
 from youdotcom.research_helpers import stream_research
 for event in stream_research(you, task_id=res.task_id):
     print(event.event, event.data)
-    if event.event in ("response.done", "completed", "error", "failed", "cancelled"):
+    if event.event in ("response.done", "complete", "completed", "error", "failed", "cancelled"):
         break
 ```
 
@@ -49,6 +49,10 @@ from youdotcom.research_helpers import (
 
 # Option 1: Submit and wait in one call (simplest)
 # Streams SSE events until the task completes, then fetches the result.
+# If the stream times out or closes without a terminal event, a final
+# get_research_task call resolves the status (returns the detail if
+# completed, raises RuntimeError for terminal non-completed, or
+# TimeoutError if still running).
 detail = research_and_wait(
     you, input="...", research_effort=ResearchEffort.DEEP,
 )
@@ -62,7 +66,7 @@ detail = poll_research_task(you, task_id=task.task_id)
 # the server emits intermediate event types not in the strict enum)
 for event in stream_research(you, task_id=task.task_id):
     print(event.event, event.data)
-    if event.event in ("response.done", "completed"):
+    if event.event in ("response.done", "complete", "completed"):
         break
 ```
 
