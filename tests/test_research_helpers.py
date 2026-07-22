@@ -366,6 +366,33 @@ class TestResearchAndWait:
                 research_effort=ResearchEffort.STANDARD,
             )
 
+    def test_research_and_wait_ok_event_but_get_non_completed_raises(self):
+        """When the stream emits a terminal OK event (response.done) but the
+        follow-up GET returns a non-completed status, research_and_wait raises
+        RuntimeError. This covers the defensive branch in _resolve_from_final_get."""
+        handler = _make_wait_handler(
+            stream_chunks=[
+                _CONNECTED_CHUNK,
+                b'id: 1\nevent: response.done\ndata: {"type":"response.done","task_id":"abc","status":"completed","sequence":1}\n\n',
+            ],
+            final_status="running",
+            final_result=None,
+        )
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            client=httpx.Client(transport=transport),
+            api_key_auth="test-api-key",
+        )
+
+        with pytest.raises(RuntimeError, match="stream signalled completion but GET returned status=running"):
+            research_and_wait(
+                you,
+                timeout_s=5.0,
+                input="test query",
+                research_effort=ResearchEffort.STANDARD,
+            )
+
     def test_research_and_wait_timeout_raises_timeout_error(self):
         """research_and_wait raises TimeoutError when the stream never sends
         a terminal event within timeout_s. The _BlockingStream simulates a

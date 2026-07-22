@@ -92,7 +92,9 @@ func testGetV1ResearchStreamSuccess(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// 2) Terminal event — closes the stream. `response.done` is one of the
-	// four TERMINAL_SSE_EVENTS values that the SDK treats as stream-end.
+	// six terminal event names the SDK treats as stream-end:
+	//   OK:    response.done, complete, completed
+	//   ERROR: error, failed, cancelled
 	if !writeSSE("1", "response.done", map[string]interface{}{
 		"type":     "response.done",
 		"task_id":  taskID,
