@@ -347,8 +347,9 @@ def research_and_wait(
     http_headers = kwargs.get("http_headers")
     task = research_background(client, **kwargs)
 
-    # Use timeout_s as the stream read timeout so iter_bytes raises
-    # httpx.ReadTimeout deterministically if the server stops sending data.
+    # Open the stream with a per-read timeout so a stalled server raises
+    # httpx.ReadTimeout deterministically. We also enforce a total wall-clock
+    # deadline below to match the async variant's asyncio.wait_for semantics.
     stream_timeout_ms = int(timeout_s * 1000)
     stream = _open_raw_stream(
         client, task.task_id, http_headers=http_headers,
@@ -356,6 +357,7 @@ def research_and_wait(
     )
     result: Optional[str] = None
     timed_out = False
+    deadline = time.monotonic() + timeout_s
     try:
         for evt in stream:
             if evt.event in _TERMINAL_STREAM_EVENTS_OK:
@@ -363,6 +365,9 @@ def research_and_wait(
                 break
             if evt.event in _TERMINAL_STREAM_EVENTS_ERR:
                 result = evt.event
+                break
+            if time.monotonic() >= deadline:
+                timed_out = True
                 break
     except httpx.TimeoutException:
         timed_out = True

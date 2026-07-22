@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import time
 import uuid
 
 import httpx
@@ -456,6 +457,39 @@ class TestResearchAndWait:
             research_and_wait(
                 you,
                 timeout_s=5.0,
+                input="test query",
+                research_effort=ResearchEffort.STANDARD,
+            )
+
+    def test_research_and_wait_total_deadline_not_stall_timeout(self):
+        """research_and_wait enforces a total wall-clock deadline, not just a
+        per-read stall timeout. If the server keeps sending non-terminal
+        events forever, the total deadline fires and raises TimeoutError.
+        This matches the async variant's asyncio.wait_for semantics."""
+        class _NonTerminalStream(httpx.SyncByteStream):
+            """Yields non-terminal events fast enough to not trip the per-read
+            timeout, but never emits a terminal event."""
+            def __iter__(self):
+                for _ in range(10000):
+                    yield b'id: 0\nevent: ping\ndata: {"type":"ping"}\n\n'
+                    time.sleep(0.01)
+
+        handler = _make_wait_handler(
+            stream_obj=_NonTerminalStream(),
+            final_status="running",
+            final_result=None,
+        )
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            client=httpx.Client(transport=transport),
+            api_key_auth="test-api-key",
+        )
+
+        with pytest.raises(TimeoutError, match="did not complete within"):
+            research_and_wait(
+                you,
+                timeout_s=0.5,
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
