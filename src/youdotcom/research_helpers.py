@@ -369,9 +369,10 @@ def research_and_wait(
     ``TaskDetail`` via a ``get_research_task`` call (a second GET is
     issued in timeout/stream-close fallback paths).
 
-    The stream is opened with a read timeout of ``timeout_s`` so that a
-    stalled server raises ``httpx.ReadTimeout`` deterministically instead
-    of leaking a blocked consumer thread.
+    The stream is opened with a per-read timeout bounded to ``timeout_s``
+    (or the caller's ``timeout_ms`` when provided) so that a stalled server
+    raises ``httpx.ReadTimeout`` deterministically instead of leaking a
+    blocked consumer thread. A total wall-clock deadline is also enforced.
 
     Parameters:
         timeout_s: Maximum seconds to wait for a terminal stream event.
@@ -400,10 +401,11 @@ def research_and_wait(
     http_headers = kwargs.get("http_headers")
     task = research_background(client, **kwargs)
 
-    # Open the stream with a per-read timeout so a stalled server raises
+    # Bound the SSE per-read timeout: use the caller's timeout_ms when
+    # provided, otherwise default to timeout_s so a stalled server raises
     # httpx.ReadTimeout deterministically. We also enforce a total wall-clock
     # deadline below to match the async variant's asyncio.wait_for semantics.
-    stream_timeout_ms = int(timeout_s * 1000)
+    stream_timeout_ms = timeout_ms if timeout_ms is not None else int(timeout_s * 1000)
     stream = _open_raw_stream(
         client, task.task_id, http_headers=http_headers,
         server_url=server_url, timeout_ms=stream_timeout_ms,
@@ -444,9 +446,8 @@ async def research_and_wait_async(
 
     See :func:`research_and_wait` for parameter details and auto-timeout
     behavior (600s default, 14400s for frontier). The SSE per-read timeout
-    is bounded to ``timeout_s`` (when the caller didn't set ``timeout_ms``)
-    to match the sync variant, preventing a caller-set client default from
-    causing premature ``TimeoutError`` on long-running frontier tasks.
+    is bounded to ``timeout_s`` (or the caller's ``timeout_ms`` when
+    provided), matching the sync variant.
     """
     if timeout_s is None:
         timeout_s = _resolve_default_timeout(kwargs)

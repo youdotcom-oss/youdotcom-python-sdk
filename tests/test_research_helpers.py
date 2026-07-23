@@ -1119,6 +1119,82 @@ class TestResearchAndWaitAsync:
             )
 
     @pytest.mark.asyncio
+    async def test_async_research_and_wait_ok_event_repoll_succeeds(self):
+        """Async mirror: stream OK + first GET running, second GET completed."""
+        call_count = {"get": 0}
+
+        def handler(request):
+            url = str(request.url)
+            if url.endswith("/stream") or "/stream?" in url:
+                return httpx.Response(
+                    200, headers={"content-type": "text/event-stream"},
+                    stream=_AsyncChunks([
+                        _CONNECTED_CHUNK,
+                        b'id: 1\nevent: response.done\ndata: {"type":"response.done","task_id":"abc","status":"completed","sequence":1}\n\n',
+                    ]),
+                )
+            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
+                return httpx.Response(
+                    200, headers={"content-type": "application/json"}, content=_TASK_RESPONSE_JSON,
+                )
+            call_count["get"] += 1
+            if call_count["get"] == 1:
+                return httpx.Response(
+                    200, headers={"content-type": "application/json"},
+                    content=_make_task_detail_json(status="running", result=None),
+                )
+            return httpx.Response(
+                200, headers={"content-type": "application/json"},
+                content=_make_task_detail_json(status="completed", result=_DEFAULT_RESULT),
+            )
+
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            async_client=httpx.AsyncClient(transport=transport),
+            api_key_auth="test-api-key",
+        )
+
+        detail = await research_and_wait_async(
+            you,
+            timeout_s=5.0,
+            input="test query",
+            research_effort=ResearchEffort.STANDARD,
+        )
+
+        assert isinstance(detail, TaskDetail)
+        assert detail.status.value == "completed"
+        assert call_count["get"] == 2
+
+    @pytest.mark.asyncio
+    async def test_async_research_and_wait_ok_event_but_get_failed_raises_immediately(self):
+        """Async mirror: stream OK + GET returns terminal failed raises
+        immediately without exhausting re-poll attempts."""
+        handler = _make_wait_handler(
+            stream_chunks=[
+                _CONNECTED_CHUNK,
+                b'id: 1\nevent: response.done\ndata: {"type":"response.done","task_id":"abc","status":"completed","sequence":1}\n\n',
+            ],
+            final_status="failed",
+            final_result=None,
+            is_async=True,
+        )
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            async_client=httpx.AsyncClient(transport=transport),
+            api_key_auth="test-api-key",
+        )
+
+        with pytest.raises(RuntimeError, match="ended in non-completed state: failed"):
+            await research_and_wait_async(
+                you,
+                timeout_s=5.0,
+                input="test query",
+                research_effort=ResearchEffort.STANDARD,
+            )
+
+    @pytest.mark.asyncio
     async def test_async_research_and_wait_timeout_raises_timeout_error(self):
         """Async research_and_wait raises TimeoutError when the stream never
         sends a terminal event and the task is still running. asyncio.wait_for
