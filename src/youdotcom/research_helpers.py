@@ -442,6 +442,7 @@ def research_and_wait(
         # Mid-stream network failure (e.g. RemoteProtocolError on a dropped
         # connection): the task is already submitted and running. Fall back
         # to polling. Typed SDK errors propagate to the caller.
+        stream.close()
         return poll_research_task(
             client, task.task_id,
             interval_s=_DEFAULT_POLL_INTERVAL_S,
