@@ -1092,6 +1092,35 @@ class TestResearchAndWaitAsync:
         assert detail.status.value == "completed"
 
     @pytest.mark.asyncio
+    async def test_async_frontier_auto_timeout_completes_without_premature_timeout(self):
+        """Async mirror: when research_effort=frontier and timeout_s is omitted,
+        the auto-adjusted 4-hour timeout should not trip on a normal event
+        sequence that completes within seconds."""
+        handler = _make_wait_handler(
+            stream_chunks=[
+                _CONNECTED_CHUNK,
+                b'id: 1\nevent: response.done\ndata: {"type":"response.done","task_id":"abc","status":"completed","sequence":1}\n\n',
+            ],
+            is_async=True,
+        )
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            async_client=httpx.AsyncClient(transport=transport),
+            api_key_auth="test-api-key",
+        )
+
+        detail = await research_and_wait_async(
+            you,
+            input="Evaluate the Gates Foundation's global-health impact",
+            research_effort=ResearchEffort.FRONTIER,
+            # timeout_s intentionally omitted — should auto-adjust to 14400
+        )
+
+        assert isinstance(detail, TaskDetail)
+        assert detail.status.value == "completed"
+
+    @pytest.mark.asyncio
     async def test_async_research_and_wait_error_event_raises_runtime_error(self):
         """Async research_and_wait raises RuntimeError on error terminal event."""
         handler = _make_wait_handler(

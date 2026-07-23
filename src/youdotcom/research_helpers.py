@@ -401,15 +401,29 @@ def research_and_wait(
     http_headers = kwargs.get("http_headers")
     task = research_background(client, **kwargs)
 
-    # Bound the SSE per-read timeout: use the caller's timeout_ms when
-    # provided, otherwise default to timeout_s so a stalled server raises
-    # httpx.ReadTimeout deterministically. We also enforce a total wall-clock
-    # deadline below to match the async variant's asyncio.wait_for semantics.
-    stream_timeout_ms = timeout_ms if timeout_ms is not None else int(timeout_s * 1000)
-    stream = _open_raw_stream(
-        client, task.task_id, http_headers=http_headers,
-        server_url=server_url, timeout_ms=stream_timeout_ms,
+    # Cap the SSE per-read timeout at timeout_s so a silent stall can never
+    # exceed the total wait budget, even if the caller's timeout_ms is larger.
+    # When timeout_ms is smaller, honor it (tighter per-read bound).
+    stream_timeout_ms = min(
+        timeout_ms if timeout_ms is not None else int(timeout_s * 1000),
+        int(timeout_s * 1000),
     )
+    try:
+        stream = _open_raw_stream(
+            client, task.task_id, http_headers=http_headers,
+            server_url=server_url, timeout_ms=stream_timeout_ms,
+        )
+    except Exception:
+        # Stream-open failure (transient 500, 404 on a just-created task, etc.):
+        # the task is already submitted and running. Fall back to polling so
+        # the caller gets a result instead of an unrecoverable exception.
+        return poll_research_task(
+            client, task.task_id,
+            interval_s=_DEFAULT_POLL_INTERVAL_S,
+            timeout_s=timeout_s,
+            server_url=server_url, timeout_ms=timeout_ms,
+            http_headers=http_headers,
+        )
     result: Optional[str] = None
     timed_out = False
     deadline = time.monotonic() + timeout_s
@@ -456,11 +470,11 @@ async def research_and_wait_async(
     http_headers = kwargs.get("http_headers")
     task = await research_background_async(client, **kwargs)
 
-    # Bound the SSE per-read timeout to timeout_s when the caller didn't
-    # set an explicit timeout_ms, matching the sync variant. Without this,
-    # a caller-set You(timeout_ms=60000) would cap reads at 60s and cause
-    # premature TimeoutError on frontier tasks with auto timeout_s=14400.
-    stream_timeout_ms = timeout_ms if timeout_ms is not None else int(timeout_s * 1000)
+    # Cap the SSE per-read timeout at timeout_s (same rationale as sync).
+    stream_timeout_ms = min(
+        timeout_ms if timeout_ms is not None else int(timeout_s * 1000),
+        int(timeout_s * 1000),
+    )
 
     async def _consume() -> Optional[str]:
         async for evt in stream_research_async(
@@ -480,6 +494,17 @@ async def research_and_wait_async(
     except (asyncio.TimeoutError, httpx.TimeoutException):
         timed_out = True
         result = None
+    except Exception:
+        # Stream-open failure (transient 500, 404 on a just-created task, etc.):
+        # the task is already submitted and running. Fall back to polling so
+        # the caller gets a result instead of an unrecoverable exception.
+        return await poll_research_task_async(
+            client, task.task_id,
+            interval_s=_DEFAULT_POLL_INTERVAL_S,
+            timeout_s=timeout_s,
+            server_url=server_url, timeout_ms=timeout_ms,
+            http_headers=http_headers,
+        )
 
     return await _resolve_from_final_get_async(
         client, task.task_id, result, timeout_s,
