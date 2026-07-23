@@ -42,9 +42,25 @@ from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
 
 _DEFAULT_POLL_INTERVAL_S = 2.0
 _DEFAULT_POLL_TIMEOUT_S = 600.0
+_FRONTIER_TIMEOUT_S = 14400.0  # 4 hours — frontier tasks can run this long
 _TERMINAL_TASK_STATUSES = frozenset({"completed", "failed", "cancelled"})
 _TERMINAL_STREAM_EVENTS_OK = frozenset({"response.done", "complete", "completed"})
 _TERMINAL_STREAM_EVENTS_ERR = frozenset({"error", "failed", "cancelled"})
+
+
+def _resolve_default_timeout(kwargs: Mapping[str, Any]) -> float:
+    """Pick a sensible default ``timeout_s`` based on ``research_effort``.
+
+    Frontier tasks can run up to 4 hours; all other effort tiers complete
+    well within the standard 10-minute default. Only called when the caller
+    did not explicitly pass ``timeout_s``.
+    """
+    effort = kwargs.get("research_effort")
+    if effort is not None:
+        effort_val = effort.value if hasattr(effort, "value") else str(effort)
+        if effort_val == "frontier":
+            return _FRONTIER_TIMEOUT_S
+    return _DEFAULT_POLL_TIMEOUT_S
 
 # Typed-error branches for stream open: (status, content_type, DataClass, ErrorClass).
 # Mirrors the generated stream_research_task error handling so callers of
@@ -134,6 +150,12 @@ def poll_research_task(
 ) -> TaskDetail:
     """Poll ``GET /v1/research/{task_id}`` until ``status == "completed"``.
 
+    Parameters:
+        interval_s: Seconds between poll requests. Defaults to 2.0.
+        timeout_s: Maximum seconds to wait before raising ``TimeoutError``.
+            Defaults to 600.0 (10 minutes). For ``frontier`` tasks (up to 4
+            hours), pass ``timeout_s=14400``.
+
     Raises ``RuntimeError`` if the task ends in a non-completed terminal state
     (``failed`` / ``cancelled``) and ``TimeoutError`` if ``timeout_s`` elapses
     before completion.
@@ -170,7 +192,11 @@ async def poll_research_task_async(
     timeout_ms: Optional[int] = None,
     http_headers: Optional[Mapping[str, str]] = None,
 ) -> TaskDetail:
-    """Async variant of :func:`poll_research_task`."""
+    """Async variant of :func:`poll_research_task`.
+
+    See :func:`poll_research_task` for parameter defaults (interval_s=2.0,
+    timeout_s=600.0).
+    """
     deadline = time.monotonic() + timeout_s
     while True:
         detail = await client.get_research_task_async(
@@ -312,7 +338,7 @@ async def _resolve_from_final_get_async(
 def research_and_wait(
     client: You,
     *,
-    timeout_s: float = _DEFAULT_POLL_TIMEOUT_S,
+    timeout_s: Optional[float] = None,
     **kwargs: Any,
 ) -> TaskDetail:
     """Submit a research task in background mode and wait for completion.
@@ -328,6 +354,10 @@ def research_and_wait(
 
     Parameters:
         timeout_s: Maximum seconds to wait for a terminal stream event.
+            When ``None`` (the default), the timeout is auto-selected based
+            on ``research_effort``: 600.0 (10 minutes) for standard/deep/
+            exhaustive, 14400.0 (4 hours) for ``frontier``. Pass an explicit
+            value to override.
         ``**kwargs``: Forwarded to ``client.research``, including
             ``input`` and ``research_effort``. ``background=True`` is set
             automatically. ``server_url``, ``timeout_ms``, and
@@ -342,6 +372,8 @@ def research_and_wait(
             and the task is still non-terminal.
         RuntimeError: If the task ends in a non-completed terminal state.
     """
+    if timeout_s is None:
+        timeout_s = _resolve_default_timeout(kwargs)
     server_url = kwargs.get("server_url")
     timeout_ms = kwargs.get("timeout_ms")
     http_headers = kwargs.get("http_headers")
@@ -384,10 +416,16 @@ def research_and_wait(
 async def research_and_wait_async(
     client: You,
     *,
-    timeout_s: float = _DEFAULT_POLL_TIMEOUT_S,
+    timeout_s: Optional[float] = None,
     **kwargs: Any,
 ) -> TaskDetail:
-    """Async variant of :func:`research_and_wait`."""
+    """Async variant of :func:`research_and_wait`.
+
+    See :func:`research_and_wait` for parameter details and auto-timeout
+    behavior (600s default, 14400s for frontier).
+    """
+    if timeout_s is None:
+        timeout_s = _resolve_default_timeout(kwargs)
     server_url = kwargs.get("server_url")
     timeout_ms = kwargs.get("timeout_ms")
     http_headers = kwargs.get("http_headers")

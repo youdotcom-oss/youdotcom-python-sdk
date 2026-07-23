@@ -21,7 +21,7 @@ detail = research_and_wait(
     you,
     input="Evaluate the measurable global-health impact of the Gates Foundation",
     research_effort=ResearchEffort.FRONTIER,
-    timeout_s=14400,  # frontier tasks can run up to 4 hours
+    # timeout_s auto-adjusts to 14400 (4 hours) for frontier when omitted
 )
 print(detail.result.model_dump()["output"]["content"])
 ```
@@ -34,8 +34,8 @@ print(detail.result.model_dump()["output"]["content"])
 
 - **Convenience helpers** in `youdotcom.research_helpers` (hand-maintained, regen-safe):
   - `research_background(you, ...)` / `research_background_async(you, ...)` — submit and return `TaskResponse` directly (no Union narrowing needed).
-  - `poll_research_task(you, task_id, ...)` / `poll_research_task_async(...)` — poll until terminal status (`completed`, `failed`, `cancelled`).
-  - `research_and_wait(you, ...)` / `research_and_wait_async(...)` — submit with `background=True`, then stream SSE events until a terminal event arrives, and fetch the final `TaskDetail`. If the stream times out or closes without a terminal event, a final `get_research_task` call resolves the status (returns the detail if completed, raises `RuntimeError` for terminal non-completed, or `TimeoutError` if still running). For polling instead of streaming, use `poll_research_task` directly.
+  - `poll_research_task(you, task_id, ...)` / `poll_research_task_async(...)` — poll until terminal status (`completed`, `failed`, `cancelled`). Defaults: `interval_s=2.0`, `timeout_s=600.0` (10 minutes). For `frontier` tasks, pass `timeout_s=14400` (4 hours) explicitly since `poll_research_task` receives a `task_id` and cannot auto-detect the effort tier.
+  - `research_and_wait(you, ...)` / `research_and_wait_async(...)` — submit with `background=True`, then stream SSE events until a terminal event arrives, and fetch the final `TaskDetail`. If the stream times out or closes without a terminal event, a final `get_research_task` call resolves the status (returns the detail if completed, raises `RuntimeError` for terminal non-completed, or `TimeoutError` if still running). For polling instead of streaming, use `poll_research_task` directly. **`timeout_s` auto-adjusts** based on `research_effort` when omitted: 600s (10 min) for standard/deep/exhaustive, 14400s (4 hours) for `frontier`.
   - `stream_research(you, task_id, ...)` / `stream_research_async(...)` — tolerant SSE iterator that surfaces undocumented event types as raw dicts instead of crashing on validation. **Recommended over `you.stream_research_task()` for real research tasks**, since the server emits intermediate workflow events not in the strict `Event` enum.
 
 - **New models**: `TaskResponse`, `TaskResponseStatus`, `TaskDetail`, `TaskDetailStatus`, `TaskDetailInput`, `Result`, `GetResearchTaskRequest`, `StreamResearchTaskRequest`, `ResearchTaskStreamEvent`, `ResearchTaskStreamEventData`, `Event`, `ResearchResult` (Union alias).

@@ -27,6 +27,9 @@ from youdotcom.research_helpers import (
     stream_research,
     stream_research_async,
     _decode_raw_event,
+    _resolve_default_timeout,
+    _FRONTIER_TIMEOUT_S,
+    _DEFAULT_POLL_TIMEOUT_S,
 )
 
 
@@ -585,6 +588,88 @@ class TestStreamResearchEventsTolerant:
         # And confirm the SDK still set User-Agent on the underlying request
         # (the YDCUserAgentOverrideHook ran before send).
         assert recorded_ua["value"] == f"youdotcom-python-sdk/{you.sdk_configuration.sdk_version}"
+# ---------------------------------------------------------------------------
+# _resolve_default_timeout: auto-adjust timeout based on research_effort.
+# ---------------------------------------------------------------------------
+
+class TestResolveDefaultTimeout:
+    def test_frontier_returns_4_hour_timeout(self):
+        assert _resolve_default_timeout({"research_effort": ResearchEffort.FRONTIER}) == _FRONTIER_TIMEOUT_S
+
+    def test_frontier_string_returns_4_hour_timeout(self):
+        assert _resolve_default_timeout({"research_effort": "frontier"}) == _FRONTIER_TIMEOUT_S
+
+    def test_standard_returns_default_timeout(self):
+        assert _resolve_default_timeout({"research_effort": ResearchEffort.STANDARD}) == _DEFAULT_POLL_TIMEOUT_S
+
+    def test_deep_returns_default_timeout(self):
+        assert _resolve_default_timeout({"research_effort": ResearchEffort.DEEP}) == _DEFAULT_POLL_TIMEOUT_S
+
+    def test_exhaustive_returns_default_timeout(self):
+        assert _resolve_default_timeout({"research_effort": ResearchEffort.EXHAUSTIVE}) == _DEFAULT_POLL_TIMEOUT_S
+
+    def test_no_effort_returns_default_timeout(self):
+        assert _resolve_default_timeout({}) == _DEFAULT_POLL_TIMEOUT_S
+
+
+# ---------------------------------------------------------------------------
+# research_and_wait frontier auto-timeout: when timeout_s is omitted and
+# research_effort=frontier, the helper should use 14400s (4 hours), not the
+# 600s default. We verify by checking that a short stream timeout is NOT
+# applied — instead the 4-hour deadline is used, so the stream consumes
+# all events without a premature TimeoutError.
+# ---------------------------------------------------------------------------
+
+class TestResearchAndWaitFrontierAutoTimeout:
+    def test_frontier_auto_timeout_completes_without_premature_timeout(self):
+        """When research_effort=frontier and timeout_s is omitted, the
+        auto-adjusted 4-hour timeout should not trip on a normal event
+        sequence that would complete within seconds."""
+        handler = _make_wait_handler(stream_chunks=[
+            _CONNECTED_CHUNK,
+            b'id: 1\nevent: response.done\ndata: {"type":"response.done","task_id":"abc","status":"completed","sequence":1}\n\n',
+        ])
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            client=httpx.Client(transport=transport),
+            api_key_auth="test-api-key",
+        )
+
+        detail = research_and_wait(
+            you,
+            input="Evaluate the Gates Foundation's global-health impact",
+            research_effort=ResearchEffort.FRONTIER,
+            # timeout_s intentionally omitted — should auto-adjust to 14400
+        )
+
+        assert isinstance(detail, TaskDetail)
+        assert detail.status.value == "completed"
+
+    def test_explicit_timeout_overrides_auto_adjust(self):
+        """When the user passes an explicit timeout_s, it takes precedence
+        over the frontier auto-adjustment."""
+        handler = _make_wait_handler(
+            stream_obj=_BlockingStream(),
+            final_status="running",
+            final_result=None,
+        )
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            client=httpx.Client(transport=transport),
+            api_key_auth="test-api-key",
+        )
+
+        with pytest.raises(TimeoutError, match="did not complete within 0.5"):
+            research_and_wait(
+                you,
+                timeout_s=0.5,
+                input="test query",
+                research_effort=ResearchEffort.FRONTIER,
+            )
+
+
 # ---------------------------------------------------------------------------
 # _decode_raw_event sanity: known and unknown shapes.
 # ---------------------------------------------------------------------------
