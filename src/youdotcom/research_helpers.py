@@ -440,6 +440,17 @@ def research_and_wait(
                 break
     except httpx.TimeoutException:
         timed_out = True
+    except Exception:
+        # Mid-stream error (e.g. RemoteProtocolError on a dropped connection):
+        # the task is already submitted and running. Fall back to polling,
+        # matching the async variant's behavior.
+        return poll_research_task(
+            client, task.task_id,
+            interval_s=_DEFAULT_POLL_INTERVAL_S,
+            timeout_s=timeout_s,
+            server_url=server_url, timeout_ms=timeout_ms,
+            http_headers=http_headers,
+        )
     finally:
         stream.close()
 
