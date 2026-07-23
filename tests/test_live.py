@@ -44,6 +44,11 @@ from youdotcom.research_helpers import (
     research_and_wait,
     stream_research,
 )
+from youdotcom.errors import (
+    FinanceResearchUnprocessableEntityError,
+    ResearchUnprocessableEntityError,
+    YouDefaultError,
+)
 
 
 # Skip all tests in this file if no API key is provided.
@@ -415,6 +420,27 @@ class TestLiveFinanceResearch:
                 for source in res.output.sources:
                     assert source.url is not None
 
+    def test_finance_research_lite_effort(self, you_client):
+        """Test finance_research with LITE effort returns a quick answer.
+        Skipped if the server hasn't deployed the lite tier yet."""
+        with you_client as you:
+            try:
+                res = you.finance_research(
+                    input="What was Apple's revenue in fiscal year 2024?",
+                    research_effort=FinanceResearchEffort.LITE,
+                )
+            except (FinanceResearchUnprocessableEntityError, YouDefaultError) as e:
+                if "lite" in str(e).lower() or "422" in str(e):
+                    pytest.skip("Finance research lite tier not yet deployed on server")
+                raise
+
+            assert res.output is not None
+            assert res.output.content is not None
+            assert len(res.output.content) > 0
+            if res.output.sources:
+                for source in res.output.sources:
+                    assert source.url is not None
+
 
 class TestLiveContentsMaxAge:
     """Live test for Contents `max_age` parameter.
@@ -634,6 +660,52 @@ class TestLiveResearchBackgroundHelpers:
             assert events[0].data is not None
             assert events[0].data.get("task_id") == task.task_id
             assert events[0].data.get("status") is not None
+
+
+# ---------------------------------------------------------------------------
+# Frontier research effort (new in 2.5.0)
+# ---------------------------------------------------------------------------
+# Frontier only works with background=true and can run up to 4 hours.
+# For a live test we use a simple query and a generous but bounded timeout.
+# Marked slow so it can be skipped with `-m "not slow"`.
+# ---------------------------------------------------------------------------
+class TestLiveResearchFrontier:
+    """Live tests for frontier research effort (requires background=true)."""
+
+    @pytest.mark.slow
+    def test_frontier_background_completes(self, you_client):
+        """research_and_wait with frontier effort auto-adjusts timeout to 4h.
+        Uses a simple query so it completes in a few minutes on prod."""
+        with you_client as you:
+            try:
+                detail = research_and_wait(
+                    you,
+                    input="Who is Bill Gates?",
+                    research_effort=ResearchEffort.FRONTIER,
+                    timeout_s=600,  # bounded for CI; auto would be 14400
+                )
+            except TypeError as e:
+                if "TaskResponse" in str(e):
+                    pytest.skip("Background mode not enabled on server")
+                raise
+
+            assert isinstance(detail, TaskDetail)
+            assert detail.status.value == "completed"
+            assert detail.result is not None
+            payload = detail.result.model_dump()
+            content = payload.get("output", {}).get("content", "")
+            assert len(content) > 0
+
+    @pytest.mark.slow
+    def test_frontier_without_background_raises_422(self, you_client):
+        """frontier without background=true should return 422."""
+        with you_client as you:
+            with pytest.raises((ResearchUnprocessableEntityError, YouDefaultError)):
+                you.research(
+                    input="Who is Bill Gates?",
+                    research_effort=ResearchEffort.FRONTIER,
+                    background=False,
+                )
 
 
 if __name__ == "__main__":
