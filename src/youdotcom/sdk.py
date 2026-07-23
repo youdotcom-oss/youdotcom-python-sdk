@@ -24,7 +24,7 @@ import weakref
 from youdotcom import errors, models, utils
 from youdotcom._hooks import HookContext, SDKHooks
 from youdotcom.types import OptionalNullable, UNSET
-from youdotcom.utils import get_security_from_env
+from youdotcom.utils import eventstreaming, get_security_from_env
 from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
 
 if TYPE_CHECKING:
@@ -532,6 +532,7 @@ class You(BaseSDK):
         research_effort: Optional[
             models.ResearchEffort
         ] = models.ResearchEffort.STANDARD,
+        background: Optional[bool] = False,
         source_control: Optional[
             Union[models.SourceControl, models.SourceControlTypedDict]
         ] = None,
@@ -540,7 +541,7 @@ class You(BaseSDK):
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
-    ) -> models.ResearchResponse:
+    ) -> models.ResearchResult:
         r"""Returns comprehensive research-grade answers with multi-step reasoning
 
         Research goes beyond a single web search. In response to your question, it runs multiple searches, reads through the sources, and synthesizes everything into a thorough, well-cited answer. Use it when a question is too complex for a simple lookup, and when you need a response you can actually trust and verify.
@@ -555,6 +556,8 @@ class You(BaseSDK):
             - `standard`: The default. Balances speed and depth, a good fit for most questions.
             - `deep`: Spends more time researching and cross-referencing sources. Use this when accuracy and thoroughness matter more than speed.
             - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex research tasks where you want the highest quality result.
+            - `frontier`: The highest-quality tier. Runs over longer durations with improved quality and accuracy. Only works with the task-based API (`background=true`); sending `frontier` without `background=true` returns a 422.
+        :param background: When true, queue a research task and return a task handle immediately instead of waiting for the result inline. Defaults to synchronous. When enabled, the response is a TaskResponse object with a task_id and stream_url for polling progress via GET /v1/research/{task_id} or streaming via GET /v1/research/{task_id}/stream.
         :param source_control: Beta. Controls which web sources the research agent searches and visits. Use this to allow specific domains, block specific domains, boost specific domains, filter by recency, or focus web results by country.
 
             `include_domains` and `exclude_domains` cannot be used together. Each domain list is capped at 500 entries. `exclude_domains` also blocks the research agent from visiting pages on those domains during browsing. `boost_domains` gives matching domains a relative ranking boost without filtering out other domains. It can be combined with `exclude_domains` but cannot be combined with `include_domains`.
@@ -581,6 +584,7 @@ class You(BaseSDK):
         request = models.ResearchRequest(
             input=input,
             research_effort=research_effort,
+            background=background,
             source_control=utils.get_pydantic_model(
                 source_control, Optional[models.SourceControl]
             ),
@@ -634,7 +638,7 @@ class You(BaseSDK):
 
         response_data: Any = None
         if utils.match_response(http_res, "200", "application/json"):
-            return unmarshal_json_response(models.ResearchResponse, http_res)
+            return unmarshal_json_response(models.ResearchResult, http_res)
         if utils.match_response(http_res, "401", "application/json"):
             response_data = unmarshal_json_response(
                 errors.ResearchUnauthorizedErrorData, http_res
@@ -671,6 +675,7 @@ class You(BaseSDK):
         research_effort: Optional[
             models.ResearchEffort
         ] = models.ResearchEffort.STANDARD,
+        background: Optional[bool] = False,
         source_control: Optional[
             Union[models.SourceControl, models.SourceControlTypedDict]
         ] = None,
@@ -679,7 +684,7 @@ class You(BaseSDK):
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
-    ) -> models.ResearchResponse:
+    ) -> models.ResearchResult:
         r"""Returns comprehensive research-grade answers with multi-step reasoning
 
         Research goes beyond a single web search. In response to your question, it runs multiple searches, reads through the sources, and synthesizes everything into a thorough, well-cited answer. Use it when a question is too complex for a simple lookup, and when you need a response you can actually trust and verify.
@@ -694,6 +699,8 @@ class You(BaseSDK):
             - `standard`: The default. Balances speed and depth, a good fit for most questions.
             - `deep`: Spends more time researching and cross-referencing sources. Use this when accuracy and thoroughness matter more than speed.
             - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex research tasks where you want the highest quality result.
+            - `frontier`: The highest-quality tier. Runs over longer durations with improved quality and accuracy. Only works with the task-based API (`background=true`); sending `frontier` without `background=true` returns a 422.
+        :param background: When true, queue a research task and return a task handle immediately instead of waiting for the result inline. Defaults to synchronous. When enabled, the response is a TaskResponse object with a task_id and stream_url for polling progress via GET /v1/research/{task_id} or streaming via GET /v1/research/{task_id}/stream.
         :param source_control: Beta. Controls which web sources the research agent searches and visits. Use this to allow specific domains, block specific domains, boost specific domains, filter by recency, or focus web results by country.
 
             `include_domains` and `exclude_domains` cannot be used together. Each domain list is capped at 500 entries. `exclude_domains` also blocks the research agent from visiting pages on those domains during browsing. `boost_domains` gives matching domains a relative ranking boost without filtering out other domains. It can be combined with `exclude_domains` but cannot be combined with `include_domains`.
@@ -720,6 +727,7 @@ class You(BaseSDK):
         request = models.ResearchRequest(
             input=input,
             research_effort=research_effort,
+            background=background,
             source_control=utils.get_pydantic_model(
                 source_control, Optional[models.SourceControl]
             ),
@@ -773,7 +781,7 @@ class You(BaseSDK):
 
         response_data: Any = None
         if utils.match_response(http_res, "200", "application/json"):
-            return unmarshal_json_response(models.ResearchResponse, http_res)
+            return unmarshal_json_response(models.ResearchResult, http_res)
         if utils.match_response(http_res, "401", "application/json"):
             response_data = unmarshal_json_response(
                 errors.ResearchUnauthorizedErrorData, http_res
@@ -803,6 +811,488 @@ class You(BaseSDK):
 
         raise errors.YouDefaultError("Unexpected response received", http_res)
 
+    def get_research_task(
+        self,
+        *,
+        task_id: str,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> models.TaskDetail:
+        r"""Get the status of a background research task
+
+        Poll the status of a background research task created with background=true. When the task is completed, the result is included in the response.
+
+        :param task_id: The UUID of the research task.
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = self._get_url(base_url, url_variables)
+
+        request = models.GetResearchTaskRequest(
+            task_id=task_id,
+        )
+
+        req = self._build_request(
+            method="GET",
+            path="/v1/research/{task_id}",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=False,
+            request_has_path_params=True,
+            request_has_query_params=True,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            security=self.sdk_configuration.security,
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = self.do_request(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="getResearchTask",
+                oauth2_scopes=None,
+                security_source=get_security_from_env(
+                    self.sdk_configuration.security, models.Security
+                ),
+                tags=None,
+                extensions=None,
+            ),
+            request=req,
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(models.TaskDetail, http_res)
+        if utils.match_response(http_res, "401", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.GetResearchTaskUnauthorizedErrorData, http_res
+            )
+            raise errors.GetResearchTaskUnauthorizedError(response_data, http_res)
+        if utils.match_response(http_res, "403", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.GetResearchTaskForbiddenErrorData, http_res
+            )
+            raise errors.GetResearchTaskForbiddenError(response_data, http_res)
+        if utils.match_response(http_res, "404", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.GetResearchTaskNotFoundErrorData, http_res
+            )
+            raise errors.GetResearchTaskNotFoundError(response_data, http_res)
+        if utils.match_response(http_res, "500", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.GetResearchTaskInternalServerErrorData, http_res
+            )
+            raise errors.GetResearchTaskInternalServerError(response_data, http_res)
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    async def get_research_task_async(
+        self,
+        *,
+        task_id: str,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> models.TaskDetail:
+        r"""Get the status of a background research task
+
+        Poll the status of a background research task created with background=true. When the task is completed, the result is included in the response.
+
+        :param task_id: The UUID of the research task.
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = self._get_url(base_url, url_variables)
+
+        request = models.GetResearchTaskRequest(
+            task_id=task_id,
+        )
+
+        req = self._build_request_async(
+            method="GET",
+            path="/v1/research/{task_id}",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=False,
+            request_has_path_params=True,
+            request_has_query_params=True,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            security=self.sdk_configuration.security,
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = await self.do_request_async(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="getResearchTask",
+                oauth2_scopes=None,
+                security_source=get_security_from_env(
+                    self.sdk_configuration.security, models.Security
+                ),
+                tags=None,
+                extensions=None,
+            ),
+            request=req,
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(models.TaskDetail, http_res)
+        if utils.match_response(http_res, "401", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.GetResearchTaskUnauthorizedErrorData, http_res
+            )
+            raise errors.GetResearchTaskUnauthorizedError(response_data, http_res)
+        if utils.match_response(http_res, "403", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.GetResearchTaskForbiddenErrorData, http_res
+            )
+            raise errors.GetResearchTaskForbiddenError(response_data, http_res)
+        if utils.match_response(http_res, "404", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.GetResearchTaskNotFoundErrorData, http_res
+            )
+            raise errors.GetResearchTaskNotFoundError(response_data, http_res)
+        if utils.match_response(http_res, "500", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.GetResearchTaskInternalServerErrorData, http_res
+            )
+            raise errors.GetResearchTaskInternalServerError(response_data, http_res)
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    def stream_research_task(
+        self,
+        *,
+        task_id: str,
+        from_id: Optional[int] = 0,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> eventstreaming.EventStream[models.ResearchTaskStreamEvent]:
+        r"""Stream updates for a background research task
+
+        Stream real-time updates for a background research task via Server-Sent Events (SSE). Supports reconnection via the from_id query parameter to replay missed events. The connection closes automatically when the task reaches a terminal state.
+
+        :param task_id: The UUID of the research task.
+        :param from_id: Resume from a sequence number for reconnection.
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = self._get_url(base_url, url_variables)
+
+        request = models.StreamResearchTaskRequest(
+            task_id=task_id,
+            from_id=from_id,
+        )
+
+        req = self._build_request(
+            method="GET",
+            path="/v1/research/{task_id}/stream",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=False,
+            request_has_path_params=True,
+            request_has_query_params=True,
+            user_agent_header="user-agent",
+            accept_header_value="text/event-stream",
+            http_headers=http_headers,
+            security=self.sdk_configuration.security,
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = self.do_request(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="streamResearchTask",
+                oauth2_scopes=None,
+                security_source=get_security_from_env(
+                    self.sdk_configuration.security, models.Security
+                ),
+                tags=None,
+                extensions=None,
+            ),
+            request=req,
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
+            stream=True,
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "text/event-stream"):
+            return eventstreaming.EventStream(
+                http_res,
+                lambda raw: unmarshal_json_response(
+                    models.ResearchTaskStreamEvent, http_res, raw
+                ),
+                client_ref=self,
+            )
+        if utils.match_response(http_res, "401", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
+            response_data = unmarshal_json_response(
+                errors.StreamResearchTaskUnauthorizedErrorData, http_res, http_res_text
+            )
+            raise errors.StreamResearchTaskUnauthorizedError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "403", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
+            response_data = unmarshal_json_response(
+                errors.StreamResearchTaskForbiddenErrorData, http_res, http_res_text
+            )
+            raise errors.StreamResearchTaskForbiddenError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "404", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
+            response_data = unmarshal_json_response(
+                errors.StreamResearchTaskNotFoundErrorData, http_res, http_res_text
+            )
+            raise errors.StreamResearchTaskNotFoundError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "500", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
+            response_data = unmarshal_json_response(
+                errors.StreamResearchTaskInternalServerErrorData,
+                http_res,
+                http_res_text,
+            )
+            raise errors.StreamResearchTaskInternalServerError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        http_res_text = utils.stream_to_text(http_res)
+        raise errors.YouDefaultError(
+            "Unexpected response received", http_res, http_res_text
+        )
+
+    async def stream_research_task_async(
+        self,
+        *,
+        task_id: str,
+        from_id: Optional[int] = 0,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> eventstreaming.EventStreamAsync[models.ResearchTaskStreamEvent]:
+        r"""Stream updates for a background research task
+
+        Stream real-time updates for a background research task via Server-Sent Events (SSE). Supports reconnection via the from_id query parameter to replay missed events. The connection closes automatically when the task reaches a terminal state.
+
+        :param task_id: The UUID of the research task.
+        :param from_id: Resume from a sequence number for reconnection.
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = self._get_url(base_url, url_variables)
+
+        request = models.StreamResearchTaskRequest(
+            task_id=task_id,
+            from_id=from_id,
+        )
+
+        req = self._build_request_async(
+            method="GET",
+            path="/v1/research/{task_id}/stream",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=False,
+            request_has_path_params=True,
+            request_has_query_params=True,
+            user_agent_header="user-agent",
+            accept_header_value="text/event-stream",
+            http_headers=http_headers,
+            security=self.sdk_configuration.security,
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = await self.do_request_async(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="streamResearchTask",
+                oauth2_scopes=None,
+                security_source=get_security_from_env(
+                    self.sdk_configuration.security, models.Security
+                ),
+                tags=None,
+                extensions=None,
+            ),
+            request=req,
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
+            stream=True,
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "text/event-stream"):
+            return eventstreaming.EventStreamAsync(
+                http_res,
+                lambda raw: unmarshal_json_response(
+                    models.ResearchTaskStreamEvent, http_res, raw
+                ),
+                client_ref=self,
+            )
+        if utils.match_response(http_res, "401", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            response_data = unmarshal_json_response(
+                errors.StreamResearchTaskUnauthorizedErrorData, http_res, http_res_text
+            )
+            raise errors.StreamResearchTaskUnauthorizedError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "403", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            response_data = unmarshal_json_response(
+                errors.StreamResearchTaskForbiddenErrorData, http_res, http_res_text
+            )
+            raise errors.StreamResearchTaskForbiddenError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "404", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            response_data = unmarshal_json_response(
+                errors.StreamResearchTaskNotFoundErrorData, http_res, http_res_text
+            )
+            raise errors.StreamResearchTaskNotFoundError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "500", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            response_data = unmarshal_json_response(
+                errors.StreamResearchTaskInternalServerErrorData,
+                http_res,
+                http_res_text,
+            )
+            raise errors.StreamResearchTaskInternalServerError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        http_res_text = await utils.stream_to_text_async(http_res)
+        raise errors.YouDefaultError(
+            "Unexpected response received", http_res, http_res_text
+        )
+
     def finance_research(
         self,
         *,
@@ -826,6 +1316,7 @@ class You(BaseSDK):
         :param research_effort: Controls how much time and effort the Finance Research API spends on your question. Higher effort levels run more searches and dig deeper into sources, at the cost of a longer response time.
 
             Available levels:
+            - `lite`: Returns answers quickly. Good for straightforward financial questions that just need a fast, reliable answer.
             - `deep`: The default. Spends more time researching and cross-referencing sources. Good for most financial questions, including multi-company comparisons, earnings analysis, and regulatory research.
             - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex financial research tasks where you want the highest quality result.
         :param retries: Override the default retry configuration for this method
@@ -950,6 +1441,7 @@ class You(BaseSDK):
         :param research_effort: Controls how much time and effort the Finance Research API spends on your question. Higher effort levels run more searches and dig deeper into sources, at the cost of a longer response time.
 
             Available levels:
+            - `lite`: Returns answers quickly. Good for straightforward financial questions that just need a fast, reliable answer.
             - `deep`: The default. Spends more time researching and cross-referencing sources. Good for most financial questions, including multi-company comparisons, earnings analysis, and regulatory research.
             - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex financial research tasks where you want the highest quality result.
         :param retries: Override the default retry configuration for this method

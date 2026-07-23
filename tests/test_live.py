@@ -34,7 +34,20 @@ from youdotcom.models import (
     AgentRunsBatchResponse,
     ResearchEffort,
     ResearchResponse,
+    TaskResponse,
+    TaskDetail,
     FinanceResearchEffort,
+)
+from youdotcom.research_helpers import (
+    research_background,
+    poll_research_task,
+    research_and_wait,
+    stream_research,
+)
+from youdotcom.errors import (
+    FinanceResearchUnprocessableEntityError,
+    ResearchUnprocessableEntityError,
+    YouDefaultError,
 )
 
 
@@ -407,6 +420,27 @@ class TestLiveFinanceResearch:
                 for source in res.output.sources:
                     assert source.url is not None
 
+    def test_finance_research_lite_effort(self, you_client):
+        """Test finance_research with LITE effort returns a quick answer.
+        Skipped if the server hasn't deployed the lite tier yet."""
+        with you_client as you:
+            try:
+                res = you.finance_research(
+                    input="What was Apple's revenue in fiscal year 2024?",
+                    research_effort=FinanceResearchEffort.LITE,
+                )
+            except (FinanceResearchUnprocessableEntityError, YouDefaultError) as e:
+                if "lite" in str(e).lower() or "422" in str(e):
+                    pytest.skip("Finance research lite tier not yet deployed on server")
+                raise
+
+            assert res.output is not None
+            assert res.output.content is not None
+            assert len(res.output.content) > 0
+            if res.output.sources:
+                for source in res.output.sources:
+                    assert source.url is not None
+
 
 class TestLiveContentsMaxAge:
     """Live test for Contents `max_age` parameter.
@@ -445,6 +479,233 @@ class TestLiveSearchBoostDomains:
             )
 
             assert res.results is not None
+
+
+# ---------------------------------------------------------------------------
+# Background-mode research (new in 2.5.0)
+# ---------------------------------------------------------------------------
+# These tests exercise the live API's async task path:
+#   POST /v1/research?background=true  -> TaskResponse
+#   GET  /v1/research/{task_id}        -> TaskDetail
+#   GET  /v1/research/{task_id}/stream -> SSE stream
+#
+# All tests use LITE effort so the task finishes in 10-30s on prod.
+# The suite is sequential within each test: submit, then poll or stream
+# until a terminal state arrives.  If background mode is not enabled on
+# the server, the research() call falls back to a sync ResearchResponse
+# and the test is skipped with a clear message.
+# ---------------------------------------------------------------------------
+
+_BG_TIMEOUT_S = 120.0  # generous wall-clock for LITE background tasks
+
+
+class TestLiveResearchBackground:
+    """Live tests for background-mode research (POST /v1/research?background=true)."""
+
+    def test_background_returns_task_response(self, you_client):
+        """research(background=True) should return a TaskResponse, not ResearchResponse."""
+        with you_client as you:
+            res = you.research(
+                input="What is the capital of France?",
+                research_effort=ResearchEffort.LITE,
+                background=True,
+            )
+
+            if isinstance(res, ResearchResponse):
+                pytest.skip("Background mode not enabled on server (got sync ResearchResponse)")
+
+            assert isinstance(res, TaskResponse)
+            assert res.task_id is not None
+            assert len(res.task_id) > 0
+            assert res.type == "research"
+            assert res.status is not None
+            assert res.stream_url is not None
+            assert res.stream_url.startswith("/v1/research/")
+            assert res.stream_url.endswith("/stream")
+            assert res.created_at is not None
+
+    def test_get_research_task_returns_task_detail(self, you_client):
+        """get_research_task() should return a TaskDetail for a background task."""
+        with you_client as you:
+            task = you.research(
+                input="What is the capital of France?",
+                research_effort=ResearchEffort.LITE,
+                background=True,
+            )
+
+            if isinstance(task, ResearchResponse):
+                pytest.skip("Background mode not enabled on server")
+
+            assert isinstance(task, TaskResponse)
+
+            detail = you.get_research_task(task_id=task.task_id)
+            assert isinstance(detail, TaskDetail)
+            assert detail.id == task.task_id
+            assert detail.task_type == "research"
+            assert detail.status is not None
+            assert detail.created_at is not None
+            # input should be preserved (TaskDetailInput uses extra="allow")
+            assert detail.input is not None
+            input_dump = detail.input.model_dump()
+            assert input_dump.get("input") == "What is the capital of France?"
+
+    def test_poll_until_completed(self, you_client):
+        """Poll get_research_task() until status == completed, verify result."""
+        with you_client as you:
+            task = you.research(
+                input="What is the capital of France?",
+                research_effort=ResearchEffort.LITE,
+                background=True,
+            )
+
+            if isinstance(task, ResearchResponse):
+                pytest.skip("Background mode not enabled on server")
+
+            assert isinstance(task, TaskResponse)
+
+            detail = poll_research_task(
+                you,
+                task.task_id,
+                interval_s=3.0,
+                timeout_s=_BG_TIMEOUT_S,
+            )
+
+            assert detail.status.value == "completed"
+            assert detail.completed_at is not None
+            # Result should contain the ResearchResponse payload
+            assert detail.result is not None
+            result_dump = detail.result.model_dump()
+            assert "output" in result_dump
+            output = result_dump["output"]
+            assert "content" in output
+            assert len(str(output["content"])) > 0
+
+    def test_research_and_wait(self, you_client):
+        """research_and_wait submits + streams + returns completed TaskDetail."""
+        with you_client as you:
+            try:
+                detail = research_and_wait(
+                    you,
+                    timeout_s=_BG_TIMEOUT_S,
+                    timeout_ms=180_000,
+                    input="What is the capital of France?",
+                    research_effort=ResearchEffort.LITE,
+                )
+            except TypeError as e:
+                if "TaskResponse" in str(e):
+                    pytest.skip("Background mode not enabled on server")
+                raise
+
+            assert isinstance(detail, TaskDetail)
+            assert detail.status.value == "completed"
+            assert detail.result is not None
+            result_dump = detail.result.model_dump()
+            assert "output" in result_dump
+
+
+class TestLiveResearchBackgroundHelpers:
+    """Live tests for the research_helpers convenience functions."""
+
+    def test_research_background_helper(self, you_client):
+        """research_background() helper asserts and returns TaskResponse."""
+        with you_client as you:
+            try:
+                task = research_background(
+                    you,
+                    input="What is the capital of France?",
+                    research_effort=ResearchEffort.LITE,
+                )
+            except TypeError as e:
+                if "TaskResponse" in str(e):
+                    pytest.skip("Background mode not enabled on server")
+                raise
+
+            assert isinstance(task, TaskResponse)
+            assert task.task_id is not None
+            assert task.stream_url is not None
+
+    def test_stream_research(self, you_client):
+        """stream_research() yields SSE events from a live task.
+
+        The server's SSE stream sends a 'connected' event immediately, then
+        pings. Terminal events may not arrive for tasks that complete
+        mid-stream, so we iterate with a generous timeout and verify
+        at least the 'connected' event was received.
+        """
+        with you_client as you:
+            try:
+                task = research_background(
+                    you,
+                    input="What is the capital of France?",
+                    research_effort=ResearchEffort.LITE,
+                )
+            except TypeError as e:
+                if "TaskResponse" in str(e):
+                    pytest.skip("Background mode not enabled on server")
+                raise
+
+            assert isinstance(task, TaskResponse)
+
+            terminal = {"response.done", "complete", "completed", "error", "failed", "cancelled"}
+
+            events = []
+            for evt in stream_research(you, task_id=task.task_id, timeout_ms=180_000):
+                events.append(evt)
+                if evt.event in terminal:
+                    break
+
+            assert len(events) > 0, "No SSE events received"
+            assert events[0].event == "connected"
+            # The connected event should carry task_id and status
+            assert events[0].data is not None
+            assert events[0].data.get("task_id") == task.task_id
+            assert events[0].data.get("status") is not None
+
+
+# ---------------------------------------------------------------------------
+# Frontier research effort (new in 2.5.0)
+# ---------------------------------------------------------------------------
+# Frontier only works with background=true and can run up to 4 hours.
+# For a live test we use a simple query and a generous but bounded timeout.
+# Marked slow so it can be skipped with `-m "not slow"`.
+# ---------------------------------------------------------------------------
+class TestLiveResearchFrontier:
+    """Live tests for frontier research effort (requires background=true)."""
+
+    @pytest.mark.slow
+    def test_frontier_background_completes(self, you_client):
+        """research_and_wait with frontier effort auto-adjusts timeout to 4h.
+        Uses a simple query so it completes in a few minutes on prod."""
+        with you_client as you:
+            try:
+                detail = research_and_wait(
+                    you,
+                    input="Who is Bill Gates?",
+                    research_effort=ResearchEffort.FRONTIER,
+                    timeout_s=600,  # bounded for CI; auto would be 14400
+                )
+            except TypeError as e:
+                if "TaskResponse" in str(e):
+                    pytest.skip("Background mode not enabled on server")
+                raise
+
+            assert isinstance(detail, TaskDetail)
+            assert detail.status.value == "completed"
+            assert detail.result is not None
+            payload = detail.result.model_dump()
+            content = payload.get("output", {}).get("content", "")
+            assert len(content) > 0
+
+    @pytest.mark.slow
+    def test_frontier_without_background_raises_422(self, you_client):
+        """frontier without background=true should return 422."""
+        with you_client as you:
+            with pytest.raises((ResearchUnprocessableEntityError, YouDefaultError)):
+                you.research(
+                    input="Who is Bill Gates?",
+                    research_effort=ResearchEffort.FRONTIER,
+                    background=False,
+                )
 
 
 if __name__ == "__main__":

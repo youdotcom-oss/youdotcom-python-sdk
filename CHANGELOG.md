@@ -5,6 +5,53 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-07-20
+
+### Added
+
+- **`frontier` research effort tier**: New `ResearchEffort.FRONTIER` enum value for the highest-quality, longest-running research tasks. Frontier runs over longer durations with improved quality and accuracy. It only works with the task-based API (`background=true`); sending `frontier` without `background=true` returns a `422`. Use it with the background-mode helpers:
+
+```python
+from youdotcom import You
+from youdotcom.models import ResearchEffort
+from youdotcom.research_helpers import research_and_wait
+
+you = You()
+detail = research_and_wait(
+    you,
+    input="Evaluate the measurable global-health impact of the Gates Foundation",
+    research_effort=ResearchEffort.FRONTIER,
+    # timeout_s auto-adjusts to 14400 (4 hours) for frontier when omitted
+)
+print(detail.result.model_dump()["output"]["content"])
+```
+
+- **`lite` finance research effort tier**: New `FinanceResearchEffort.LITE` enum value for the Finance Research API. Returns answers quickly for straightforward financial questions. The default remains `deep`. No migration required; existing `DEEP` and `EXHAUSTIVE` values are unchanged.
+
+- **Research Background Mode**: The `you.research()` method now accepts an optional `background=True` parameter. When enabled, the API queues the research task and returns a `TaskResponse` (with `task_id`, `type`, `status`, `stream_url`, `created_at`) immediately instead of waiting for the inline `ResearchResponse`. Use the new methods to poll or stream the task to completion.
+
+- **`you.get_research_task(task_id=...)`**: Poll the status of a background research task via `GET /v1/research/{task_id}`. Returns a `TaskDetail` with `status`, `result` (populated when completed), `error` (populated when failed), and timing fields.
+
+- **`you.stream_research_task(task_id=..., from_id=0)`**: Stream real-time updates for a background research task via `GET /v1/research/{task_id}/stream` (Server-Sent Events). Returns an `EventStream` of `ResearchTaskStreamEvent` objects. The connection closes automatically when the task reaches a terminal state. Terminal event names: `response.done`, `complete`, `completed` (success); `error`, `failed`, `cancelled` (failure).
+
+- **Convenience helpers** in `youdotcom.research_helpers` (hand-maintained, regen-safe):
+  - `research_background(you, ...)` / `research_background_async(you, ...)` — submit and return `TaskResponse` directly (no Union narrowing needed).
+  - `poll_research_task(you, task_id, ...)` / `poll_research_task_async(...)` — poll until terminal status (`completed`, `failed`, `cancelled`). Defaults: `interval_s=2.0`, `timeout_s=600.0` (10 minutes). For `frontier` tasks, pass `timeout_s=14400` (4 hours) explicitly since `poll_research_task` receives a `task_id` and cannot auto-detect the effort tier.
+  - `research_and_wait(you, ...)` / `research_and_wait_async(...)` — submit with `background=True`, then stream SSE events until a terminal event arrives, and fetch the final `TaskDetail`. If the stream times out or closes without a terminal event, a final `get_research_task` call resolves the status (returns the detail if completed, raises `RuntimeError` for terminal non-completed, or `TimeoutError` if still running). For polling instead of streaming, use `poll_research_task` directly. **`timeout_s` auto-adjusts** based on `research_effort` when omitted: 600s (10 min) for standard/deep/exhaustive, 14400s (4 hours) for `frontier`.
+  - `stream_research(you, task_id, ...)` / `stream_research_async(...)` — tolerant SSE iterator that surfaces undocumented event types as raw dicts instead of crashing on validation. **Recommended over `you.stream_research_task()` for real research tasks**, since the server emits intermediate workflow events not in the strict `Event` enum.
+
+- **New models**: `TaskResponse`, `TaskResponseStatus`, `TaskDetail`, `TaskDetailStatus`, `TaskDetailInput`, `Result`, `GetResearchTaskRequest`, `StreamResearchTaskRequest`, `ResearchTaskStreamEvent`, `ResearchTaskStreamEventData`, `Event`, `ResearchResult` (Union alias).
+
+- **New error classes**: `GetResearchTaskUnauthorizedError`, `GetResearchTaskForbiddenError`, `GetResearchTaskNotFoundError`, `GetResearchTaskInternalServerError`, `StreamResearchTaskUnauthorizedError`, `StreamResearchTaskForbiddenError`, `StreamResearchTaskNotFoundError`, `StreamResearchTaskInternalServerError` (and their `*Data` variants).
+
+### Changed
+
+- **`you.research()` return type** is now `Union[ResearchResponse, TaskResponse]` (exposed as the `ResearchResult` alias). When `background=False` (the default), the return is `ResearchResponse` as before. When `background=True`, the return is `TaskResponse`. Use `isinstance(res, TaskResponse)` to narrow, or use the `research_helpers` convenience functions.
+
+### Notes
+
+- All 2.4.0 features (finance_research, source_control, output_schema, boost_domains, max_age, env-var precedence, user_agent hook) are unchanged.
+
 ## [2.4.0] - 2026-07-14
 
 ### Added

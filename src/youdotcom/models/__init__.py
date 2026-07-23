@@ -85,6 +85,10 @@ if TYPE_CHECKING:
     from .financeresearcheffort import FinanceResearchEffort
     from .freshness import Freshness
     from .freshnessvalue import FreshnessValue, FreshnessValueTypedDict
+    from .getresearchtaskop import (
+        GetResearchTaskRequest,
+        GetResearchTaskRequestTypedDict,
+    )
     from .language import Language
     from .livecrawl import LiveCrawl
     from .livecrawlformats import LiveCrawlFormats
@@ -102,6 +106,8 @@ if TYPE_CHECKING:
         ResearchLocTypedDict,
         ResearchRequest,
         ResearchRequestTypedDict,
+        ResearchResult,
+        ResearchResultTypedDict,
         SourceControl,
         SourceControlTypedDict,
     )
@@ -115,6 +121,13 @@ if TYPE_CHECKING:
         ResearchResponseTypedDict,
         Source,
         SourceTypedDict,
+    )
+    from .researchtaskstreamevent import (
+        Event,
+        ResearchTaskStreamEvent,
+        ResearchTaskStreamEventData,
+        ResearchTaskStreamEventDataTypedDict,
+        ResearchTaskStreamEventTypedDict,
     )
     from .researchtool import ResearchTool, ResearchToolTypedDict
     from .response_created import ResponseCreated, ResponseCreatedTypedDict
@@ -162,6 +175,20 @@ if TYPE_CHECKING:
         SearchResponseTypedDict,
     )
     from .security import Security, SecurityTypedDict
+    from .streamresearchtaskop import (
+        StreamResearchTaskRequest,
+        StreamResearchTaskRequestTypedDict,
+    )
+    from .taskdetail import (
+        Result,
+        ResultTypedDict,
+        TaskDetail,
+        TaskDetailInput,
+        TaskDetailInputTypedDict,
+        TaskDetailStatus,
+        TaskDetailTypedDict,
+    )
+    from .taskresponse import TaskResponse, TaskResponseStatus, TaskResponseTypedDict
     from .verbosity import Verbosity
     from .webresult import WebResult, WebResultTypedDict
     from .websearchtool import WebSearchTool, WebSearchToolTypedDict
@@ -204,6 +231,7 @@ __all__ = [
     "DataTypedDict",
     "Detail",
     "DetailTypedDict",
+    "Event",
     "ExpressAgentRunsRequest",
     "ExpressAgentRunsRequestTypedDict",
     "FinanceResearchContentType",
@@ -227,6 +255,8 @@ __all__ = [
     "Freshness",
     "FreshnessValue",
     "FreshnessValueTypedDict",
+    "GetResearchTaskRequest",
+    "GetResearchTaskRequestTypedDict",
     "Input",
     "InputTypedDict",
     "Language",
@@ -251,7 +281,13 @@ __all__ = [
     "ResearchRequest",
     "ResearchRequestTypedDict",
     "ResearchResponse",
+    "ResearchResult",
+    "ResearchResultTypedDict",
     "ResearchResponseTypedDict",
+    "ResearchTaskStreamEvent",
+    "ResearchTaskStreamEventData",
+    "ResearchTaskStreamEventDataTypedDict",
+    "ResearchTaskStreamEventTypedDict",
     "ResearchTool",
     "ResearchToolTypedDict",
     "ResponseCreated",
@@ -278,6 +314,8 @@ __all__ = [
     "ResponseOutputTextDeltaTypedDict",
     "ResponseStarting",
     "ResponseStartingTypedDict",
+    "Result",
+    "ResultTypedDict",
     "Results",
     "ResultsTypedDict",
     "Role",
@@ -299,6 +337,16 @@ __all__ = [
     "SourceControl",
     "SourceControlTypedDict",
     "SourceTypedDict",
+    "StreamResearchTaskRequest",
+    "StreamResearchTaskRequestTypedDict",
+    "TaskDetail",
+    "TaskDetailInput",
+    "TaskDetailInputTypedDict",
+    "TaskDetailStatus",
+    "TaskDetailTypedDict",
+    "TaskResponse",
+    "TaskResponseStatus",
+    "TaskResponseTypedDict",
     "Tool",
     "ToolTypedDict",
     "Type",
@@ -379,6 +427,8 @@ _dynamic_imports: dict[str, str] = {
     "Freshness": ".freshness",
     "FreshnessValue": ".freshnessvalue",
     "FreshnessValueTypedDict": ".freshnessvalue",
+    "GetResearchTaskRequest": ".getresearchtaskop",
+    "GetResearchTaskRequestTypedDict": ".getresearchtaskop",
     "Language": ".language",
     "LiveCrawl": ".livecrawl",
     "LiveCrawlFormats": ".livecrawlformats",
@@ -396,6 +446,8 @@ _dynamic_imports: dict[str, str] = {
     "ResearchLocTypedDict": ".researchop",
     "ResearchRequest": ".researchop",
     "ResearchRequestTypedDict": ".researchop",
+    "ResearchResult": ".researchop",
+    "ResearchResultTypedDict": ".researchop",
     "SourceControl": ".researchop",
     "SourceControlTypedDict": ".researchop",
     "Content": ".researchresponse",
@@ -407,6 +459,11 @@ _dynamic_imports: dict[str, str] = {
     "ResearchResponseTypedDict": ".researchresponse",
     "Source": ".researchresponse",
     "SourceTypedDict": ".researchresponse",
+    "Event": ".researchtaskstreamevent",
+    "ResearchTaskStreamEvent": ".researchtaskstreamevent",
+    "ResearchTaskStreamEventData": ".researchtaskstreamevent",
+    "ResearchTaskStreamEventDataTypedDict": ".researchtaskstreamevent",
+    "ResearchTaskStreamEventTypedDict": ".researchtaskstreamevent",
     "ResearchTool": ".researchtool",
     "ResearchToolTypedDict": ".researchtool",
     "ResponseCreated": ".response_created",
@@ -449,6 +506,18 @@ _dynamic_imports: dict[str, str] = {
     "SearchResponseTypedDict": ".searchresponse",
     "Security": ".security",
     "SecurityTypedDict": ".security",
+    "StreamResearchTaskRequest": ".streamresearchtaskop",
+    "StreamResearchTaskRequestTypedDict": ".streamresearchtaskop",
+    "TaskDetail": ".taskdetail",
+    "TaskDetailInput": ".taskdetail",
+    "TaskDetailInputTypedDict": ".taskdetail",
+    "TaskDetailStatus": ".taskdetail",
+    "TaskDetailTypedDict": ".taskdetail",
+    "Result": ".taskdetail",
+    "ResultTypedDict": ".taskdetail",
+    "TaskResponse": ".taskresponse",
+    "TaskResponseStatus": ".taskresponse",
+    "TaskResponseTypedDict": ".taskresponse",
     "Verbosity": ".verbosity",
     "WebResult": ".webresult",
     "WebResultTypedDict": ".webresult",
