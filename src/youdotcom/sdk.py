@@ -556,6 +556,7 @@ class You(BaseSDK):
             - `standard`: The default. Balances speed and depth, a good fit for most questions.
             - `deep`: Spends more time researching and cross-referencing sources. Use this when accuracy and thoroughness matter more than speed.
             - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex research tasks where you want the highest quality result.
+            - `frontier`: The highest-quality tier. Runs over longer durations with improved quality and accuracy. Only works with the task-based API (`background=true`); sending `frontier` without `background=true` returns a 422.
         :param background: When true, queue a research task and return a task handle immediately instead of waiting for the result inline. Defaults to synchronous. When enabled, the response is a TaskResponse object with a task_id and stream_url for polling progress via GET /v1/research/{task_id} or streaming via GET /v1/research/{task_id}/stream.
         :param source_control: Beta. Controls which web sources the research agent searches and visits. Use this to allow specific domains, block specific domains, boost specific domains, filter by recency, or focus web results by country.
 
@@ -698,6 +699,7 @@ class You(BaseSDK):
             - `standard`: The default. Balances speed and depth, a good fit for most questions.
             - `deep`: Spends more time researching and cross-referencing sources. Use this when accuracy and thoroughness matter more than speed.
             - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex research tasks where you want the highest quality result.
+            - `frontier`: The highest-quality tier. Runs over longer durations with improved quality and accuracy. Only works with the task-based API (`background=true`); sending `frontier` without `background=true` returns a 422.
         :param background: When true, queue a research task and return a task handle immediately instead of waiting for the result inline. Defaults to synchronous. When enabled, the response is a TaskResponse object with a task_id and stream_url for polling progress via GET /v1/research/{task_id} or streaming via GET /v1/research/{task_id}/stream.
         :param source_control: Beta. Controls which web sources the research agent searches and visits. Use this to allow specific domains, block specific domains, boost specific domains, filter by recency, or focus web results by country.
 

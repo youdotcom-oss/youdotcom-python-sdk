@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`frontier` research effort tier**: New `ResearchEffort.FRONTIER` enum value for the highest-quality, longest-running research tasks. Frontier runs over longer durations with improved quality and accuracy. It only works with the task-based API (`background=true`); sending `frontier` without `background=true` returns a `422`. Use it with the background-mode helpers:
+
+```python
+from youdotcom import You
+from youdotcom.models import ResearchEffort
+from youdotcom.research_helpers import research_and_wait
+
+you = You()
+detail = research_and_wait(
+    you,
+    input="Evaluate the measurable global-health impact of the Gates Foundation",
+    research_effort=ResearchEffort.FRONTIER,
+    timeout_s=14400,  # frontier tasks can run up to 4 hours
+)
+print(detail.result.model_dump()["output"]["content"])
+```
+
 - **Research Background Mode**: The `you.research()` method now accepts an optional `background=True` parameter. When enabled, the API queues the research task and returns a `TaskResponse` (with `task_id`, `type`, `status`, `stream_url`, `created_at`) immediately instead of waiting for the inline `ResearchResponse`. Use the new methods to poll or stream the task to completion.
 
 - **`you.get_research_task(task_id=...)`**: Poll the status of a background research task via `GET /v1/research/{task_id}`. Returns a `TaskDetail` with `status`, `result` (populated when completed), `error` (populated when failed), and timing fields.

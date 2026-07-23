@@ -371,6 +371,54 @@ def research_and_wait_example():
             print(f"\nAnswer (preview):\n{content[:500]}...")
 
 
+def research_stream_example():
+    """
+    Research API with streaming: submit in background mode, then stream
+    real-time SSE events with the tolerant stream_research helper.
+
+    The tolerant helper surfaces undocumented intermediate event types
+    (e.g. research.searching, response.created) as raw dicts instead of
+    crashing on pydantic validation. Recommended over the generated
+    you.stream_research_task() for real tasks.
+    """
+    from youdotcom.research_helpers import research_background, stream_research
+
+    print("\n🚀 Running Research Stream (Helper)...\n")
+
+    assert you is not None, "SDK client not initialized"
+
+    try:
+        task = research_background(
+            you,
+            input="Compare the profitability of NVIDIA, AMD, and Intel over the past 5 fiscal years.",
+            research_effort=ResearchEffort.DEEP,
+        )
+    except TypeError as e:
+        if "TaskResponse" in str(e):
+            print("  Background mode not enabled on server. Skipping.")
+            return
+        raise
+
+    print(f"Queued task {task.task_id}, streaming events...\n")
+
+    for event in stream_research(you, task_id=task.task_id):
+        print(f"  event: {event.event}  data: {str(event.data)[:120]}")
+        if event.event in ("response.done", "complete", "completed"):
+            print("\n  Task completed via stream.")
+            break
+        if event.event in ("error", "failed", "cancelled"):
+            print(f"\n  Task ended with: {event.event}")
+            break
+
+    # Fetch the final result via a GET
+    detail = you.get_research_task(task_id=task.task_id)
+    if detail.status.value == "completed" and detail.result:
+        payload = detail.result.model_dump()
+        content = payload.get("output", {}).get("content", "")
+        if isinstance(content, str):
+            print(f"\nFinal answer (preview):\n{content[:500]}...")
+
+
 def research_output_schema_request():
     """
     Research API with `output_schema` for structured JSON output.
@@ -487,6 +535,7 @@ FUNCTIONS = [
     {"name": "Research Request", "fn": research_request},
     {"name": "Research Background Mode", "fn": research_background_request},
     {"name": "Research and Wait (Helper)", "fn": research_and_wait_example},
+    {"name": "Research Stream (Helper)", "fn": research_stream_example},
     {"name": "Research with output_schema", "fn": research_output_schema_request},
     {"name": "Finance Research Request", "fn": finance_research_request},
 ]

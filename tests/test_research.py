@@ -94,6 +94,23 @@ class TestResearchBasic:
             assert res.output.content is not None
             assert len(res.output.content) > 0
 
+    def test_research_frontier_effort_with_background(self, server_url, api_key):
+        """frontier requires background=true; the mockserver returns a
+        TaskResponse when background=true regardless of effort tier."""
+        client = create_test_http_client("post_/v1/research-background")
+
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            res = you.research(
+                input="Evaluate the measurable global-health impact of the Gates Foundation",
+                research_effort=ResearchEffort.FRONTIER,
+                background=True,
+                server_url=server_url,
+            )
+
+            assert isinstance(res, TaskResponse)
+            assert res.task_id is not None
+            assert res.status.value == "queued"
+
     def test_research_with_sources(self, server_url, api_key):
         client = create_test_http_client("post_/v1/research")
 
@@ -555,6 +572,28 @@ class TestResearch422ErrorPaths:
                 input="test",
                 research_effort=ResearchEffort.LITE,
                 output_schema={"type": "object", "properties": {}},
+            )
+        sdk_client.close()
+
+    def test_frontier_without_background_raises_422(self):
+        """frontier requires background=true; sending it without returns 422."""
+        def handler(request):
+            body = json.loads(request.content)
+            assert body.get("research_effort") == "frontier"
+            assert not body.get("background", False)
+            return httpx.Response(
+                422,
+                headers={"content-type": "application/json"},
+                content=json.dumps({"error": {"message": "frontier requires background=true"}}),
+            )
+
+        transport = httpx.MockTransport(handler)
+        sdk_client = httpx.Client(transport=transport)
+        you = You(server_url="http://mock.local", client=sdk_client, api_key_auth="test")
+        with pytest.raises(ResearchUnprocessableEntityError):
+            you.research(
+                input="Evaluate the Gates Foundation's global-health impact",
+                research_effort=ResearchEffort.FRONTIER,
             )
         sdk_client.close()
 

@@ -62,3 +62,36 @@ actions:
   - target: $["components"]["schemas"]["TaskDetail"]["properties"]["input"]
     update:
       additionalProperties: true
+  # Add the `frontier` research_effort tier to the ResearchEffort enum.
+  # Frontier is a long-running, higher-quality tier that only works with
+  # the task-based (background=true) API. The upstream spec doesn't yet
+  # include it, so this overlay injects the enum value and updates the
+  # description to document the new tier. Regen-durable: future Speakeasy
+  # regenerations will pick up `frontier` from the overlay-applied spec.
+  - target: $["components"]["schemas"]["ResearchEffort"]["enum"]
+    update:
+      - lite
+      - standard
+      - deep
+      - exhaustive
+      - frontier
+  - target: $["components"]["schemas"]["ResearchEffort"]["description"]
+    update: >-
+      Controls how much time and effort the Research API spends on your
+      question. Higher effort levels run more searches and dig deeper into
+      sources, at the cost of a longer response time.
+
+      Available levels:
+      - `lite`: Returns answers quickly. Good for straightforward questions
+        that just need a fast, reliable answer.
+      - `standard`: The default. Balances speed and depth, a good fit for
+        most questions.
+      - `deep`: Spends more time researching and cross-referencing sources.
+        Use this when accuracy and thoroughness matter more than speed.
+      - `exhaustive`: The most thorough option. Explores the topic as fully
+        as possible, best suited for complex research tasks where you want
+        the highest quality result.
+      - `frontier`: The highest-quality tier. Runs over longer durations
+        with improved quality and accuracy. Only works with the task-based
+        API (`background=true`); sending `frontier` without `background=true`
+        returns a 422.

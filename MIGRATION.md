@@ -2,6 +2,44 @@
 
 ## 2.4.0 → 2.5.0 (Latest)
 
+### New `frontier` Research Effort Tier
+
+A new `ResearchEffort.FRONTIER` enum value has been added for the highest-quality, longest-running research tasks. Frontier runs over longer durations (up to 4 hours) with improved quality and accuracy.
+
+**Key constraint:** `frontier` only works with the task-based API (`background=true`). Sending `frontier` without `background=true` returns a `422`.
+
+```python
+from youdotcom import You
+from youdotcom.models import ResearchEffort
+from youdotcom.research_helpers import research_and_wait
+
+you = You()
+
+# Submit a frontier task with background mode and wait for completion
+detail = research_and_wait(
+    you,
+    input="Evaluate the measurable global-health impact of the Gates Foundation",
+    research_effort=ResearchEffort.FRONTIER,
+    timeout_s=14400,  # frontier tasks can run up to 4 hours
+)
+print(detail.result.model_dump()["output"]["content"])
+```
+
+You can also use the lower-level helpers for manual polling or streaming:
+
+```python
+from youdotcom.research_helpers import research_background, poll_research_task
+
+task = research_background(
+    you,
+    input="Evaluate the measurable global-health impact of the Gates Foundation",
+    research_effort=ResearchEffort.FRONTIER,
+)
+detail = poll_research_task(you, task_id=task.task_id, timeout_s=14400)
+```
+
+No migration is required for existing code. The `frontier` tier is purely additive; existing `LITE`, `STANDARD`, `DEEP`, and `EXHAUSTIVE` values are unchanged.
+
 ### New Background Mode for Research
 
 The `you.research()` method now accepts `background=True` to queue long-running research tasks asynchronously. The return type changes from `ResearchResponse` to `Union[ResearchResponse, TaskResponse]` (exposed as the `ResearchResult` alias).
