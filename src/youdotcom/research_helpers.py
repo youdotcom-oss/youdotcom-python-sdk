@@ -370,9 +370,9 @@ def research_and_wait(
     issued in timeout/stream-close fallback paths).
 
     The stream is opened with a per-read timeout bounded to ``timeout_s``
-    (or the caller's ``timeout_ms`` when provided) so that a stalled server
-    raises ``httpx.ReadTimeout`` deterministically instead of leaking a
-    blocked consumer thread. A total wall-clock deadline is also enforced.
+    so that a stalled server raises ``httpx.ReadTimeout`` deterministically
+    instead of leaking a blocked consumer thread. A total wall-clock deadline
+    is also enforced.
 
     Parameters:
         timeout_s: Maximum seconds to wait for a terminal stream event.
