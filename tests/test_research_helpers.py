@@ -396,6 +396,33 @@ class TestResearchAndWait:
                 research_effort=ResearchEffort.STANDARD,
             )
 
+    def test_research_and_wait_ok_event_but_get_failed_raises_immediately(self):
+        """When the stream emits a terminal OK event but the follow-up GET
+        returns a terminal non-completed status (failed), research_and_wait
+        raises RuntimeError immediately without exhausting re-poll attempts."""
+        handler = _make_wait_handler(
+            stream_chunks=[
+                _CONNECTED_CHUNK,
+                b'id: 1\nevent: response.done\ndata: {"type":"response.done","task_id":"abc","status":"completed","sequence":1}\n\n',
+            ],
+            final_status="failed",
+            final_result=None,
+        )
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            client=httpx.Client(transport=transport),
+            api_key_auth="test-api-key",
+        )
+
+        with pytest.raises(RuntimeError, match="ended in non-completed state: failed"):
+            research_and_wait(
+                you,
+                timeout_s=5.0,
+                input="test query",
+                research_effort=ResearchEffort.STANDARD,
+            )
+
     def test_research_and_wait_ok_event_repoll_succeeds(self):
         """When the stream emits a terminal OK event and the first GET returns
         running (backend commit race), research_and_wait re-polls and returns

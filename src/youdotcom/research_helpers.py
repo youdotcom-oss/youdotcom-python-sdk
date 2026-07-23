@@ -256,7 +256,10 @@ def _resolve_from_final_get(
             if detail.status.value == "completed":
                 return detail
             if detail.status.value in _TERMINAL_TASK_STATUSES:
-                break  # terminal non-completed, fall through to error below
+                raise RuntimeError(
+                    f"research task {task_id} ended in non-completed state: "
+                    f"{detail.status.value}"
+                )
             time.sleep(_REPOLL_INTERVAL_S)
         raise RuntimeError(
             f"research task {task_id} stream signalled completion "
@@ -315,7 +318,10 @@ async def _resolve_from_final_get_async(
             if detail.status.value == "completed":
                 return detail
             if detail.status.value in _TERMINAL_TASK_STATUSES:
-                break
+                raise RuntimeError(
+                    f"research task {task_id} ended in non-completed state: "
+                    f"{detail.status.value}"
+                )
             await asyncio.sleep(_REPOLL_INTERVAL_S)
         raise RuntimeError(
             f"research task {task_id} stream signalled completion "
