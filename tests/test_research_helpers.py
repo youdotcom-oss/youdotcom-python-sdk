@@ -388,13 +388,63 @@ class TestResearchAndWait:
             api_key_auth="test-api-key",
         )
 
-        with pytest.raises(RuntimeError, match="stream signalled completion but GET returned status=running"):
+        with pytest.raises(RuntimeError, match="stream signalled completion but GET returned status=running after 3 attempts"):
             research_and_wait(
                 you,
                 timeout_s=5.0,
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+
+    def test_research_and_wait_ok_event_repoll_succeeds(self):
+        """When the stream emits a terminal OK event and the first GET returns
+        running (backend commit race), research_and_wait re-polls and returns
+        the completed detail once the status catches up."""
+        call_count = {"get": 0}
+
+        def handler(request):
+            url = str(request.url)
+            if url.endswith("/stream") or "/stream?" in url:
+                return httpx.Response(
+                    200, headers={"content-type": "text/event-stream"},
+                    content=[
+                        _CONNECTED_CHUNK,
+                        b'id: 1\nevent: response.done\ndata: {"type":"response.done","task_id":"abc","status":"completed","sequence":1}\n\n',
+                    ],
+                )
+            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
+                return httpx.Response(
+                    200, headers={"content-type": "application/json"}, content=_TASK_RESPONSE_JSON,
+                )
+            # GET: first call returns running, second returns completed
+            call_count["get"] += 1
+            if call_count["get"] == 1:
+                return httpx.Response(
+                    200, headers={"content-type": "application/json"},
+                    content=_make_task_detail_json(status="running", result=None),
+                )
+            return httpx.Response(
+                200, headers={"content-type": "application/json"},
+                content=_make_task_detail_json(status="completed", result=_DEFAULT_RESULT),
+            )
+
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            client=httpx.Client(transport=transport),
+            api_key_auth="test-api-key",
+        )
+
+        detail = research_and_wait(
+            you,
+            timeout_s=5.0,
+            input="test query",
+            research_effort=ResearchEffort.STANDARD,
+        )
+
+        assert isinstance(detail, TaskDetail)
+        assert detail.status.value == "completed"
+        assert call_count["get"] == 2  # first running, second completed
 
     def test_research_and_wait_timeout_raises_timeout_error(self):
         """research_and_wait raises TimeoutError when the stream never sends
@@ -1066,6 +1116,41 @@ class TestResearchAndWaitAsync:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+
+    @pytest.mark.asyncio
+    async def test_async_research_and_wait_httpx_readtimeout_falls_back_to_get(self):
+        """Async research_and_wait catches httpx.ReadTimeout (not just
+        asyncio.TimeoutError) and falls back to a final GET. Mirrors the
+        sync _BlockingStream test. Without catching httpx.TimeoutException,
+        the raw ReadTimeout would propagate uncaught."""
+        class _ReadTimeoutAsyncStream(httpx.AsyncByteStream):
+            """Yields one event then raises httpx.ReadTimeout to simulate
+            a stalled server with an explicit read timeout."""
+            async def __aiter__(self):
+                yield _CONNECTED_CHUNK
+                raise httpx.ReadTimeout("read timeout")
+
+        handler = _make_wait_handler(
+            stream_obj=_ReadTimeoutAsyncStream(),
+            final_status="completed",
+            is_async=True,
+        )
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            async_client=httpx.AsyncClient(transport=transport),
+            api_key_auth="test-api-key",
+        )
+
+        detail = await research_and_wait_async(
+            you,
+            timeout_s=0.5,
+            input="test query",
+            research_effort=ResearchEffort.STANDARD,
+        )
+
+        assert isinstance(detail, TaskDetail)
+        assert detail.status.value == "completed"
 
     @pytest.mark.asyncio
     async def test_async_research_and_wait_timeout_falls_back_to_get(self):

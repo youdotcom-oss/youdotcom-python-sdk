@@ -43,6 +43,8 @@ from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
 _DEFAULT_POLL_INTERVAL_S = 2.0
 _DEFAULT_POLL_TIMEOUT_S = 600.0
 _FRONTIER_TIMEOUT_S = 14400.0  # 4 hours — frontier tasks can run this long
+_REPOLL_MAX_ATTEMPTS = 3  # bounded re-poll on completion race (stream OK but GET not yet completed)
+_REPOLL_INTERVAL_S = 1.0
 _TERMINAL_TASK_STATUSES = frozenset({"completed", "failed", "cancelled"})
 _TERMINAL_STREAM_EVENTS_OK = frozenset({"response.done", "complete", "completed"})
 _TERMINAL_STREAM_EVENTS_ERR = frozenset({"error", "failed", "cancelled"})
@@ -234,25 +236,33 @@ def _resolve_from_final_get(
 
     Called after the SSE stream terminates (terminal event, timeout, or close
     without terminal event). When ``result`` is ``"ok"``, verifies the task is
-    completed. When ``result`` is a non-None error event name, raises
-    ``RuntimeError``. When ``result`` is None (timeout or stream close),
-    performs a final GET and returns the detail if completed, raises
-    ``RuntimeError`` for terminal non-completed, or ``TimeoutError`` if still
-    running.
+    completed with a short bounded re-poll to tolerate backend commit races.
+    When ``result`` is a non-None error event name, raises ``RuntimeError``.
+    When ``result`` is None (timeout or stream close), performs a final GET
+    and returns the detail if completed, raises ``RuntimeError`` for terminal
+    non-completed, or ``TimeoutError`` if still running.
     """
     if result == "ok":
-        detail = client.get_research_task(
-            task_id=task_id,
-            server_url=server_url,
-            timeout_ms=timeout_ms,
-            http_headers=http_headers,
-        )
-        if detail.status.value != "completed":
-            raise RuntimeError(
-                f"research task {task_id} stream signalled completion "
-                f"but GET returned status={detail.status.value}"
+        # The stream signalled completion, but the persisted task status may
+        # not be committed yet (distributed backend race). Re-poll a few times
+        # before giving up instead of failing on the first GET.
+        for _ in range(_REPOLL_MAX_ATTEMPTS):
+            detail = client.get_research_task(
+                task_id=task_id,
+                server_url=server_url,
+                timeout_ms=timeout_ms,
+                http_headers=http_headers,
             )
-        return detail
+            if detail.status.value == "completed":
+                return detail
+            if detail.status.value in _TERMINAL_TASK_STATUSES:
+                break  # terminal non-completed, fall through to error below
+            time.sleep(_REPOLL_INTERVAL_S)
+        raise RuntimeError(
+            f"research task {task_id} stream signalled completion "
+            f"but GET returned status={detail.status.value} "
+            f"after {_REPOLL_MAX_ATTEMPTS} attempts"
+        )
     if result is not None:
         raise RuntimeError(
             f"research task {task_id} ended in non-completed state: {result}"
@@ -295,18 +305,23 @@ async def _resolve_from_final_get_async(
 ) -> TaskDetail:
     """Async counterpart of :func:`_resolve_from_final_get`."""
     if result == "ok":
-        detail = await client.get_research_task_async(
-            task_id=task_id,
-            server_url=server_url,
-            timeout_ms=timeout_ms,
-            http_headers=http_headers,
-        )
-        if detail.status.value != "completed":
-            raise RuntimeError(
-                f"research task {task_id} stream signalled completion "
-                f"but GET returned status={detail.status.value}"
+        for _ in range(_REPOLL_MAX_ATTEMPTS):
+            detail = await client.get_research_task_async(
+                task_id=task_id,
+                server_url=server_url,
+                timeout_ms=timeout_ms,
+                http_headers=http_headers,
             )
-        return detail
+            if detail.status.value == "completed":
+                return detail
+            if detail.status.value in _TERMINAL_TASK_STATUSES:
+                break
+            await asyncio.sleep(_REPOLL_INTERVAL_S)
+        raise RuntimeError(
+            f"research task {task_id} stream signalled completion "
+            f"but GET returned status={detail.status.value} "
+            f"after {_REPOLL_MAX_ATTEMPTS} attempts"
+        )
     if result is not None:
         raise RuntimeError(
             f"research task {task_id} ended in non-completed state: {result}"
@@ -446,7 +461,7 @@ async def research_and_wait_async(
     timed_out = False
     try:
         result = await asyncio.wait_for(_consume(), timeout=timeout_s)
-    except asyncio.TimeoutError:
+    except (asyncio.TimeoutError, httpx.TimeoutException):
         timed_out = True
         result = None
 
@@ -603,7 +618,6 @@ def stream_research(
         from_id: Sequence number to resume from (reconnection). ``0`` starts at
             the beginning of the stream.
     """
-    # pylint: disable-next=protected-access
     with _open_raw_stream(
         client, task_id, http_headers=http_headers, from_id=from_id,
         server_url=server_url, timeout_ms=timeout_ms,

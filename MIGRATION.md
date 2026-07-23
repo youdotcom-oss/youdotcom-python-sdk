@@ -40,6 +40,23 @@ detail = poll_research_task(you, task_id=task.task_id, timeout_s=14400)
 
 No migration is required for existing code. The `frontier` tier is purely additive; existing `LITE`, `STANDARD`, `DEEP`, and `EXHAUSTIVE` values are unchanged.
 
+### New `lite` Finance Research Effort Tier
+
+A new `FinanceResearchEffort.LITE` enum value has been added for quick, straightforward financial questions. The default remains `deep`.
+
+```python
+from youdotcom import You
+from youdotcom.models import FinanceResearchEffort
+
+you = You()
+res = you.finance_research(
+    input="What was Apple's revenue in FY2024?",
+    research_effort=FinanceResearchEffort.LITE,
+)
+```
+
+No migration is required. Existing `DEEP` and `EXHAUSTIVE` values are unchanged.
+
 ### New Background Mode for Research
 
 The `you.research()` method now accepts `background=True` to queue long-running research tasks asynchronously. The return type changes from `ResearchResponse` to `Union[ResearchResponse, TaskResponse]` (exposed as the `ResearchResult` alias).

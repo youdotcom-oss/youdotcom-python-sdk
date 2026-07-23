@@ -216,6 +216,20 @@ class TestFinanceResearch:
                 assert source.url is not None
                 assert source.title is not None
 
+    def test_finance_research_lite_effort(self, server_url, api_key):
+        client = create_test_http_client("post_/v1/finance_research")
+
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            res = you.finance_research(
+                input="What was Apple's revenue in FY2024?",
+                research_effort=FinanceResearchEffort.LITE,
+                server_url=server_url,
+            )
+
+            assert res.output is not None
+            assert res.output.content is not None
+            assert "effort: lite" in res.output.content
+
     def test_finance_research_unauthorized(self, server_url):
         client = create_test_http_client("post_/v1/finance_research-unauthorized")
 

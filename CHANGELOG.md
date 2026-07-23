@@ -26,6 +26,8 @@ detail = research_and_wait(
 print(detail.result.model_dump()["output"]["content"])
 ```
 
+- **`lite` finance research effort tier**: New `FinanceResearchEffort.LITE` enum value for the Finance Research API. Returns answers quickly for straightforward financial questions. The default remains `deep`. No migration required; existing `DEEP` and `EXHAUSTIVE` values are unchanged.
+
 - **Research Background Mode**: The `you.research()` method now accepts an optional `background=True` parameter. When enabled, the API queues the research task and returns a `TaskResponse` (with `task_id`, `type`, `status`, `stream_url`, `created_at`) immediately instead of waiting for the inline `ResearchResponse`. Use the new methods to poll or stream the task to completion.
 
 - **`you.get_research_task(task_id=...)`**: Poll the status of a background research task via `GET /v1/research/{task_id}`. Returns a `TaskDetail` with `status`, `result` (populated when completed), `error` (populated when failed), and timing fields.
