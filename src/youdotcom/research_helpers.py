@@ -401,22 +401,20 @@ def research_and_wait(
     http_headers = kwargs.get("http_headers")
     task = research_background(client, **kwargs)
 
-    # Cap the SSE per-read timeout at timeout_s so a silent stall can never
-    # exceed the total wait budget, even if the caller's timeout_ms is larger.
-    # When timeout_ms is smaller, honor it (tighter per-read bound).
-    stream_timeout_ms = min(
-        timeout_ms if timeout_ms is not None else int(timeout_s * 1000),
-        int(timeout_s * 1000),
-    )
+    # The SSE per-read timeout is bounded to timeout_s so a silent stall
+    # can never exceed the total wait budget. This is decoupled from the
+    # caller's timeout_ms (which governs individual HTTP requests like the
+    # POST and GET, not SSE event gaps).
+    stream_timeout_ms = int(timeout_s * 1000)
     try:
         stream = _open_raw_stream(
             client, task.task_id, http_headers=http_headers,
             server_url=server_url, timeout_ms=stream_timeout_ms,
         )
-    except Exception:
-        # Stream-open failure (transient 500, 404 on a just-created task, etc.):
-        # the task is already submitted and running. Fall back to polling so
-        # the caller gets a result instead of an unrecoverable exception.
+    except httpx.TransportError:
+        # Transient connection failure (can't reach server, etc.): the task
+        # is already submitted. Fall back to polling. Typed errors (401/403/
+        # 404/500 from _raise_stream_error) propagate to the caller.
         return poll_research_task(
             client, task.task_id,
             interval_s=_DEFAULT_POLL_INTERVAL_S,
@@ -440,10 +438,10 @@ def research_and_wait(
                 break
     except httpx.TimeoutException:
         timed_out = True
-    except Exception:
-        # Mid-stream error (e.g. RemoteProtocolError on a dropped connection):
-        # the task is already submitted and running. Fall back to polling,
-        # matching the async variant's behavior.
+    except httpx.TransportError:
+        # Mid-stream network failure (e.g. RemoteProtocolError on a dropped
+        # connection): the task is already submitted and running. Fall back
+        # to polling. Typed SDK errors propagate to the caller.
         return poll_research_task(
             client, task.task_id,
             interval_s=_DEFAULT_POLL_INTERVAL_S,
@@ -471,8 +469,7 @@ async def research_and_wait_async(
 
     See :func:`research_and_wait` for parameter details and auto-timeout
     behavior (600s default, 14400s for frontier). The SSE per-read timeout
-    is bounded to ``timeout_s`` (or the caller's ``timeout_ms`` when
-    provided), matching the sync variant.
+    is bounded to ``timeout_s``, matching the sync variant.
     """
     if timeout_s is None:
         timeout_s = _resolve_default_timeout(kwargs)
@@ -481,11 +478,10 @@ async def research_and_wait_async(
     http_headers = kwargs.get("http_headers")
     task = await research_background_async(client, **kwargs)
 
-    # Cap the SSE per-read timeout at timeout_s (same rationale as sync).
-    stream_timeout_ms = min(
-        timeout_ms if timeout_ms is not None else int(timeout_s * 1000),
-        int(timeout_s * 1000),
-    )
+    # The SSE per-read timeout is bounded to timeout_s (same rationale as
+    # sync). Decoupled from the caller's timeout_ms, which governs
+    # individual HTTP requests (POST, GET), not SSE event gaps.
+    stream_timeout_ms = int(timeout_s * 1000)
 
     async def _consume() -> Optional[str]:
         async for evt in stream_research_async(
@@ -505,10 +501,10 @@ async def research_and_wait_async(
     except (asyncio.TimeoutError, httpx.TimeoutException):
         timed_out = True
         result = None
-    except Exception:
-        # Stream-open failure (transient 500, 404 on a just-created task, etc.):
-        # the task is already submitted and running. Fall back to polling so
-        # the caller gets a result instead of an unrecoverable exception.
+    except httpx.TransportError:
+        # Transient connection failure (can't reach server, dropped
+        # connection, etc.): the task is already submitted. Fall back to
+        # polling. Typed errors (401/403/404/500) propagate to the caller.
         return await poll_research_task_async(
             client, task.task_id,
             interval_s=_DEFAULT_POLL_INTERVAL_S,

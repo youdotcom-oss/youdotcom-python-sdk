@@ -601,6 +601,122 @@ class TestResearchAndWait:
                 research_effort=ResearchEffort.STANDARD,
             )
 
+    def test_stream_open_transport_error_falls_back_to_poll(self):
+        """When _open_raw_stream raises a TransportError (can't reach server),
+        research_and_wait falls back to poll_research_task and returns the
+        completed detail."""
+        def handler(request):
+            url = str(request.url)
+            if url.endswith("/stream") or "/stream?" in url:
+                raise httpx.ConnectError("connection refused")
+            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
+                return httpx.Response(
+                    200, headers={"content-type": "application/json"},
+                    content=_TASK_RESPONSE_JSON,
+                )
+            return httpx.Response(
+                200, headers={"content-type": "application/json"},
+                content=_make_task_detail_json(status="completed", result=_DEFAULT_RESULT),
+            )
+
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            client=httpx.Client(transport=transport),
+            api_key_auth="test-api-key",
+        )
+
+        detail = research_and_wait(
+            you,
+            timeout_s=5.0,
+            input="test query",
+            research_effort=ResearchEffort.STANDARD,
+        )
+
+        assert isinstance(detail, TaskDetail)
+        assert detail.status.value == "completed"
+
+    def test_stream_open_401_propagates_typed_error(self):
+        """When _open_raw_stream gets a 401, the typed
+        StreamResearchTaskUnauthorizedError propagates instead of falling
+        back to polling."""
+        from youdotcom.errors import StreamResearchTaskUnauthorizedError
+
+        def handler(request):
+            url = str(request.url)
+            if url.endswith("/stream") or "/stream?" in url:
+                return httpx.Response(
+                    401,
+                    headers={"content-type": "application/json"},
+                    content='{"error": "unauthorized"}',
+                )
+            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
+                return httpx.Response(
+                    200, headers={"content-type": "application/json"},
+                    content=_TASK_RESPONSE_JSON,
+                )
+            return httpx.Response(
+                200, headers={"content-type": "application/json"},
+                content=_make_task_detail_json(status="completed", result=_DEFAULT_RESULT),
+            )
+
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            client=httpx.Client(transport=transport),
+            api_key_auth="bad-key",
+        )
+
+        with pytest.raises(StreamResearchTaskUnauthorizedError):
+            research_and_wait(
+                you,
+                timeout_s=5.0,
+                input="test query",
+                research_effort=ResearchEffort.STANDARD,
+            )
+
+    def test_mid_stream_transport_error_falls_back_to_poll(self):
+        """When a TransportError occurs mid-stream (dropped connection),
+        research_and_wait falls back to poll_research_task."""
+        class _DroppedStream(httpx.SyncByteStream):
+            def __iter__(self):
+                yield _CONNECTED_CHUNK
+                raise httpx.RemoteProtocolError("connection dropped")
+
+        def handler(request):
+            url = str(request.url)
+            if url.endswith("/stream") or "/stream?" in url:
+                return httpx.Response(
+                    200, headers={"content-type": "text/event-stream"},
+                    stream=_DroppedStream(),
+                )
+            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
+                return httpx.Response(
+                    200, headers={"content-type": "application/json"},
+                    content=_TASK_RESPONSE_JSON,
+                )
+            return httpx.Response(
+                200, headers={"content-type": "application/json"},
+                content=_make_task_detail_json(status="completed", result=_DEFAULT_RESULT),
+            )
+
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            client=httpx.Client(transport=transport),
+            api_key_auth="test-api-key",
+        )
+
+        detail = research_and_wait(
+            you,
+            timeout_s=5.0,
+            input="test query",
+            research_effort=ResearchEffort.STANDARD,
+        )
+
+        assert isinstance(detail, TaskDetail)
+        assert detail.status.value == "completed"
+
 
 # ---------------------------------------------------------------------------
 # Stream research tolerant decoder: verify that
@@ -1354,6 +1470,78 @@ class TestResearchAndWaitAsync:
         )
 
         with pytest.raises(TimeoutError, match="still running"):
+            await research_and_wait_async(
+                you,
+                timeout_s=5.0,
+                input="test query",
+                research_effort=ResearchEffort.STANDARD,
+            )
+
+    @pytest.mark.asyncio
+    async def test_async_stream_open_transport_error_falls_back_to_poll(self):
+        """Async mirror: TransportError on stream-open falls back to polling."""
+        def handler(request):
+            url = str(request.url)
+            if url.endswith("/stream") or "/stream?" in url:
+                raise httpx.ConnectError("connection refused")
+            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
+                return httpx.Response(
+                    200, headers={"content-type": "application/json"},
+                    content=_TASK_RESPONSE_JSON,
+                )
+            return httpx.Response(
+                200, headers={"content-type": "application/json"},
+                content=_make_task_detail_json(status="completed", result=_DEFAULT_RESULT),
+            )
+
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            async_client=httpx.AsyncClient(transport=transport),
+            api_key_auth="test-api-key",
+        )
+
+        detail = await research_and_wait_async(
+            you,
+            timeout_s=5.0,
+            input="test query",
+            research_effort=ResearchEffort.STANDARD,
+        )
+
+        assert isinstance(detail, TaskDetail)
+        assert detail.status.value == "completed"
+
+    @pytest.mark.asyncio
+    async def test_async_stream_open_401_propagates_typed_error(self):
+        """Async mirror: 401 on stream-open propagates typed error."""
+        from youdotcom.errors import StreamResearchTaskUnauthorizedError
+
+        def handler(request):
+            url = str(request.url)
+            if url.endswith("/stream") or "/stream?" in url:
+                return httpx.Response(
+                    401,
+                    headers={"content-type": "application/json"},
+                    content='{"error": "unauthorized"}',
+                )
+            if request.method == "POST" and "/v1/research" in url and "/stream" not in url:
+                return httpx.Response(
+                    200, headers={"content-type": "application/json"},
+                    content=_TASK_RESPONSE_JSON,
+                )
+            return httpx.Response(
+                200, headers={"content-type": "application/json"},
+                content=_make_task_detail_json(status="completed", result=_DEFAULT_RESULT),
+            )
+
+        transport = httpx.MockTransport(handler)
+        you = You(
+            server_url="http://mock.local",
+            async_client=httpx.AsyncClient(transport=transport),
+            api_key_auth="bad-key",
+        )
+
+        with pytest.raises(StreamResearchTaskUnauthorizedError):
             await research_and_wait_async(
                 you,
                 timeout_s=5.0,
