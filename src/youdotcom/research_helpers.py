@@ -437,7 +437,10 @@ async def research_and_wait_async(
     """Async variant of :func:`research_and_wait`.
 
     See :func:`research_and_wait` for parameter details and auto-timeout
-    behavior (600s default, 14400s for frontier).
+    behavior (600s default, 14400s for frontier). The SSE per-read timeout
+    is bounded to ``timeout_s`` (when the caller didn't set ``timeout_ms``)
+    to match the sync variant, preventing a caller-set client default from
+    causing premature ``TimeoutError`` on long-running frontier tasks.
     """
     if timeout_s is None:
         timeout_s = _resolve_default_timeout(kwargs)
@@ -446,10 +449,16 @@ async def research_and_wait_async(
     http_headers = kwargs.get("http_headers")
     task = await research_background_async(client, **kwargs)
 
+    # Bound the SSE per-read timeout to timeout_s when the caller didn't
+    # set an explicit timeout_ms, matching the sync variant. Without this,
+    # a caller-set You(timeout_ms=60000) would cap reads at 60s and cause
+    # premature TimeoutError on frontier tasks with auto timeout_s=14400.
+    stream_timeout_ms = timeout_ms if timeout_ms is not None else int(timeout_s * 1000)
+
     async def _consume() -> Optional[str]:
         async for evt in stream_research_async(
             client, task.task_id,
-            server_url=server_url, timeout_ms=timeout_ms,
+            server_url=server_url, timeout_ms=stream_timeout_ms,
             http_headers=http_headers,
         ):
             if evt.event in _TERMINAL_STREAM_EVENTS_OK:
