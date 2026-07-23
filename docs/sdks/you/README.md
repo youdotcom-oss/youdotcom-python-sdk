@@ -519,7 +519,7 @@ with You(
 
 ### Response
 
-**[Union[eventstreaming.EventStream[models.ResearchTaskStreamEvent], eventstreaming.EventStreamAsync[models.ResearchTaskStreamEvent]]](../../models/.md)**
+**[Union[eventstreaming.EventStream[models.ResearchTaskStreamEvent], eventstreaming.EventStreamAsync[models.ResearchTaskStreamEvent]]](../../models/researchtaskstreamevent.md)**
 
 ### Errors
 

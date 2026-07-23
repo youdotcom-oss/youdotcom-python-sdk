@@ -45,7 +45,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
@@ -68,6 +68,8 @@ jobs:
       - name: Install Droid CLI
         if: github.event_name == 'workflow_dispatch'
         run: |
+          # Official Factory CLI installer from app.factory.ai
+          # TODO: pin to a specific version with checksum verification
           curl --retry 5 --retry-delay 2 --retry-all-errors -fsSL https://app.factory.ai/cli | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 

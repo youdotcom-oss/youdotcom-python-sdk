@@ -28,7 +28,11 @@ print(detail.result.model_dump()["output"]["content"])
 You can also use the lower-level helpers for manual polling or streaming:
 
 ```python
+from youdotcom import You
+from youdotcom.models import ResearchEffort
 from youdotcom.research_helpers import research_background, poll_research_task
+
+you = You()
 
 task = research_background(
     you,
@@ -64,7 +68,10 @@ The `you.research()` method now accepts `background=True` to queue long-running 
 **Synchronous mode (default, unchanged):**
 
 ```python
-from youdotcom.models import ResearchResponse
+from youdotcom import You
+from youdotcom.models import ResearchEffort, ResearchResponse
+
+you = You()
 res = you.research(input="...", research_effort=ResearchEffort.DEEP)
 # res is ResearchResponse — same as 2.4.0
 assert isinstance(res, ResearchResponse)
@@ -73,7 +80,10 @@ assert isinstance(res, ResearchResponse)
 **Background mode (new):**
 
 ```python
-from youdotcom.models import TaskResponse, TaskDetail
+from youdotcom import You
+from youdotcom.models import ResearchEffort, TaskResponse, TaskDetail
+
+you = You()
 
 # Submit and get a task handle
 res = you.research(input="...", research_effort=ResearchEffort.DEEP, background=True)
@@ -97,10 +107,14 @@ for event in stream_research(you, task_id=res.task_id):
 **Or use the convenience helpers:**
 
 ```python
+from youdotcom import You
+from youdotcom.models import ResearchEffort
 from youdotcom.research_helpers import (
     research_background, poll_research_task, research_and_wait,
     stream_research,
 )
+
+you = You()
 
 # Option 1: Submit and wait in one call (simplest)
 # Streams SSE events until the task completes, then fetches the result.
@@ -144,7 +158,11 @@ The `poll_research_task` helper polls `GET /v1/research/{task_id}` at a configur
 **`poll_research_task` does not auto-adjust** (it receives a `task_id`, not the effort level). You must set `timeout_s` explicitly for frontier:
 
 ```python
+from youdotcom import You
+from youdotcom.models import ResearchEffort
 from youdotcom.research_helpers import research_background, poll_research_task
+
+you = You()
 
 task = research_background(
     you, input="...", research_effort=ResearchEffort.FRONTIER,
