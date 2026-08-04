@@ -7,6 +7,7 @@
 New `Answer` sub-SDK for `POST /v1/answer`:
 
 ```python
+import os
 from youdotcom import You
 
 with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:

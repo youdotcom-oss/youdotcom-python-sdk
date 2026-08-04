@@ -723,5 +723,5 @@ For more details on testing, see the [tests README](tests/README.md).
 
 ## Contributions
 
-While we value open-source contributions to this SDK, this library is generated programmatically. Any manual changes added to internal files will be overwritten on the next generation.
+While we value open-source contributions to this SDK, this library is hand-maintained. We welcome pull requests — see [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 We look forward to hearing your feedback. Feel free to open a PR or an issue with a proof of concept and we'll do our best to include it in a future release.

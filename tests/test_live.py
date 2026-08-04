@@ -825,8 +825,8 @@ class TestLiveSearchHelpers:
     @pytest.mark.asyncio
     async def test_async_keyless_search_helper(self):
         """search_async() with NO API key works via the free-tier proxy."""
-        you = You(async_client=httpx.AsyncClient(), timeout_ms=LIVE_TIMEOUT_MS)
-        with you:
+        you = You(timeout_ms=LIVE_TIMEOUT_MS)
+        async with you:
             res = await search_helper_async(you, query="What is machine learning?", count=3)
 
             assert res.results is not None
