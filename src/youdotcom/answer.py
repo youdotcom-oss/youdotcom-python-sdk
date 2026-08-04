@@ -15,8 +15,8 @@ class Answer(BaseSDK):
         freshness: Optional[
             Union[models.FreshnessValue, models.FreshnessValueTypedDict]
         ] = None,
-        country: Optional[models.Country] = None,
-        language: Optional[models.Language] = None,
+        country: Optional[str] = None,
+        language: Optional[str] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -63,15 +63,16 @@ class Answer(BaseSDK):
         else:
             base_url = self._get_url(None, None)
 
-        request = models.AnswerRequestBody(
+        body: dict = dict(
             query=query,
             freshness=freshness,
-            country=country,
-            language=language,
+            country=country.upper() if isinstance(country, str) else country,
+            language=language.upper() if isinstance(language, str) else language,
             include_domains=utils.unmarshal(include_domains, Optional[List[str]]),
             exclude_domains=utils.unmarshal(exclude_domains, Optional[List[str]]),
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),
         )
+        request = models.AnswerRequestBody(**body)
 
         req = self._build_request(
             method="POST",
@@ -162,8 +163,8 @@ class Answer(BaseSDK):
         freshness: Optional[
             Union[models.FreshnessValue, models.FreshnessValueTypedDict]
         ] = None,
-        country: Optional[models.Country] = None,
-        language: Optional[models.Language] = None,
+        country: Optional[str] = None,
+        language: Optional[str] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -210,15 +211,16 @@ class Answer(BaseSDK):
         else:
             base_url = self._get_url(None, None)
 
-        request = models.AnswerRequestBody(
+        body: dict = dict(
             query=query,
             freshness=freshness,
-            country=country,
-            language=language,
+            country=country.upper() if isinstance(country, str) else country,
+            language=language.upper() if isinstance(language, str) else language,
             include_domains=utils.unmarshal(include_domains, Optional[List[str]]),
             exclude_domains=utils.unmarshal(exclude_domains, Optional[List[str]]),
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),
         )
+        request = models.AnswerRequestBody(**body)
 
         req = self._build_request_async(
             method="POST",

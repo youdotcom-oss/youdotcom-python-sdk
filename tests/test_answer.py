@@ -148,6 +148,20 @@ class TestAnswerSuccess:
         assert "http://custom.local" in captured["url"]
         assert "/v1/answer" in captured["url"]
 
+    def test_lowercase_language_and_country_normalized(self):
+        """language='en' and country='us' should be normalized to uppercase."""
+        captured: dict = {}
+
+        def handler(request):
+            captured["body"] = json.loads(request.content)
+            return httpx.Response(
+                200, headers={"content-type": "application/json"}, content=_ANSWER_BODY
+            )
+
+        _sync_you(handler).answer.create(query="test", language="en", country="us")
+        assert captured["body"]["language"] == "EN"
+        assert captured["body"]["country"] == "US"
+
     def test_omits_optional_params_when_not_set(self):
         captured: dict = {}
 
@@ -215,13 +229,34 @@ class TestAnswerErrors:
 
     def test_422_raises_unprocessable_entity_error(self):
         body = json.dumps({"detail": [{"type": "missing", "loc": ["body", "query"], "msg": "Field required"}]})
-        with pytest.raises(UnprocessableEntityResponseError):
+        with pytest.raises(UnprocessableEntityResponseError) as exc_info:
             _sync_you(_make_handler(422, body)).answer.create(query="")
+        # FastAPI validation format: detail array
+        assert exc_info.value.data.detail is not None
+        assert exc_info.value.data.detail[0]["type"] == "missing"
 
-    def test_500_raises_internal_server_error(self):
-        body = json.dumps({"detail": "Internal server error"})
-        with pytest.raises(InternalServerErrorResponse):
+    def test_422_json_api_format(self):
+        """422 in JSON:API format {errors: [{status, code, title, detail}]}."""
+        body = json.dumps({"errors": [{"status": "422", "code": "unprocessable_entity", "title": "Unprocessable Entity", "detail": "invalid request parameter(s)"}]})
+        with pytest.raises(UnprocessableEntityResponseError) as exc_info:
+            _sync_you(_make_handler(422, body)).answer.create(query="")
+        assert exc_info.value.data.errors is not None
+        assert exc_info.value.data.errors[0]["code"] == "unprocessable_entity"
+
+    def test_422_search_spec_format(self):
+        """422 in search spec format {error: string}."""
+        body = json.dumps({"error": "invalid request parameter(s)"})
+        with pytest.raises(UnprocessableEntityResponseError) as exc_info:
+            _sync_you(_make_handler(422, body)).answer.create(query="")
+        assert exc_info.value.data.error == "invalid request parameter(s)"
+
+    def test_500_with_json_api_errors(self):
+        """500 in JSON:API format {errors: [...]}."""
+        body = json.dumps({"errors": [{"status": "500", "code": "internal_server_error", "title": "Internal Server Error"}]})
+        with pytest.raises(InternalServerErrorResponse) as exc_info:
             _sync_you(_make_handler(500, body)).answer.create(query="test")
+        assert exc_info.value.data.errors is not None
+        assert exc_info.value.data.errors[0]["code"] == "internal_server_error"
 
     def test_4xx_fallback_raises_default_error(self):
         body = json.dumps({"detail": "rate limited"})
