@@ -54,11 +54,11 @@ from youdotcom.errors import (
 )
 
 
-# Skip all tests in this file if no API key is provided.
+# Skip keyed tests if no API key is provided.
 # Mirror the SDK's own env-var precedence (YDC_API_KEY first, then
 # YOU_API_KEY_AUTH as the documented 2.3.x fallback) so users on the
 # fallback env var don't get their live suite silently skipped.
-pytestmark = pytest.mark.skipif(
+requires_api_key = pytest.mark.skipif(
     not (os.getenv("YDC_API_KEY") or os.getenv("YOU_API_KEY_AUTH")),
     reason="YDC_API_KEY or YOU_API_KEY_AUTH environment variable not set"
 )
@@ -88,6 +88,7 @@ def you_client(api_key):
     )
 
 
+@requires_api_key
 class TestLiveSearch:
     """Live tests for the Search API."""
     
@@ -170,26 +171,9 @@ class TestLiveSearch:
             )
             
             assert res.results is not None
-            
-            # Both web and news should be able to have contents
-            has_any_contents = False
-            
-            if res.results.web:
-                for result in res.results.web:
-                    if result.contents:
-                        has_any_contents = True
-                        break
-            
-            if res.results.news:
-                for news_item in res.results.news:
-                    if news_item.contents:
-                        has_any_contents = True
-                        break
-            
-            # We expect at least some results to have contents with livecrawl=ALL
-            # (This assertion may be relaxed if the API doesn't always return contents)
 
 
+@requires_api_key
 class TestLiveContents:
     """Live tests for the Contents API."""
     
@@ -244,6 +228,7 @@ class TestLiveContents:
             assert len(res) > 0
 
 
+@requires_api_key
 class TestLiveAgents:
     """Live tests for the Agents API."""
     
@@ -280,6 +265,7 @@ class TestLiveAgents:
             assert res.output is not None
 
 
+@requires_api_key
 class TestLiveResearch:
     """Live tests for the Research API (new in 2.3.0)."""
 
@@ -341,6 +327,7 @@ class TestLiveResearch:
                 assert source.url is not None
 
 
+@requires_api_key
 class TestLiveResearchOutputSchema:
     """Live test for Research `output_schema` parameter (beta feature).
 
@@ -378,6 +365,7 @@ class TestLiveResearchOutputSchema:
             assert "same_entity" in res.output.content
 
 
+@requires_api_key
 class TestLiveResearchSourceControl:
     """Live test for Research `source_control` parameter (beta feature).
 
@@ -402,6 +390,7 @@ class TestLiveResearchSourceControl:
             assert len(res.output.content) > 0
 
 
+@requires_api_key
 class TestLiveFinanceResearch:
     """Live tests for the Finance Research API."""
 
@@ -445,6 +434,7 @@ class TestLiveFinanceResearch:
                     assert source.url is not None
 
 
+@requires_api_key
 class TestLiveContentsMaxAge:
     """Live test for Contents `max_age` parameter.
 
@@ -465,6 +455,7 @@ class TestLiveContentsMaxAge:
             assert len(res) > 0
 
 
+@requires_api_key
 class TestLiveSearchBoostDomains:
     """Live test for Search `boost_domains` parameter.
 
@@ -502,6 +493,7 @@ class TestLiveSearchBoostDomains:
 _BG_TIMEOUT_S = 120.0  # generous wall-clock for LITE background tasks
 
 
+@requires_api_key
 class TestLiveResearchBackground:
     """Live tests for background-mode research (POST /v1/research?background=true)."""
 
@@ -606,6 +598,7 @@ class TestLiveResearchBackground:
             assert "output" in result_dump
 
 
+@requires_api_key
 class TestLiveResearchBackgroundHelpers:
     """Live tests for the research_helpers convenience functions."""
 
@@ -672,6 +665,7 @@ class TestLiveResearchBackgroundHelpers:
 # For a live test we use a simple query and a generous but bounded timeout.
 # Marked slow so it can be skipped with `-m "not slow"`.
 # ---------------------------------------------------------------------------
+@requires_api_key
 class TestLiveResearchFrontier:
     """Live tests for frontier research effort (requires background=true)."""
 
@@ -714,6 +708,7 @@ class TestLiveResearchFrontier:
 # ---------------------------------------------------------------------------
 # Answer API (new in 2.6.0)
 # ---------------------------------------------------------------------------
+@requires_api_key
 class TestLiveAnswer:
     """Live tests for the Answer API (POST /v1/answer).
 

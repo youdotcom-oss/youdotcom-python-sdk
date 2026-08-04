@@ -87,7 +87,7 @@ def search(
         count=count,
         freshness=freshness,
         offset=offset,
-        country=country,
+        country=country.upper() if isinstance(country, str) else country,
         safesearch=safesearch,
         livecrawl=livecrawl,
         livecrawl_formats=utils.unmarshal(
@@ -180,7 +180,7 @@ async def search_async(
         count=count,
         freshness=freshness,
         offset=offset,
-        country=country,
+        country=country.upper() if isinstance(country, str) else country,
         safesearch=safesearch,
         livecrawl=livecrawl,
         livecrawl_formats=utils.unmarshal(
