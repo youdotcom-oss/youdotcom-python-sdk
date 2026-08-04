@@ -7,7 +7,12 @@ from typing import Union
 # Any hooks you wish to add should be registered in the init_hooks function. Feel free to define them
 # in this file or in separate files in the hooks folder.
 
-_DEFAULT_UA_PREFIX = "speakeasy-sdk/"
+# ponytail: the hook checks whether the configured user-agent matches the SDK
+# default. If it does, the hook emits the canonical ``youdotcom-python-sdk/{version}``
+# format. If a caller overrides user_agent away from this default, the hook passes
+# it through so integrations (langchain-youdotcom, youdotcom-temporal,
+# n8n-nodes-youdotcom) can identify their traffic.
+_DEFAULT_UA_PREFIX = "youdotcom-python-sdk/"
 
 
 class YDCUserAgentOverrideHook(BeforeRequestHook):
@@ -15,7 +20,7 @@ class YDCUserAgentOverrideHook(BeforeRequestHook):
 
     Behaviour:
     - If ``sdk_configuration.user_agent`` has been overridden away from the
-      speakeasy-default (``speakeasy-sdk/python ...``), pass it through so
+      SDK default (``youdotcom-python-sdk/...``), pass it through so
       integrations (langchain-youdotcom, youdotcom-temporal,
       n8n-nodes-youdotcom) can identify their traffic.
     - Otherwise, emit the SDK-default ``youdotcom-python-sdk/{sdk_version}``.
@@ -25,9 +30,6 @@ class YDCUserAgentOverrideHook(BeforeRequestHook):
         sdk_version = hook_ctx.config.sdk_version
         configured_ua = hook_ctx.config.user_agent
 
-        # `not startswith(_DEFAULT_UA_PREFIX)` already handles the default-UA
-        # case (the speakeasy default always starts with the prefix), so a
-        # separate `configured_ua != __user_agent__` check is redundant.
         is_custom = bool(configured_ua) and not configured_ua.startswith(_DEFAULT_UA_PREFIX)
 
         request.headers["User-Agent"] = (
