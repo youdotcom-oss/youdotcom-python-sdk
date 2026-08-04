@@ -9,9 +9,10 @@ Multi-step reasoning with comprehensive research capabilities
 Finance-focused multi-step research with competitive accuracy at same price points and latencies as the Research API
 Comprehensive API for You.com services:
 - **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
+- **Answer API**: Get synthesized, citation-backed answers grounded in real-time web results
 - **Research API**: In-depth, multi-step research with citations and sources
 - **Finance Research API**: Finance-focused multi-step research with citations and sources
-- **Search API**: Get search results from web and news sources
+- **Search API**: Get search results from web and news sources (keyless-capable via `/v1/agents/search`)
 - **Contents API**: Retrieve and process web page content
 
 ### Available Operations
