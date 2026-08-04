@@ -61,7 +61,7 @@ class Answer(BaseSDK):
         if server_url is not None:
             base_url = server_url
         else:
-            base_url = models.ANSWER_OP_SERVERS[0]
+            base_url = self._get_url(None, None)
 
         request = models.AnswerRequestBody(
             query=query,
@@ -208,7 +208,7 @@ class Answer(BaseSDK):
         if server_url is not None:
             base_url = server_url
         else:
-            base_url = models.ANSWER_OP_SERVERS[0]
+            base_url = self._get_url(None, None)
 
         request = models.AnswerRequestBody(
             query=query,

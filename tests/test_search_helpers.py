@@ -77,6 +77,11 @@ class TestSearchSuccess:
         )
         assert isinstance(res, SearchResponse)
 
+    def test_lowercase_language_is_normalized(self):
+        """language='en' should be normalized to 'EN' before model validation."""
+        res = search(_sync_you(_make_handler(200)), query="python", language="en")
+        assert isinstance(res, SearchResponse)
+
     def test_posts_to_agents_search_endpoint(self):
         """Request must hit /v1/agents/search, not /v1/search."""
         captured: dict = {}

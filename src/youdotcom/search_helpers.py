@@ -53,7 +53,7 @@ def search(
 
     With no API key configured on ``client``, runs in the free tier
     (count ≤ 50, no livecrawl). A ``402`` response raises
-    :class:`FreeTierLimitError` carrying the upgrade message.
+    :class:`~youdotcom.errors.PaymentRequiredResponseError` carrying the upgrade message.
 
     Enum-typed parameters (``country``, ``safesearch``, ``livecrawl``,
     ``freshness``) accept plain strings — pydantic coerces them when building
@@ -101,7 +101,7 @@ def search(
         crawl_timeout=crawl_timeout,
     )
     if language is not None:
-        body["language"] = language
+        body["language"] = language.upper() if isinstance(language, str) else language
     request = models.SearchRequestBody(**body)
 
     req = client._build_request(
@@ -194,7 +194,7 @@ async def search_async(
         crawl_timeout=crawl_timeout,
     )
     if language is not None:
-        body["language"] = language
+        body["language"] = language.upper() if isinstance(language, str) else language
     request = models.SearchRequestBody(**body)
 
     req = client._build_request_async(
