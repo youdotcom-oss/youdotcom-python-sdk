@@ -82,6 +82,16 @@ class TestSearchSuccess:
         res = search(_sync_you(_make_handler(200)), query="python", language="en")
         assert isinstance(res, SearchResponse)
 
+    def test_exclude_and_boost_domains_accepted(self):
+        """exclude_domains and boost_domains should be accepted as lists."""
+        res = search(
+            _sync_you(_make_handler(200)),
+            query="python",
+            exclude_domains=["spam.com"],
+            boost_domains=["realpython.com"],
+        )
+        assert isinstance(res, SearchResponse)
+
     def test_posts_to_agents_search_endpoint(self):
         """Request must hit /v1/agents/search, not /v1/search."""
         captured: dict = {}

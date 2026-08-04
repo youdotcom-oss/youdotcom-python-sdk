@@ -37,7 +37,9 @@ from youdotcom.models import (
     TaskResponse,
     TaskDetail,
     FinanceResearchEffort,
+    AnswerResponse,
 )
+from youdotcom.search_helpers import search as search_helper, search_async as search_helper_async
 from youdotcom.research_helpers import (
     research_background,
     poll_research_task,
@@ -706,6 +708,136 @@ class TestLiveResearchFrontier:
                     research_effort=ResearchEffort.FRONTIER,
                     background=False,
                 )
+
+
+# ---------------------------------------------------------------------------
+# Answer API (new in 2.6.0)
+# ---------------------------------------------------------------------------
+class TestLiveAnswer:
+    """Live tests for the Answer API (POST /v1/answer).
+
+    The Answer API returns a synthesized answer with citations and web results.
+    Requires an API key (not keyless).
+    """
+
+    def test_basic_answer(self, you_client):
+        """Test basic answer query returns AnswerResponse with answer + citations."""
+        with you_client as you:
+            res = you.answer.create(query="What is the capital of France?")
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+            # Citations should be present for a factual query
+            assert len(res.citations) > 0
+            for citation in res.citations:
+                assert citation.source is not None
+                assert len(citation.source) > 0
+            # Web results should be present
+            assert len(res.results.web) > 0
+            for result in res.results.web:
+                assert result.url is not None
+                assert result.title is not None
+
+    def test_answer_with_freshness(self, you_client):
+        """Test answer with freshness filter."""
+        with you_client as you:
+            res = you.answer.create(
+                query="Latest AI developments",
+                freshness="week",
+            )
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+
+    def test_answer_with_country(self, you_client):
+        """Test answer with country filter."""
+        with you_client as you:
+            res = you.answer.create(
+                query="Best restaurants in London",
+                country=Country.GB,
+            )
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+
+    def test_answer_with_boost_domains(self, you_client):
+        """Test answer with boost_domains (can combine with exclude, not include)."""
+        with you_client as you:
+            res = you.answer.create(
+                query="Python type hints",
+                boost_domains=["python.org", "docs.python.org"],
+            )
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+
+    @pytest.mark.asyncio
+    async def test_async_answer(self, you_client):
+        """Test async answer.create_async()."""
+        with you_client as you:
+            res = await you.answer.create_async(query="What is 2+2?")
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+
+
+# ---------------------------------------------------------------------------
+# Search helpers (keyless-capable /v1/agents/search)
+# ---------------------------------------------------------------------------
+class TestLiveSearchHelpers:
+    """Live tests for search_helpers.search() → POST /v1/agents/search.
+
+    These verify the keyless-capable search helper against the real API.
+    With an API key, the proxy forwards to /v1/search with full features.
+    """
+
+    def test_keyed_search_helper(self, you_client):
+        """search() with an API key returns full SearchResponse."""
+        with you_client as you:
+            res = search_helper(you, query="Python programming language", count=5)
+
+            assert isinstance(res, type(res.results)) or res.results is not None
+            assert res.results is not None
+            assert res.results.web is not None
+            assert len(res.results.web) > 0
+
+    def test_search_helper_with_filters(self, you_client):
+        """search() with country/freshness/safesearch filters."""
+        with you_client as you:
+            res = search_helper(
+                you,
+                query="artificial intelligence news",
+                count=3,
+                country="US",
+                freshness="week",
+                safesearch="moderate",
+            )
+
+            assert res.results is not None
+            assert res.results.web is not None
+
+    def test_search_helper_with_domain_filters(self, you_client):
+        """search() with include_domains / exclude_domains / boost_domains."""
+        with you_client as you:
+            res = search_helper(
+                you,
+                query="Python type hints",
+                count=3,
+                boost_domains=["python.org"],
+                exclude_domains=["spam-site.com"],
+            )
+
+            assert res.results is not None
+
+    @pytest.mark.asyncio
+    async def test_async_search_helper(self, you_client):
+        """search_async() returns SearchResponse."""
+        with you_client as you:
+            res = await search_helper_async(you, query="What is machine learning?", count=3)
+
+            assert res.results is not None
+            assert res.results.web is not None
+            assert len(res.results.web) > 0
 
 
 if __name__ == "__main__":
