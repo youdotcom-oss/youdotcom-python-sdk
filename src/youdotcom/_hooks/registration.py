@@ -1,47 +1,11 @@
-from .types import Hooks, BeforeRequestHook, BeforeRequestContext
-import httpx
-from typing import Union
-
-
-# This file is only ever generated once on the first generation and then is free to be modified.
-# Any hooks you wish to add should be registered in the init_hooks function. Feel free to define them
-# in this file or in separate files in the hooks folder.
-
-# ponytail: the hook checks whether the configured user-agent matches the SDK
-# default. If it does, the hook emits the canonical ``youdotcom-python-sdk/{version}``
-# format. If a caller overrides user_agent away from this default, the hook passes
-# it through so integrations (langchain-youdotcom, youdotcom-temporal,
-# n8n-nodes-youdotcom) can identify their traffic.
-_DEFAULT_UA_PREFIX = "youdotcom-python-sdk/"
-
-
-class YDCUserAgentOverrideHook(BeforeRequestHook):
-    """Hook that overrides the User-Agent header on every request.
-
-    Behaviour:
-    - If ``sdk_configuration.user_agent`` has been overridden away from the
-      SDK default (``youdotcom-python-sdk/...``), pass it through so
-      integrations (langchain-youdotcom, youdotcom-temporal,
-      n8n-nodes-youdotcom) can identify their traffic.
-    - Otherwise, emit the SDK-default ``youdotcom-python-sdk/{sdk_version}``.
-    """
-
-    def before_request(self, hook_ctx: BeforeRequestContext, request: httpx.Request) -> Union[httpx.Request, Exception]:
-        sdk_version = hook_ctx.config.sdk_version
-        configured_ua = hook_ctx.config.user_agent
-
-        is_custom = bool(configured_ua) and not configured_ua.startswith(_DEFAULT_UA_PREFIX)
-
-        request.headers["User-Agent"] = (
-            configured_ua if is_custom else f"youdotcom-python-sdk/{sdk_version}"
-        )
-
-        return request
+from .types import Hooks
 
 
 def init_hooks(hooks: Hooks):
-    # pylint: disable=unused-argument
-    """Add hooks by calling hooks.register{sdk_init/before_request/after_success/after_error}Hook
-    with an instance of a hook that implements that specific Hook interface
-    Hooks are registered per SDK instance, and are valid for the lifetime of the SDK instance"""
-    hooks.register_before_request_hook(YDCUserAgentOverrideHook())
+    """Register SDK hooks.
+
+    The user-agent is set directly from ``sdk_configuration.user_agent`` in
+    ``BaseSDK._build_request`` — no hook needed. Integrations that want a
+    custom UA simply override ``client.sdk_configuration.user_agent``.
+    """
+    pass

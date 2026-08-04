@@ -58,7 +58,6 @@ pytest tests/ -v
 - `test_research.py` - Tests for the Research API (`/v1/research`) including background mode, output_schema, and source_control
 - `test_research_helpers.py` - Tests for the hand-maintained `research_helpers` module (background submission, polling, streaming, research_and_wait)
 - `test_security_env.py` - Tests for environment variable precedence (`YDC_API_KEY` / `YOU_API_KEY_AUTH`)
-- `test_user_agent_hook.py` - Tests for the `YDCUserAgentOverrideHook` custom user-agent pass-through
 - `test_performance.py` - Performance/instrumentation tests measuring SDK overhead
 - `test_live.py` - Live API tests that run against the real You.com API (requires API key)
 
