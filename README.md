@@ -248,7 +248,7 @@ with You(
 
 ### [Answer](docs/sdks/answer/README.md)
 
-* [create](docs/sdks/answer/README.md#create) - Returns a synthesized answer with citations from web search results
+* [answer](docs/sdks/answer/README.md#answer) - Returns a synthesized answer with citations from web search results
 
 ### Keyless Search
 

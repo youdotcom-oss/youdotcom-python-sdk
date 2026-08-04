@@ -4,11 +4,13 @@
 
 The Answer API returns a synthesized natural-language answer with citations and the web results used to generate it. Send a `query` with optional freshness, locale, and domain controls.
 
+Called as a direct method on the `You` client: `you.answer(query=...)`.
+
 ### Available Operations
 
-* [create](#create) - Returns a synthesized answer with citations from web search results
+* [answer](#answer) - Returns a synthesized answer with citations from web search results
 
-## create
+## answer
 
 Returns a synthesized natural-language answer with citations and the web results used to generate it. Provide a `query` and optional freshness, locale, and domain controls.
 
@@ -23,7 +25,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.answer.create(query="What are the main causes of the 2008 financial crisis?")
+    res = you.answer(query="What are the main causes of the 2008 financial crisis?")
 
     # Handle response
     print(res.answer)

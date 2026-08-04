@@ -64,7 +64,7 @@ def _async_you(handler, *, api_key: str | None = "test-key"):
 
 class TestAnswerSuccess:
     def test_returns_answer_response(self):
-        res = _sync_you(_make_handler(200)).answer.create(query="quantum computing 2025")
+        res = _sync_you(_make_handler(200)).answer(query="quantum computing 2025")
         assert isinstance(res, AnswerResponse)
         assert "Quantum computing" in res.answer
         assert len(res.citations) == 2
@@ -87,7 +87,7 @@ class TestAnswerSuccess:
                 200, headers={"content-type": "application/json"}, content=_ANSWER_BODY
             )
 
-        _sync_you(handler).answer.create(query="test")
+        _sync_you(handler).answer(query="test")
         assert captured["method"] == "POST"
         assert "/v1/answer" in captured["url"]
 
@@ -100,7 +100,7 @@ class TestAnswerSuccess:
                 200, headers={"content-type": "application/json"}, content=_ANSWER_BODY
             )
 
-        _sync_you(handler).answer.create(
+        _sync_you(handler).answer(
             query="test",
             include_domains=["nature.com", "science.org"],
             country="US",
@@ -120,7 +120,7 @@ class TestAnswerSuccess:
                 200, headers={"content-type": "application/json"}, content=_ANSWER_BODY
             )
 
-        _sync_you(handler).answer.create(
+        _sync_you(handler).answer(
             query="test",
             exclude_domains=["spam.com"],
             boost_domains=["reuters.com"],
@@ -144,7 +144,7 @@ class TestAnswerSuccess:
             client=httpx.Client(transport=httpx.MockTransport(handler)),
             api_key_auth="test-key",
         )
-        you.answer.create(query="test")
+        you.answer(query="test")
         assert "http://custom.local" in captured["url"]
         assert "/v1/answer" in captured["url"]
 
@@ -158,7 +158,7 @@ class TestAnswerSuccess:
                 200, headers={"content-type": "application/json"}, content=_ANSWER_BODY
             )
 
-        _sync_you(handler).answer.create(query="test", language="en", country="us")
+        _sync_you(handler).answer(query="test", language="en", country="us")
         assert captured["body"]["language"] == "EN"
         assert captured["body"]["country"] == "US"
 
@@ -171,7 +171,7 @@ class TestAnswerSuccess:
                 200, headers={"content-type": "application/json"}, content=_ANSWER_BODY
             )
 
-        _sync_you(handler).answer.create(query="test")
+        _sync_you(handler).answer(query="test")
         body = captured["body"]
         assert "freshness" not in body
         assert "country" not in body
@@ -180,7 +180,7 @@ class TestAnswerSuccess:
 
     @pytest.mark.asyncio
     async def test_async_returns_answer_response(self):
-        res = await _async_you(_make_handler(200)).answer.create_async(query="quantum")
+        res = await _async_you(_make_handler(200)).answer_async(query="quantum")
         assert isinstance(res, AnswerResponse)
         assert len(res.citations) == 2
         assert len(res.results.web) == 2
@@ -194,7 +194,7 @@ class TestAnswerErrors:
             "upgrade_url": "https://you.com/platform",
         })
         with pytest.raises(PaymentRequiredResponseError) as exc_info:
-            _sync_you(_make_handler(402, body)).answer.create(query="test")
+            _sync_you(_make_handler(402, body)).answer(query="test")
         assert exc_info.value.status_code == 402
         assert exc_info.value.data.message == "Insufficient credits"
         assert exc_info.value.data.upgrade_url == "https://you.com/platform"
@@ -211,7 +211,7 @@ class TestAnswerErrors:
             "reset_at": "2026-08-05T00:00:00Z",
         })
         with pytest.raises(PaymentRequiredResponseError) as exc_info:
-            _sync_you(_make_handler(402, body)).answer.create(query="test")
+            _sync_you(_make_handler(402, body)).answer(query="test")
         assert exc_info.value.data.limit == 100
         assert exc_info.value.data.used == 100
         assert exc_info.value.data.period == "day"
@@ -220,17 +220,17 @@ class TestAnswerErrors:
     def test_401_raises_unauthorized_error(self):
         body = json.dumps({"detail": "Invalid or expired API key"})
         with pytest.raises(UnauthorizedResponseError):
-            _sync_you(_make_handler(401, body), api_key="bad-key").answer.create(query="test")
+            _sync_you(_make_handler(401, body), api_key="bad-key").answer(query="test")
 
     def test_403_raises_forbidden_error(self):
         body = json.dumps({"detail": "Missing required scopes"})
         with pytest.raises(ForbiddenResponseError):
-            _sync_you(_make_handler(403, body)).answer.create(query="test")
+            _sync_you(_make_handler(403, body)).answer(query="test")
 
     def test_422_raises_unprocessable_entity_error(self):
         body = json.dumps({"detail": [{"type": "missing", "loc": ["body", "query"], "msg": "Field required"}]})
         with pytest.raises(UnprocessableEntityResponseError) as exc_info:
-            _sync_you(_make_handler(422, body)).answer.create(query="")
+            _sync_you(_make_handler(422, body)).answer(query="")
         # FastAPI validation format: detail array
         assert exc_info.value.data.detail is not None
         assert exc_info.value.data.detail[0]["type"] == "missing"
@@ -239,7 +239,7 @@ class TestAnswerErrors:
         """422 in JSON:API format {errors: [{status, code, title, detail}]}."""
         body = json.dumps({"errors": [{"status": "422", "code": "unprocessable_entity", "title": "Unprocessable Entity", "detail": "invalid request parameter(s)"}]})
         with pytest.raises(UnprocessableEntityResponseError) as exc_info:
-            _sync_you(_make_handler(422, body)).answer.create(query="")
+            _sync_you(_make_handler(422, body)).answer(query="")
         assert exc_info.value.data.errors is not None
         assert exc_info.value.data.errors[0]["code"] == "unprocessable_entity"
 
@@ -247,21 +247,21 @@ class TestAnswerErrors:
         """422 in search spec format {error: string}."""
         body = json.dumps({"error": "invalid request parameter(s)"})
         with pytest.raises(UnprocessableEntityResponseError) as exc_info:
-            _sync_you(_make_handler(422, body)).answer.create(query="")
+            _sync_you(_make_handler(422, body)).answer(query="")
         assert exc_info.value.data.error == "invalid request parameter(s)"
 
     def test_500_with_json_api_errors(self):
         """500 in JSON:API format {errors: [...]}."""
         body = json.dumps({"errors": [{"status": "500", "code": "internal_server_error", "title": "Internal Server Error"}]})
         with pytest.raises(InternalServerErrorResponse) as exc_info:
-            _sync_you(_make_handler(500, body)).answer.create(query="test")
+            _sync_you(_make_handler(500, body)).answer(query="test")
         assert exc_info.value.data.errors is not None
         assert exc_info.value.data.errors[0]["code"] == "internal_server_error"
 
     def test_4xx_fallback_raises_default_error(self):
         body = json.dumps({"detail": "rate limited"})
         with pytest.raises(YouDefaultError):
-            _sync_you(_make_handler(429, body)).answer.create(query="test")
+            _sync_you(_make_handler(429, body)).answer(query="test")
 
     @pytest.mark.asyncio
     async def test_async_402_raises_payment_required_error(self):
@@ -271,7 +271,7 @@ class TestAnswerErrors:
             "upgrade_url": "https://you.com/platform",
         })
         with pytest.raises(PaymentRequiredResponseError) as exc_info:
-            await _async_you(_make_handler(402, body)).answer.create_async(query="test")
+            await _async_you(_make_handler(402, body)).answer_async(query="test")
         assert exc_info.value.status_code == 402
         assert exc_info.value.data.error == "payment_required"
 
@@ -279,4 +279,4 @@ class TestAnswerErrors:
     async def test_async_500_raises_internal_server_error(self):
         body = json.dumps({"detail": "internal server error"})
         with pytest.raises(InternalServerErrorResponse):
-            await _async_you(_make_handler(500, body)).answer.create_async(query="test")
+            await _async_you(_make_handler(500, body)).answer_async(query="test")

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Answer API**: New `Answer` sub-SDK — `you.answer.create()` / `you.answer.create_async()` for `POST /v1/answer`. Returns a synthesized markdown answer with inline citations (`[[1, 2]]`), a citations array (source URLs + supporting excerpts), and web results. Accepts `query` (required), `freshness`, `country`, `language`, `include_domains`, `exclude_domains`, `boost_domains`. Requires an API key. Country and language accept plain strings (e.g. `"us"`, `"en"`) and are normalized to uppercase automatically.
+- **Answer API**: New direct method `you.answer()` / `you.answer_async()` for `POST /v1/answer`. Returns a synthesized markdown answer with inline citations (`[[1, 2]]`), a citations array (source URLs + supporting excerpts), and web results. Accepts `query` (required), `freshness`, `country`, `language`, `include_domains`, `exclude_domains`, `boost_domains`. Requires an API key. Country and language accept plain strings (e.g. `"us"`, `"en"`) and are normalized to uppercase automatically.
 - **Keyless search helper**: `search_helpers.search()` / `search_async()` target `POST /v1/agents/search` on `api.you.com` — the keyless-capable proxy. With no API key, runs in the free tier (100 queries/day, count ≤ 50, no livecrawl). With a key, forwards to the full search endpoint. Language strings are normalized to uppercase.
 - **`PaymentRequiredResponseError`**: New first-class error class for HTTP 402 responses, matching the `UpgradeRequiredResponse` schema (`error`, `message`, `upgrade_url`, `limit`, `used`, `period`, `reset_at`). Shared by both search and answer 402 handlers. Replaces the previous `FreeTierLimitError`.
 

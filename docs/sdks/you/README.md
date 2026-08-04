@@ -17,6 +17,7 @@ Comprehensive API for You.com services:
 
 ### Available Operations
 
+* [answer](#answer) - Returns a synthesized answer with citations from web search results
 * [search_post](#search_post) - Returns a list of unified search results from web and news sources
 * [research](#research) - Returns comprehensive research-grade answers with multi-step reasoning
 * [get_research_task](#get_research_task) - Get the status of a background research task

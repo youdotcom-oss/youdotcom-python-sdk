@@ -4,14 +4,14 @@
 
 ### Answer API
 
-New `Answer` sub-SDK for `POST /v1/answer`:
+New direct method `you.answer()` for `POST /v1/answer`:
 
 ```python
 import os
 from youdotcom import You
 
 with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
-    res = you.answer.create(query="What causes the 2008 financial crisis?")
+    res = you.answer(query="What causes the 2008 financial crisis?")
     print(res.answer)           # markdown with [[1, 2]] citations
     print(res.citations[0].source)  # source URL
     print(res.results.web[0].title) # web result title

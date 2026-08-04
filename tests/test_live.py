@@ -719,7 +719,7 @@ class TestLiveAnswer:
     def test_basic_answer(self, you_client):
         """Test basic answer query returns AnswerResponse with answer + citations."""
         with you_client as you:
-            res = you.answer.create(query="What is the capital of France?")
+            res = you.answer(query="What is the capital of France?")
 
             assert isinstance(res, AnswerResponse)
             assert len(res.answer) > 0
@@ -737,7 +737,7 @@ class TestLiveAnswer:
     def test_answer_with_freshness(self, you_client):
         """Test answer with freshness filter."""
         with you_client as you:
-            res = you.answer.create(
+            res = you.answer(
                 query="Latest AI developments",
                 freshness="week",
             )
@@ -748,7 +748,7 @@ class TestLiveAnswer:
     def test_answer_with_country(self, you_client):
         """Test answer with country filter."""
         with you_client as you:
-            res = you.answer.create(
+            res = you.answer(
                 query="Best restaurants in London",
                 country=Country.GB,
             )
@@ -759,7 +759,7 @@ class TestLiveAnswer:
     def test_answer_with_boost_domains(self, you_client):
         """Test answer with boost_domains (can combine with exclude, not include)."""
         with you_client as you:
-            res = you.answer.create(
+            res = you.answer(
                 query="Python type hints",
                 boost_domains=["python.org", "docs.python.org"],
             )
@@ -771,7 +771,7 @@ class TestLiveAnswer:
     async def test_async_answer(self, you_client):
         """Test async answer.create_async()."""
         with you_client as you:
-            res = await you.answer.create_async(query="What is 2+2?")
+            res = await you.answer_async(query="What is 2+2?")
 
             assert isinstance(res, AnswerResponse)
             assert len(res.answer) > 0
