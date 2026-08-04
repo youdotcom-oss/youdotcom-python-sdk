@@ -6,6 +6,7 @@ import httpx
 import pytest
 
 from youdotcom import You
+from youdotcom._version import __version__
 from youdotcom.errors import (
     InternalServerErrorResponse,
     PaymentRequiredResponseError,
@@ -111,6 +112,38 @@ class TestSearchSuccess:
         search(_sync_you(handler), query="python")
         assert captured["method"] == "POST"
         assert "/v1/agents/search" in captured["url"]
+
+    def test_default_user_agent_is_set(self):
+        """Default UA on the request is youdotcom-python-sdk/{version}."""
+        captured: dict = {}
+
+        def handler(request):
+            captured["ua"] = request.headers.get("user-agent", "")
+            return httpx.Response(
+                200, headers={"content-type": "application/json"}, content=_SEARCH_BODY
+            )
+
+        search(_sync_you(handler), query="python")
+        assert captured["ua"] == f"youdotcom-python-sdk/{__version__}"
+
+    def test_custom_user_agent_passes_through(self):
+        """A custom user_agent overrides the default on the wire."""
+        captured: dict = {}
+
+        def handler(request):
+            captured["ua"] = request.headers.get("user-agent", "")
+            return httpx.Response(
+                200, headers={"content-type": "application/json"}, content=_SEARCH_BODY
+            )
+
+        you = You(
+            api_key_auth="test-key",
+            server_url="http://mock.local",
+            client=httpx.Client(transport=httpx.MockTransport(handler)),
+        )
+        you.sdk_configuration.user_agent = "my-integration/1.0"
+        search(you, query="python")
+        assert captured["ua"] == "my-integration/1.0"
 
     @pytest.mark.asyncio
     async def test_async_keyed_search_returns_search_response(self):

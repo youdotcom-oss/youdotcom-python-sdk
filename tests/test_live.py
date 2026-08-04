@@ -833,6 +833,16 @@ class TestLiveSearchHelpers:
             assert res.results.web is not None
             assert len(res.results.web) > 0
 
+    def test_custom_user_agent_keyless(self):
+        """A custom user_agent doesn't break the keyless search path."""
+        you = You(timeout_ms=LIVE_TIMEOUT_MS)
+        you.sdk_configuration.user_agent = "test-integration/1.0"
+        with you:
+            res = search_helper(you, query="Python programming language", count=3)
+
+            assert res.results is not None
+            assert res.results.web is not None
+
 
 if __name__ == "__main__":
     # Run with: python -m pytest tests/test_live.py -v
