@@ -4,5 +4,5 @@ from __future__ import annotations
 
 
 SEARCH_POST_OP_SERVERS = [
-    "https://ydc-index.io",
+    "https://api.you.com",
 ]

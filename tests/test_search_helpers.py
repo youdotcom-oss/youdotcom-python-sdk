@@ -8,12 +8,13 @@ import pytest
 from youdotcom import You
 from youdotcom.errors import (
     InternalServerErrorResponse,
+    PaymentRequiredResponseError,
     UnauthorizedResponseError,
     UnprocessableEntityResponseError,
     YouDefaultError,
 )
 from youdotcom.models import SearchResponse
-from youdotcom.search_helpers import FreeTierLimitError, search, search_async
+from youdotcom.search_helpers import search, search_async
 
 
 _SEARCH_BODY = json.dumps(
@@ -105,12 +106,17 @@ class TestSearchSuccess:
 
 
 class TestSearchErrors:
-    def test_402_raises_free_tier_limit_error(self):
-        body = json.dumps({"error": "count exceeds free tier limit of 50"})
-        with pytest.raises(FreeTierLimitError) as exc_info:
+    def test_402_raises_payment_required_error(self):
+        body = json.dumps({
+            "error": "payment_required",
+            "message": "Insufficient credits",
+            "upgrade_url": "https://you.com/platform",
+        })
+        with pytest.raises(PaymentRequiredResponseError) as exc_info:
             search(_sync_you(_make_handler(402, body)), query="python", count=100)
         assert exc_info.value.status_code == 402
-        assert exc_info.value.body is not None
+        assert exc_info.value.data.message == "Insufficient credits"
+        assert exc_info.value.data.upgrade_url == "https://you.com/platform"
 
     def test_401_raises_unauthorized_error(self):
         body = json.dumps({"detail": "invalid api key"})
@@ -133,11 +139,16 @@ class TestSearchErrors:
             search(_sync_you(_make_handler(429, body)), query="python")
 
     @pytest.mark.asyncio
-    async def test_async_402_raises_free_tier_limit_error(self):
-        body = json.dumps({"error": "free tier limit exceeded"})
-        with pytest.raises(FreeTierLimitError) as exc_info:
+    async def test_async_402_raises_payment_required_error(self):
+        body = json.dumps({
+            "error": "payment_required",
+            "message": "Free tier limit exceeded",
+            "upgrade_url": "https://you.com/platform",
+        })
+        with pytest.raises(PaymentRequiredResponseError) as exc_info:
             await search_async(_async_you(_make_handler(402, body)), query="python", count=100)
         assert exc_info.value.status_code == 402
+        assert exc_info.value.data.error == "payment_required"
 
     @pytest.mark.asyncio
     async def test_async_401_raises_unauthorized_error(self):

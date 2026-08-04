@@ -10,7 +10,7 @@ from youdotcom.types import BaseModel, Nullable, OptionalNullable, UNSET, UNSET_
 
 
 CONTENTS_OP_SERVERS = [
-    "https://ydc-index.io",
+    "https://api.you.com",
 ]
 
 

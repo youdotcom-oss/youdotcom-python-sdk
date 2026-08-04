@@ -28,22 +28,6 @@ from youdotcom.utils import get_security_from_env
 from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
 
 
-class FreeTierLimitError(Exception):
-    """Raised when the keyless free-tier search endpoint returns HTTP 402.
-
-    Carries the raw response ``body`` so callers can surface the upgrade
-    message / URL.
-    """
-
-    status_code: int
-    body: Optional[str]
-
-    def __init__(self, message: str, *, body: Optional[str] = None) -> None:
-        super().__init__(message)
-        self.status_code = 402
-        self.body = body
-
-
 def search(
     client: You,
     *,
@@ -265,12 +249,11 @@ def _handle_response(http_res: Any) -> models.SearchResponse:
     response_data: Any = None
     if utils.match_response(http_res, "200", "application/json"):
         return unmarshal_json_response(models.SearchResponse, http_res)
-    if utils.match_response(http_res, "402", "*"):
-        text = utils.stream_to_text(http_res)
-        raise FreeTierLimitError(
-            text or "Free-tier limit exceeded — set YDC_API_KEY to unlock full features.",
-            body=text,
+    if utils.match_response(http_res, "402", "application/json"):
+        response_data = unmarshal_json_response(
+            errors.PaymentRequiredResponseErrorData, http_res
         )
+        raise errors.PaymentRequiredResponseError(response_data, http_res)
     if utils.match_response(http_res, "401", "application/json"):
         response_data = unmarshal_json_response(
             errors.UnauthorizedResponseErrorData, http_res
@@ -305,12 +288,11 @@ async def _handle_response_async(http_res: Any) -> models.SearchResponse:
     response_data: Any = None
     if utils.match_response(http_res, "200", "application/json"):
         return unmarshal_json_response(models.SearchResponse, http_res)
-    if utils.match_response(http_res, "402", "*"):
-        text = await utils.stream_to_text_async(http_res)
-        raise FreeTierLimitError(
-            text or "Free-tier limit exceeded — set YDC_API_KEY to unlock full features.",
-            body=text,
+    if utils.match_response(http_res, "402", "application/json"):
+        response_data = unmarshal_json_response(
+            errors.PaymentRequiredResponseErrorData, http_res
         )
+        raise errors.PaymentRequiredResponseError(response_data, http_res)
     if utils.match_response(http_res, "401", "application/json"):
         response_data = unmarshal_json_response(
             errors.UnauthorizedResponseErrorData, http_res

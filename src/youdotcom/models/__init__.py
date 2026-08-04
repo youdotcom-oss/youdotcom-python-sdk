@@ -13,6 +13,11 @@ if TYPE_CHECKING:
         WorkflowConfig,
         WorkflowConfigTypedDict,
     )
+    from .answercitation import AnswerCitation
+    from .answerop import ANSWER_OP_SERVERS
+    from .answerrequestbody import AnswerRequestBody
+    from .answerresponse import AnswerResponse, AnswerResults
+    from .answersearchresult import AnswerSearchResult
     from .agentruns422response_error import Detail, DetailTypedDict, Loc, LocTypedDict
     from .agentrunsbatchresponse import (
         AgentRunsBatchResponse,
@@ -197,6 +202,12 @@ __all__ = [
     "AGENTS_RUNS_OP_SERVERS",
     "AdvancedAgentRunsRequest",
     "AdvancedAgentRunsRequestTypedDict",
+    "ANSWER_OP_SERVERS",
+    "AnswerCitation",
+    "AnswerRequestBody",
+    "AnswerResponse",
+    "AnswerResults",
+    "AnswerSearchResult",
     "AgentRunsBatchResponse",
     "AgentRunsBatchResponseTypedDict",
     "AgentRunsResponseOutput",
@@ -366,6 +377,12 @@ _dynamic_imports: dict[str, str] = {
     "ToolTypedDict": ".advancedagentrunsrequest",
     "WorkflowConfig": ".advancedagentrunsrequest",
     "WorkflowConfigTypedDict": ".advancedagentrunsrequest",
+    "ANSWER_OP_SERVERS": ".answerop",
+    "AnswerCitation": ".answercitation",
+    "AnswerRequestBody": ".answerrequestbody",
+    "AnswerResponse": ".answerresponse",
+    "AnswerResults": ".answerresponse",
+    "AnswerSearchResult": ".answersearchresult",
     "Detail": ".agentruns422response_error",
     "DetailTypedDict": ".agentruns422response_error",
     "Loc": ".agentruns422response_error",

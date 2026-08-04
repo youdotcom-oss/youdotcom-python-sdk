@@ -29,6 +29,7 @@ from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
 
 if TYPE_CHECKING:
     from youdotcom.agents import Agents
+    from youdotcom.answer import Answer
     from youdotcom.contents_sdk import ContentsSDK
     from youdotcom.search import Search
 
@@ -48,10 +49,12 @@ class You(BaseSDK):
     """
 
     agents: "Agents"
+    answer: "Answer"
     search: "Search"
     contents: "ContentsSDK"
     _sub_sdk_map = {
         "agents": ("youdotcom.agents", "Agents"),
+        "answer": ("youdotcom.answer", "Answer"),
         "search": ("youdotcom.search", "Search"),
         "contents": ("youdotcom.contents_sdk", "ContentsSDK"),
     }

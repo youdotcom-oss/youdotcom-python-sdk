@@ -15,7 +15,7 @@ from youdotcom.utils import FieldMetadata, QueryParamMetadata
 
 
 SEARCH_OP_SERVERS = [
-    "https://ydc-index.io",
+    "https://api.you.com",
 ]
 
 
