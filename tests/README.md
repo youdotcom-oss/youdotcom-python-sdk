@@ -102,11 +102,14 @@ Tests are organized into logical classes using pytest:
 
 ### Running Live Tests
 
-The `test_live.py` file contains tests that run against the real You.com API. These are skipped by default unless an API key is provided:
+The `test_live.py` file contains tests that run against the real You.com API. Keyed tests are skipped unless an API key is provided. Keyless search tests (`TestLiveSearchHelpers`) run without an API key by default, since they verify the free-tier `/v1/agents/search` proxy:
 
 ```bash
-# Run live tests with your API key
+# Run live tests with your API key (enables keyed tests)
 YDC_API_KEY="your-api-key" pytest tests/test_live.py -v
+
+# Run only keyless live tests (no API key needed)
+pytest tests/test_live.py::TestLiveSearchHelpers -v
 
 # Run all tests except live tests
 pytest tests/ --ignore=tests/test_live.py -v

@@ -32,15 +32,18 @@ Requires an API key. `country` and `language` accept plain strings (e.g. `"us"`,
 The standalone `FreeTierLimitError` exception in `search_helpers.py` has been replaced with the first-class `PaymentRequiredResponseError` (extends `YouError`). The new error provides structured data:
 
 ```python
+from youdotcom import You
 from youdotcom.errors import PaymentRequiredResponseError
+from youdotcom.search_helpers import search
 
-try:
-    search(you, query="test", count=100)  # exceeds free tier
-except PaymentRequiredResponseError as e:
-    print(e.data.message)       # "Insufficient credits"
-    print(e.data.upgrade_url)   # "https://you.com/platform"
-    print(e.data.limit)         # 100
-    print(e.data.reset_at)      # "2026-08-05T00:00:00Z"
+with You() as you:
+    try:
+        search(you, query="test", count=100)  # exceeds free tier
+    except PaymentRequiredResponseError as e:
+        print(e.data.message)       # "Insufficient credits"
+        print(e.data.upgrade_url)   # "https://you.com/platform"
+        print(e.data.limit)         # 100
+        print(e.data.reset_at)      # "2026-08-05T00:00:00Z"
 ```
 
 ### 422/500 Error Models Expanded

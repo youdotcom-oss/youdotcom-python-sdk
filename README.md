@@ -684,6 +684,8 @@ s = You(debug_logger=logging.getLogger("youdotcom"))
 ```
 
 You can also enable a default debug logger by setting an environment variable `YOU_DEBUG` to true.
+
+**Warning:** Debug logs include full request headers and bodies, which may contain API keys and sensitive data. Do not enable debug logging in production or commit debug logs to version control.
 <!-- End Debugging [debug] -->
 
 # Development
