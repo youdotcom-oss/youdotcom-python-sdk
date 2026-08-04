@@ -6,7 +6,6 @@ The official developer-friendly & type-safe Python SDK specifically designed to 
 </div>
 <br >
 <div align="center">
-    <a href="https://www.speakeasy.com/?utm_source=openapi&utm_campaign=python"><img src="https://www.speakeasy.com/assets/badges/built-by-speakeasy.svg" /></a>
     <a href="https://opensource.org/licenses/MIT">
         <img src="https://img.shields.io/badge/License-MIT-blue.svg" style="width: 100px; height: 28px;" />
     </a>
@@ -22,9 +21,10 @@ Multi-step reasoning with comprehensive research capabilities
 Finance-focused multi-step research with competitive accuracy at same price points and latencies as the Research API
 Comprehensive API for You.com services:
 - **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
+- **Answer API**: Get synthesized, citation-backed answers grounded in real-time web results
 - **Research API**: In-depth, multi-step research with citations and sources
 - **Finance Research API**: Finance-focused multi-step research with citations and sources
-- **Search API**: Get search results from web and news sources
+- **Search API**: Get search results from web and news sources (keyless-capable via `/v1/agents/search`)
 - **Contents API**: Retrieve and process web page content
 <!-- End Summary [summary] -->
 
@@ -245,6 +245,26 @@ with You(
 ### [Search](docs/sdks/search/README.md)
 
 * [unified](docs/sdks/search/README.md#unified) - Returns a list of unified search results from web and news sources
+
+### [Answer](docs/sdks/answer/README.md)
+
+* [create](docs/sdks/answer/README.md#create) - Returns a synthesized answer with citations from web search results
+
+### Keyless Search
+
+The SDK supports keyless search via the `/v1/agents/search` proxy endpoint. No API key required for the free tier (100 queries/day, count ≤ 50, no livecrawl).
+
+```python
+from youdotcom import You
+from youdotcom.search_helpers import search
+
+# No API key — uses the free tier
+you = You()
+res = search(you, query="What is the capital of France?", count=5)
+print(res.results.web[0].title)
+```
+
+With an API key, the same helper forwards to the full `/v1/search` endpoint with no restrictions. A `402` response raises `PaymentRequiredResponseError` with structured data (`message`, `upgrade_url`, `limit`, `used`, `period`, `reset_at`).
 
 </details>
 <!-- End Available Resources and Operations [operations] -->
