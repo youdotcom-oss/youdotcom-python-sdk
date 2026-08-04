@@ -686,8 +686,6 @@ s = You(debug_logger=logging.getLogger("youdotcom"))
 You can also enable a default debug logger by setting an environment variable `YOU_DEBUG` to true.
 <!-- End Debugging [debug] -->
 
-<!-- Placeholder for Future Speakeasy SDK Sections -->
-
 # Development
 
 ## Maturity
@@ -727,5 +725,3 @@ For more details on testing, see the [tests README](tests/README.md).
 
 While we value open-source contributions to this SDK, this library is generated programmatically. Any manual changes added to internal files will be overwritten on the next generation.
 We look forward to hearing your feedback. Feel free to open a PR or an issue with a proof of concept and we'll do our best to include it in a future release.
-
-### SDK Created by [Speakeasy](https://www.speakeasy.com/?utm_source=youdotcom&utm_campaign=python)
