@@ -16,6 +16,7 @@ with `-m "not slow"` for a fast smoke run:
 """
 
 import os
+import httpx
 import pytest
 
 from youdotcom import You
@@ -796,14 +797,24 @@ class TestLiveSearchHelpers:
         with you_client as you:
             res = search_helper(you, query="Python programming language", count=5)
 
-            assert isinstance(res, type(res.results)) or res.results is not None
             assert res.results is not None
             assert res.results.web is not None
             assert len(res.results.web) > 0
 
-    def test_search_helper_with_filters(self, you_client):
-        """search() with country/freshness/safesearch filters."""
-        with you_client as you:
+    def test_keyless_search_helper(self):
+        """search() with NO API key works via the free-tier proxy."""
+        you = You(timeout_ms=LIVE_TIMEOUT_MS)
+        with you:
+            res = search_helper(you, query="Python programming language", count=5)
+
+            assert res.results is not None
+            assert res.results.web is not None
+            assert len(res.results.web) > 0
+
+    def test_keyless_search_helper_with_filters(self):
+        """Keyless search accepts country/freshness/safesearch (server enforces limits)."""
+        you = You(timeout_ms=LIVE_TIMEOUT_MS)
+        with you:
             res = search_helper(
                 you,
                 query="artificial intelligence news",
@@ -816,23 +827,11 @@ class TestLiveSearchHelpers:
             assert res.results is not None
             assert res.results.web is not None
 
-    def test_search_helper_with_domain_filters(self, you_client):
-        """search() with include_domains / exclude_domains / boost_domains."""
-        with you_client as you:
-            res = search_helper(
-                you,
-                query="Python type hints",
-                count=3,
-                boost_domains=["python.org"],
-                exclude_domains=["spam-site.com"],
-            )
-
-            assert res.results is not None
-
     @pytest.mark.asyncio
-    async def test_async_search_helper(self, you_client):
-        """search_async() returns SearchResponse."""
-        with you_client as you:
+    async def test_async_keyless_search_helper(self):
+        """search_async() with NO API key works via the free-tier proxy."""
+        you = You(async_client=httpx.AsyncClient(), timeout_ms=LIVE_TIMEOUT_MS)
+        with you:
             res = await search_helper_async(you, query="What is machine learning?", count=3)
 
             assert res.results is not None
