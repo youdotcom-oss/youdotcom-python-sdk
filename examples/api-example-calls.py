@@ -277,9 +277,8 @@ def research_output_schema_request():
 
     assert isinstance(res, ResearchResponse)
     print(f"content_type: {res.output.content_type.value}")
-    # output.content is Union[str, Dict[str, Any]] via the overlay's
-    # additionalProperties: true. When content_type is "object" it is a
-    # plain dict, so index it directly.
+    # output.content is Union[str, Dict[str, Any]]. When content_type is
+    # "object" it is a plain dict, so index it directly.
     structured_content = res.output.content
     print(f"structured payload: {structured_content}")
 

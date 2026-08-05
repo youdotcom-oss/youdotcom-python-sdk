@@ -389,8 +389,7 @@ class TestResearchOutputSchema:
     the request body, so this test uses ``httpx.MockTransport`` to inject a
     realistic server response with ``content_type=object`` and asserts the
     SDK correctly deserializes both the ``content_type`` slot and the
-    structured payload (preserved via ``additionalProperties: true`` in the
-    overlay, which makes ``Content`` a ``Union[str, Dict[str, Any]]``).
+    structured payload (``Content`` is ``Union[str, Dict[str, Any]]``).
     """
 
     def test_output_schema_sets_content_type_to_object(self, server_url, api_key):
@@ -403,8 +402,8 @@ class TestResearchOutputSchema:
         def handler(request):
             body = json.loads(request.content)
             assert "output_schema" in body
-            # Guard the 2.4.0 regression: a reverted overlay serializes
-            # output_schema to an empty {}. Assert the schema fields survive.
+            # Guard the 2.4.0 regression: output_schema serializes
+            # to an empty {}. Assert the schema fields survive.
             assert body["output_schema"].get("properties", {}).get("same_entity")
             assert "same_entity" in body["output_schema"].get("required", [])
             return httpx.Response(
@@ -444,9 +443,8 @@ class TestResearchOutputSchema:
 
         assert isinstance(res, ResearchResponse)
         assert res.output.content_type.value == "object"
-        # Content is now Union[str, Dict[str, Any]] — the overlay injected
-        # additionalProperties: true so the structured payload round-trips
-        # as a plain dict.
+        # Content is now Union[str, Dict[str, Any]] — when content_type
+        # is "object" the structured payload round-trips as a plain dict.
         assert res.output.content is not None
         assert res.output.content == structured_payload
         assert res.output.content["same_entity"] is True

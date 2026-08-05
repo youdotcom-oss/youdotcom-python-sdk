@@ -327,9 +327,8 @@ res = you.research(
     },
 )
 assert res.output.content_type.value == "object"
-# Content is now Union[str, Dict[str, Any]] — the overlay injects
-# additionalProperties: true so the structured payload round-trips
-# as a plain dict.
+# Content is now Union[str, Dict[str, Any]] — when content_type is
+# "object" the structured payload round-trips as a plain dict.
 print(res.output.content)
 # {'same_entity': True, 'confidence': 0.95, 'evidence': [...]}
 print(res.output.content["same_entity"])  # True

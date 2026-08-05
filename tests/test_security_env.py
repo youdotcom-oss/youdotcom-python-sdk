@@ -2,8 +2,8 @@
 
 `get_security_from_env` reads `YDC_API_KEY` first and falls back to
 `YOU_API_KEY_AUTH` for backward compatibility with the 2.3.x env-var name.
-These tests lock in the precedence so a future Speakeasy regen (which
-would revert this hand-edit) is caught by CI immediately.
+These tests lock in the precedence so accidental regressions are caught
+by CI immediately.
 """
 
 import os

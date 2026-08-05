@@ -151,18 +151,7 @@ export YDC_API_KEY="your-api-key"
 
 ### Fixed
 
-- **`output_schema` requests no longer send an empty `{}` body**: the Research request body declares `output_schema` as an inline `type: object` schema (no `$ref`, no `properties`). Speakeasy was emitting `class OutputSchema(BaseModel): r"""..."""` — a docstring-only body — so pydantic's `extra="ignore"` stripped every JSON Schema field on serialize, leaving the server to receive `{}` and return 422 (`Structured output schema root must be an object`). The overlay now injects `additionalProperties: true` on the inline schema (mirror of the response-side `Content` fix), so `OutputSchema` round-trips as `Optional[Dict[str, Any]]` and the JSON Schema reaches the server intact. Regression caught before release by `tests/test_live.py::TestLiveResearchOutputSchema::test_research_output_schema_structured_payload` against prod.
-
-### Hand-maintained additions
-
-Two files in the SDK are hand-maintained rather than fully regenerated each cycle:
-
-- **`src/youdotcom/utils/security.py`** — generated with a `Code generated ... DO NOT EDIT` header (Speakeasy will overwrite on regen). The hand-edit below MUST be re-applied after every regen (or moved into the Speakeasy overlay / `x-speakeasy-env-var` extension).
-- **`src/youdotcom/_hooks/registration.py`** — generated-once per its file header (`This file is only ever generated once on the first generation and then is free to be modified`); Speakeasy does **not** overwrite it on subsequent regens, so the hand-edit below is regen-safe and will survive.
-
-    - **`security.py` env-var precedence**: `get_security_from_env` reads `YDC_API_KEY` first and falls back to `YOU_API_KEY_AUTH` for backward compatibility with the 2.3.x env-var name. Covered by `tests/test_security_env.py`. Future regens that drop the fallback will lose `2.3.x` users — re-apply the precedence chain after regen, or move it into the Speakeasy overlay.
-
-    - **`YDCUserAgentOverrideHook` honors custom `user_agent`** (regen-safe; lives in `registration.py`): Previously the hook unconditionally rewrote `User-Agent` to `youdotcom-python-sdk/{sdk_version}`. Now it detects when `sdk_configuration.user_agent` has been overridden away from the speakeasy default prefix (`speakeasy-sdk/`) and passes the custom value through. Integrations (langchain-youdotcom, youdotcom-temporal, n8n-nodes-youdotcom) can now simply set `client.sdk_configuration.user_agent = "<integration>/<version>"` after construction instead of swapping hooks.
+- **`output_schema` requests no longer send an empty `{}` body**: the Research request body declares `output_schema` as an inline `type: object` schema (no `$ref`, no `properties`). Previously the body was a docstring-only model, so pydantic's `extra="ignore"` stripped every JSON Schema field on serialize, leaving the server to receive `{}` and return 422 (`Structured output schema root must be an object`). Now `OutputSchema` round-trips as `Optional[Dict[str, Any]]` and the JSON Schema reaches the server intact. Regression caught before release by `tests/test_live.py::TestLiveResearchOutputSchema::test_research_output_schema_structured_payload` against prod.
 
 ---
 
