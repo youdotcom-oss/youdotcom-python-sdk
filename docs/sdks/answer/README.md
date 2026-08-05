@@ -29,8 +29,9 @@ with You(
 
     # Handle response
     print(res.answer)
-    for citation in res.citations:
-        print(f"  [{citation.source}] {citation.excerpts[0]}")
+    for citation in (res.citations or []):
+        excerpt = (citation.excerpts or [""])[0]
+        print(f"  [{citation.source}] {excerpt}")
 ```
 
 ### Parameters

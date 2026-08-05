@@ -183,8 +183,8 @@ class You(BaseSDK):
         freshness: Optional[
             Union[models.FreshnessValue, models.FreshnessValueTypedDict]
         ] = None,
-        country: Optional[models.Country] = None,
-        language: Optional[models.Language] = None,
+        country: Optional[Union[str, models.Country]] = None,
+        language: Optional[Union[str, models.Language]] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -331,8 +331,8 @@ class You(BaseSDK):
         freshness: Optional[
             Union[models.FreshnessValue, models.FreshnessValueTypedDict]
         ] = None,
-        country: Optional[models.Country] = None,
-        language: Optional[models.Language] = None,
+        country: Optional[Union[str, models.Country]] = None,
+        language: Optional[Union[str, models.Language]] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,

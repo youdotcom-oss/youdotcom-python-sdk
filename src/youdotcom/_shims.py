@@ -190,6 +190,12 @@ class SearchShim:
         http_headers: Optional[Mapping[str, str]] = None,
     ) -> models.SearchResponse:
         _warn("you.search.unified()", "you.search()")
+
+        def _split_csv(v: Optional[str]) -> Optional[List[str]]:
+            if v is None:
+                return None
+            return [s.strip() for s in v.split(",") if s.strip()]
+
         return self._you._search_impl(
             query=query,
             count=count,
@@ -200,9 +206,9 @@ class SearchShim:
             safesearch=safesearch,
             livecrawl=livecrawl,
             livecrawl_formats=livecrawl_formats,
-            include_domains=include_domains,
-            exclude_domains=exclude_domains,
-            boost_domains=boost_domains,
+            include_domains=_split_csv(include_domains),
+            exclude_domains=_split_csv(exclude_domains),
+            boost_domains=_split_csv(boost_domains),
             crawl_timeout=crawl_timeout,
             retries=retries,
             server_url=server_url,
@@ -258,6 +264,30 @@ class ContentsShim:
     ) -> List[models.ContentsResponse]:
         _warn("you.contents.generate()", "you.contents()")
         return self._you._contents_impl(
+            urls=urls,
+            formats=formats,
+            crawl_timeout=crawl_timeout,
+            max_age=max_age,
+            retries=retries,
+            server_url=server_url,
+            timeout_ms=timeout_ms,
+            http_headers=http_headers,
+        )
+
+    async def generate_async(
+        self,
+        *,
+        urls: Optional[Iterable[str]] = None,
+        formats: Optional[Iterable[models.ContentsFormats]] = None,
+        crawl_timeout: Optional[int] = 10,
+        max_age: OptionalNullable[int] = None,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> List[models.ContentsResponse]:
+        _warn("you.contents.generate_async()", "you.contents_async()")
+        return await self._you._contents_async_impl(
             urls=urls,
             formats=formats,
             crawl_timeout=crawl_timeout,
