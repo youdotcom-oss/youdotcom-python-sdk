@@ -256,6 +256,9 @@ pytest tests/test_performance.py -v
 ### Parallel Execution
 
 ```bash
+# Install pytest-xdist first (not included in dev deps):
+pip install pytest-xdist
+
 # Run tests in parallel (faster, but results may vary)
 pytest tests/test_performance.py -n auto -v
 ```

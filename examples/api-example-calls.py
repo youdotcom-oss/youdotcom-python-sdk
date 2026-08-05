@@ -6,14 +6,14 @@ Run this file to see interactive examples of all available API endpoints.
 Setup Instructions:
 -------------------
 1. Create and activate a virtual environment:
-   python3 -m venv venv
+   python3 -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\\Scripts\\activate
 
 2. Install the package:
    pip install youdotcom
 
-3. Run the script:
-   python api-example-calls.py
+3. Run the script from the repo root:
+   python examples/api-example-calls.py
 
    The script will prompt you to enter your API key at runtime.
 """

@@ -40,8 +40,8 @@ go run .
 ```bash
 # Install dependencies first
 uv sync --dev
-# or
-pip install -e ".[dev]"
+# or with pip:
+pip install -e . mypy pylint pyright pytest pytest-asyncio
 
 # Run tests
 pytest tests/ -v
@@ -161,7 +161,7 @@ These tests are designed to run in CI/CD environments. The automated script ensu
 
 ## Troubleshooting
 
-**Tests not found**: Ensure you've installed dev dependencies with `uv sync --dev` or `pip install -e ".[dev]"`
+**Tests not found**: Ensure you've installed dev dependencies with `uv sync --dev` or `pip install -e . mypy pylint pyright pytest pytest-asyncio`
 
 **Mock server fails to start**: Ensure you have either Go (1.21+) or Docker installed
 

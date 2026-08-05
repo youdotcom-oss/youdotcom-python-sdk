@@ -7,8 +7,7 @@ from ._version import (
 )
 from .httpclient import AsyncHttpClient, HttpClient
 from .utils import Logger, RetryConfig, remove_suffix
-from dataclasses import dataclass
-from pydantic import Field
+from dataclasses import dataclass, field
 from typing import Callable, Dict, Optional, Tuple, Union
 from youdotcom import models
 from youdotcom.types import OptionalNullable, UNSET
@@ -34,7 +33,7 @@ class SDKConfiguration:
     openapi_doc_version: str = __openapi_doc_version__
     sdk_version: str = __version__
     user_agent: str = __user_agent__
-    retry_config: OptionalNullable[RetryConfig] = Field(default_factory=lambda: UNSET)
+    retry_config: OptionalNullable[RetryConfig] = field(default_factory=lambda: UNSET)
     timeout_ms: Optional[int] = None
 
     def get_server_details(self) -> Tuple[str, Dict[str, str]]:
