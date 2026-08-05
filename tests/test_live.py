@@ -288,7 +288,7 @@ class TestLiveResearch:
 class TestLiveResearchOutputSchema:
     """Live test for Research `output_schema` parameter (beta feature).
 
-    Smoke-tests prod to ensure the overlay-generated
+    Smoke-tests prod to ensure the
     `Content = Union[str, Dict[str, Any]]` round-trips structured payloads.
     """
 
