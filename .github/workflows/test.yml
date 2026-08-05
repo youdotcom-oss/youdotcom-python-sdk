@@ -40,7 +40,7 @@ jobs:
           curl -sf http://localhost:18080/ || echo "mock server ready"
 
       - name: Run tests
-        run: pytest tests/ -v --tb=short -x
+        run: pytest tests/ -v --tb=short -x --ignore=tests/test_live.py
 
       - name: Run mypy
         run: mypy src/youdotcom/
