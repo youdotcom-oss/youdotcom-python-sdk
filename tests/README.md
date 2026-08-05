@@ -118,9 +118,7 @@ pytest tests/ --ignore=tests/test_live.py -v
 ## Test Coverage
 
 All tests cover the functionality demonstrated in the `examples/` directory:
-- ✓ All search examples (`examples/search.py`)
-- ✓ All contents examples (`examples/contents.py`)
-- ✓ All agents examples (`examples/agents.py`)
+- ✓ All API examples (`examples/api-example-calls.py`)
 
 Additionally, tests include:
 - ✓ Error response handling for all endpoints

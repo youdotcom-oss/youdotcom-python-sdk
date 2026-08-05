@@ -7,12 +7,11 @@ from youdotcom.errors import (
     ForbiddenResponseError,
     UnauthorizedResponseError,
     UnprocessableEntityResponseError,
-    YouDefaultError,
 )
 
 
 # ---------------------------------------------------------------------------
-# Error tests: search() (POST /v1/agents/search) must raise the same
+# Error tests: search() (POST /v1/agents/search) must raise the
 # consolidated *ResponseError classes.  Uses MockTransport.
 # ---------------------------------------------------------------------------
 
@@ -20,9 +19,8 @@ from youdotcom.errors import (
 class TestSearchErrors:
     """Verify search() raises the consolidated *ResponseError classes.
 
-    The CHANGELOG documents that the Search endpoint (POST) raises the
-    consolidated error classes. These tests lock that contract for the
-    POST path so a regen that mis-wires POST errors would fail CI.
+    These tests lock the error-class contract so a regen that mis-wires
+    errors would fail CI. Each test asserts the specific error class.
     """
 
     def test_unauthorized(self):
@@ -36,7 +34,7 @@ class TestSearchErrors:
         transport = httpx.MockTransport(handler)
         sdk_client = httpx.Client(transport=transport)
         you = You(server_url="http://mock.local", client=sdk_client, api_key_auth="invalid")
-        with pytest.raises((UnauthorizedResponseError, YouDefaultError)):
+        with pytest.raises(UnauthorizedResponseError):
             you.search(query="test")
         sdk_client.close()
 
@@ -51,7 +49,7 @@ class TestSearchErrors:
         transport = httpx.MockTransport(handler)
         sdk_client = httpx.Client(transport=transport)
         you = You(server_url="http://mock.local", client=sdk_client, api_key_auth="test")
-        with pytest.raises((ForbiddenResponseError, YouDefaultError)):
+        with pytest.raises(ForbiddenResponseError):
             you.search(query="test")
         sdk_client.close()
 
@@ -66,7 +64,7 @@ class TestSearchErrors:
         transport = httpx.MockTransport(handler)
         sdk_client = httpx.Client(transport=transport)
         you = You(server_url="http://mock.local", client=sdk_client, api_key_auth="test")
-        with pytest.raises((UnprocessableEntityResponseError, YouDefaultError)):
+        with pytest.raises(UnprocessableEntityResponseError):
             you.search(
                 query="test",
                 include_domains=["example.com"],

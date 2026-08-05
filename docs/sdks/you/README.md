@@ -57,7 +57,6 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
     res = you.agents(request=models.ExpressAgentRunsRequest(
-        agent=models.AgentType.EXPRESS,
         input="What are the latest AI developments?",
     ))
     print(res)
