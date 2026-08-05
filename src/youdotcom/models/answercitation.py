@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List
+from typing import List, Optional
 from youdotcom.types import BaseModel
 
 
@@ -9,5 +9,5 @@ class AnswerCitation(BaseModel):
     source: str
     r"""The URL of the cited source."""
 
-    excerpts: List[str] = []
+    excerpts: Optional[List[str]] = None
     r"""Verbatim excerpts from the cited source that support the answer."""

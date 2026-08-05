@@ -10,9 +10,6 @@ import (
 
 func pathPostV1Search(dir *logging.HTTPFileDirectory, rt *tracking.RequestTracker) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		_ = req.Header.Get("x-speakeasy-test-name")
-		_ = req.Header.Get("x-speakeasy-test-instance-id")
-
 		if err := assert.SecurityHeader(req, "X-API-Key", false); err != nil {
 			log.Printf("assertion error: %s\n", err)
 			http.Error(w, err.Error(), http.StatusUnauthorized)

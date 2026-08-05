@@ -170,7 +170,6 @@ if TYPE_CHECKING:
     from .searcheffort import SearchEffort
     from .searchmetadata import SearchMetadata, SearchMetadataTypedDict
     from .searchop import SEARCH_OP_SERVERS, SearchRequest, SearchRequestTypedDict
-    from .searchpostop import SEARCH_POST_OP_SERVERS
     from .searchrequestbody import SearchRequestBody, SearchRequestBodyTypedDict
     from .searchresponse import (
         Results,
@@ -329,7 +328,6 @@ __all__ = [
     "ResultsTypedDict",
     "Role",
     "SEARCH_OP_SERVERS",
-    "SEARCH_POST_OP_SERVERS",
     "SafeSearch",
     "SearchEffort",
     "SearchMetadata",
@@ -511,7 +509,6 @@ _dynamic_imports: dict[str, str] = {
     "SEARCH_OP_SERVERS": ".searchop",
     "SearchRequest": ".searchop",
     "SearchRequestTypedDict": ".searchop",
-    "SEARCH_POST_OP_SERVERS": ".searchpostop",
     "SearchRequestBody": ".searchrequestbody",
     "SearchRequestBodyTypedDict": ".searchrequestbody",
     "Results": ".searchresponse",

@@ -12,7 +12,7 @@ class AnswerSearchResult(BaseModel):
     title: str
     r"""The title of the source webpage."""
 
-    snippets: List[str] = []
+    snippets: Optional[List[str]] = None
     r"""Text snippets from the search result that preview its content."""
 
     page_age: Optional[str] = None

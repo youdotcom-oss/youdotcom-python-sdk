@@ -8,7 +8,7 @@ from youdotcom.types import BaseModel
 class AnswerResults(BaseModel):
     r"""Search results grouped by result type."""
 
-    web: List[AnswerSearchResult] = []
+    web: Optional[List[AnswerSearchResult]] = None
     r"""All web search results considered during answer synthesis."""
 
 
@@ -18,8 +18,8 @@ class AnswerResponse(BaseModel):
     answer: str
     r"""The synthesized response with numbered inline citations that reference items in the ``citations`` array."""
 
-    citations: List[AnswerCitation] = []
+    citations: Optional[List[AnswerCitation]] = None
     r"""The sources cited in the answer, in citation order."""
 
-    results: AnswerResults = AnswerResults()
+    results: Optional[AnswerResults] = None
     r"""Search results grouped by result type."""

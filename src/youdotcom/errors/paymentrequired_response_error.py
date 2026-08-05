@@ -7,7 +7,7 @@ from youdotcom.types import BaseModel
 
 
 class PaymentRequiredResponseErrorData(BaseModel):
-    r"""Body of a 402 ``UpgradeRequiredResponse`` — returned when the account
+    r"""Body of a 402 response — returned when the account
     cannot make paid API requests (free-tier limit exceeded, insufficient credits).
     """
     error: Optional[str] = None
