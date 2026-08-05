@@ -6,7 +6,6 @@ from .sdkconfiguration import SDKConfiguration
 from .utils.logger import Logger, get_default_logger
 from .utils.retries import RetryConfig
 import httpx
-import importlib
 from typing import (
     Any,
     Callable,
@@ -15,7 +14,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    TYPE_CHECKING,
     Union,
     cast,
 )
@@ -164,8 +162,8 @@ class You(BaseSDK):
         freshness: Optional[
             Union[models.FreshnessValue, models.FreshnessValueTypedDict]
         ] = None,
-        country: Optional[str] = None,
-        language: Optional[str] = None,
+        country: Optional[models.Country] = None,
+        language: Optional[models.Language] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -312,8 +310,8 @@ class You(BaseSDK):
         freshness: Optional[
             Union[models.FreshnessValue, models.FreshnessValueTypedDict]
         ] = None,
-        country: Optional[str] = None,
-        language: Optional[str] = None,
+        country: Optional[models.Country] = None,
+        language: Optional[models.Language] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -1024,7 +1022,7 @@ class You(BaseSDK):
         if server_url is not None:
             base_url = server_url
         else:
-            base_url = models.SEARCH_POST_OP_SERVERS[0]
+            base_url = self._get_url(None, None)
 
         request = models.SearchRequestBody(
             query=query,
@@ -1182,7 +1180,7 @@ class You(BaseSDK):
         if server_url is not None:
             base_url = server_url
         else:
-            base_url = models.SEARCH_POST_OP_SERVERS[0]
+            base_url = self._get_url(None, None)
 
         request = models.SearchRequestBody(
             query=query,
