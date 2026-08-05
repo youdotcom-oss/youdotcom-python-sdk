@@ -3,9 +3,16 @@
 The search method now targets ``/v1/agents/search`` (the keyless-capable
 proxy) instead of ``/v1/search``.  With no API key it runs in the free tier;
 with a key the proxy forwards to the full search endpoint.
+
+Three test layers:
+- **Unit** (MockTransport): TestSearchSuccess, TestSearchErrors — fast, no server.
+- **Mock server** (Go): TestSearchKeylessMockServer — verifies the keyless path
+  against the mock server with no API key header.
+- **Live**: tests/test_live.py::TestLiveSearchKeyless — hits the real API.
 """
 
 import json
+import os
 
 import httpx
 import pytest
@@ -214,3 +221,63 @@ class TestSearchErrors:
         body = json.dumps({"detail": "internal server error"})
         with pytest.raises(InternalServerErrorResponse):
             await _async_you(_make_handler(500, body)).search_async(query="python")
+
+
+# ---------------------------------------------------------------------------
+# Mock server tests — verify the keyless path against the Go mock server.
+# The mock server's POST /v1/agents/search handler accepts requests without
+# an X-API-Key header (keyless-capable). These tests require the mock server
+# running on localhost:18080 (same as performance tests).
+# ---------------------------------------------------------------------------
+
+
+def _mock_server_url() -> str:
+    return os.getenv("TEST_SERVER_URL", "http://localhost:18080")
+
+
+@pytest.fixture
+def mock_server_running():
+    """Skip if the mock server isn't running."""
+    import socket
+
+    try:
+        with socket.create_connection(("localhost", 18080), timeout=1):
+            pass
+    except (ConnectionRefusedError, OSError):
+        pytest.skip("Mock server not running on localhost:18080")
+
+
+@pytest.mark.usefixtures("mock_server_running")
+class TestSearchKeylessMockServer:
+    """Keyless search against the Go mock server (no API key)."""
+
+    def test_keyless_search_returns_results(self):
+        """you.search() with no API key hits /v1/agents/search on the mock server."""
+        you = You(server_url=_mock_server_url())
+        with you:
+            res = you.search(query="test query", count=5)
+            assert res.results is not None
+            assert res.results.web is not None
+            assert len(res.results.web) > 0
+
+    def test_keyless_search_with_string_params(self):
+        """Keyless search accepts plain string params (country, freshness, safesearch)."""
+        you = You(server_url=_mock_server_url())
+        with you:
+            res = you.search(
+                query="AI news",
+                count=3,
+                country="US",
+                freshness="week",
+                safesearch="moderate",
+            )
+            assert res.results is not None
+
+    @pytest.mark.asyncio
+    async def test_async_keyless_search(self):
+        """you.search_async() with no API key works against the mock server."""
+        you = You(server_url=_mock_server_url())
+        async with you:
+            res = await you.search_async(query="test query", count=3)
+            assert res.results is not None
+            assert res.results.web is not None

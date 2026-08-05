@@ -778,7 +778,7 @@ class TestLiveAnswer:
 
 
 # ---------------------------------------------------------------------------
-# Search helpers (keyless-capable /v1/agents/search)
+# Keyless search (POST /v1/agents/search — no API key required for free tier)
 # ---------------------------------------------------------------------------
 class TestLiveSearchKeyless:
     """Live tests for you.search() → POST /v1/agents/search (keyless-capable).
@@ -787,6 +787,7 @@ class TestLiveSearchKeyless:
     With an API key, the proxy forwards to /v1/search with full features.
     """
 
+    @requires_api_key
     def test_keyed_search(self, you_client):
         """search() with an API key returns full SearchResponse."""
         with you_client as you:

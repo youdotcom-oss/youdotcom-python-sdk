@@ -10,7 +10,7 @@ import (
 
 func pathPostV1Search(dir *logging.HTTPFileDirectory, rt *tracking.RequestTracker) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		if err := assert.SecurityHeader(req, "X-API-Key", false); err != nil {
+		if err := assert.SecurityHeader(req, "X-API-Key", true); err != nil {
 			log.Printf("assertion error: %s\n", err)
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
