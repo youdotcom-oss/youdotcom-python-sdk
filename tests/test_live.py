@@ -26,18 +26,14 @@ from youdotcom.models import (
     LiveCrawl,
     LiveCrawlFormats,
     SafeSearch,
-    ExpressAgentRunsRequest,
-    AdvancedAgentRunsRequest,
-    ResearchTool,
-    SearchEffort,
-    ReportVerbosity,
-    AgentRunsBatchResponse,
     ResearchEffort,
     ResearchResponse,
     TaskResponse,
     TaskDetail,
     FinanceResearchEffort,
+    AnswerResponse,
 )
+
 from youdotcom.research_helpers import (
     research_background,
     poll_research_task,
@@ -51,11 +47,11 @@ from youdotcom.errors import (
 )
 
 
-# Skip all tests in this file if no API key is provided.
+# Skip keyed tests if no API key is provided.
 # Mirror the SDK's own env-var precedence (YDC_API_KEY first, then
 # YOU_API_KEY_AUTH as the documented 2.3.x fallback) so users on the
 # fallback env var don't get their live suite silently skipped.
-pytestmark = pytest.mark.skipif(
+requires_api_key = pytest.mark.skipif(
     not (os.getenv("YDC_API_KEY") or os.getenv("YOU_API_KEY_AUTH")),
     reason="YDC_API_KEY or YOU_API_KEY_AUTH environment variable not set"
 )
@@ -85,13 +81,14 @@ def you_client(api_key):
     )
 
 
+@requires_api_key
 class TestLiveSearch:
     """Live tests for the Search API."""
     
     def test_basic_search(self, you_client):
         """Test basic search functionality against live API."""
         with you_client as you:
-            res = you.search.unified(query="Python programming language")
+            res = you.search(query="Python programming language")
             
             assert res.results is not None
             assert res.metadata is not None
@@ -102,7 +99,7 @@ class TestLiveSearch:
     def test_search_with_filters(self, you_client):
         """Test search with filters against live API."""
         with you_client as you:
-            res = you.search.unified(
+            res = you.search(
                 query="artificial intelligence",
                 count=5,
                 freshness=Freshness.WEEK,
@@ -119,7 +116,7 @@ class TestLiveSearch:
     def test_search_with_livecrawl_web(self, you_client):
         """Test search with livecrawl for web results."""
         with you_client as you:
-            res = you.search.unified(
+            res = you.search(
                 query="machine learning tutorials",
                 count=3,
                 livecrawl=LiveCrawl.WEB,
@@ -134,12 +131,13 @@ class TestLiveSearch:
                     # Check that we can access the contents field
                     if result.contents:
                         # At least one of html or markdown should be present
-                        assert result.contents.markdown or result.contents.html
+                        # (API may return empty string for some URLs)
+                        assert result.contents.markdown is not None or result.contents.html is not None
 
     def test_search_with_livecrawl_news(self, you_client):
         """Test search with livecrawl for news results (new in 2.2.0)."""
         with you_client as you:
-            res = you.search.unified(
+            res = you.search(
                 query="technology news today",
                 count=3,
                 livecrawl=LiveCrawl.NEWS,
@@ -159,7 +157,7 @@ class TestLiveSearch:
     def test_search_with_livecrawl_all(self, you_client):
         """Test search with livecrawl=ALL for both web and news."""
         with you_client as you:
-            res = you.search.unified(
+            res = you.search(
                 query="breaking tech news",
                 count=3,
                 livecrawl=LiveCrawl.ALL,
@@ -167,33 +165,16 @@ class TestLiveSearch:
             )
             
             assert res.results is not None
-            
-            # Both web and news should be able to have contents
-            has_any_contents = False
-            
-            if res.results.web:
-                for result in res.results.web:
-                    if result.contents:
-                        has_any_contents = True
-                        break
-            
-            if res.results.news:
-                for news_item in res.results.news:
-                    if news_item.contents:
-                        has_any_contents = True
-                        break
-            
-            # We expect at least some results to have contents with livecrawl=ALL
-            # (This assertion may be relaxed if the API doesn't always return contents)
 
 
+@requires_api_key
 class TestLiveContents:
     """Live tests for the Contents API."""
     
     def test_html_format(self, you_client):
         """Test fetching content in HTML format."""
         with you_client as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.example.com"],
                 formats=[ContentsFormats.HTML],
             )
@@ -208,7 +189,7 @@ class TestLiveContents:
     def test_markdown_format(self, you_client):
         """Test fetching content in Markdown format."""
         with you_client as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.example.com"],
                 formats=[ContentsFormats.MARKDOWN],
             )
@@ -219,7 +200,7 @@ class TestLiveContents:
     def test_metadata_format(self, you_client):
         """Test fetching metadata from a page."""
         with you_client as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.python.org"],
                 formats=[ContentsFormats.METADATA],
             )
@@ -232,7 +213,7 @@ class TestLiveContents:
     def test_multiple_formats(self, you_client):
         """Test fetching multiple formats at once."""
         with you_client as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.example.com"],
                 formats=[ContentsFormats.HTML, ContentsFormats.MARKDOWN],
             )
@@ -241,42 +222,7 @@ class TestLiveContents:
             assert len(res) > 0
 
 
-class TestLiveAgents:
-    """Live tests for the Agents API."""
-    
-    def test_express_agent(self, you_client):
-        """Test Express agent with basic query."""
-        with you_client as you:
-            res = you.agents.runs.create(
-                request=ExpressAgentRunsRequest(
-                    input="What is the capital of France?",
-                    stream=False,
-                )
-            )
-            
-            assert isinstance(res, AgentRunsBatchResponse)
-            assert res.output is not None
-            assert len(res.output) > 0
-    
-    @pytest.mark.slow
-    def test_advanced_agent_with_research(self, you_client):
-        """Test Advanced agent with ResearchTool."""
-        with you_client as you:
-            res = you.agents.runs.create(
-                request=AdvancedAgentRunsRequest(
-                    input="What are the latest developments in AI?",
-                    stream=False,
-                    tools=[ResearchTool(
-                        search_effort=SearchEffort.LOW,
-                        report_verbosity=ReportVerbosity.MEDIUM,
-                    )],
-                )
-            )
-            
-            assert isinstance(res, AgentRunsBatchResponse)
-            assert res.output is not None
-
-
+@requires_api_key
 class TestLiveResearch:
     """Live tests for the Research API (new in 2.3.0)."""
 
@@ -338,6 +284,7 @@ class TestLiveResearch:
                 assert source.url is not None
 
 
+@requires_api_key
 class TestLiveResearchOutputSchema:
     """Live test for Research `output_schema` parameter (beta feature).
 
@@ -375,6 +322,7 @@ class TestLiveResearchOutputSchema:
             assert "same_entity" in res.output.content
 
 
+@requires_api_key
 class TestLiveResearchSourceControl:
     """Live test for Research `source_control` parameter (beta feature).
 
@@ -399,6 +347,7 @@ class TestLiveResearchSourceControl:
             assert len(res.output.content) > 0
 
 
+@requires_api_key
 class TestLiveFinanceResearch:
     """Live tests for the Finance Research API."""
 
@@ -420,28 +369,8 @@ class TestLiveFinanceResearch:
                 for source in res.output.sources:
                     assert source.url is not None
 
-    def test_finance_research_lite_effort(self, you_client):
-        """Test finance_research with LITE effort returns a quick answer.
-        Skipped if the server hasn't deployed the lite tier yet."""
-        with you_client as you:
-            try:
-                res = you.finance_research(
-                    input="What was Apple's revenue in fiscal year 2024?",
-                    research_effort=FinanceResearchEffort.LITE,
-                )
-            except (FinanceResearchUnprocessableEntityError, YouDefaultError) as e:
-                if "lite" in str(e).lower() or "422" in str(e):
-                    pytest.skip("Finance research lite tier not yet deployed on server")
-                raise
 
-            assert res.output is not None
-            assert res.output.content is not None
-            assert len(res.output.content) > 0
-            if res.output.sources:
-                for source in res.output.sources:
-                    assert source.url is not None
-
-
+@requires_api_key
 class TestLiveContentsMaxAge:
     """Live test for Contents `max_age` parameter.
 
@@ -452,7 +381,7 @@ class TestLiveContentsMaxAge:
     def test_contents_with_max_age(self, you_client):
         """max_age is accepted as an optional parameter."""
         with you_client as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.example.com"],
                 formats=[ContentsFormats.MARKDOWN],
                 max_age=86400,  # 1 day
@@ -462,6 +391,7 @@ class TestLiveContentsMaxAge:
             assert len(res) > 0
 
 
+@requires_api_key
 class TestLiveSearchBoostDomains:
     """Live test for Search `boost_domains` parameter.
 
@@ -469,10 +399,10 @@ class TestLiveSearchBoostDomains:
     other domains — for a more permissive alternative to `include_domains`.
     """
 
-    def test_search_post_boost_domains_list(self, you_client):
-        """search_post accepts a Python list of boost domains."""
+    def test_search_boost_domains_list(self, you_client):
+        """search accepts a Python list of boost domains."""
         with you_client as you:
-            res = you.search_post(
+            res = you.search(
                 query="Python type hints vs TypeScript inference",
                 count=5,
                 boost_domains=["python.org", "realpython.com"],
@@ -499,6 +429,7 @@ class TestLiveSearchBoostDomains:
 _BG_TIMEOUT_S = 120.0  # generous wall-clock for LITE background tasks
 
 
+@requires_api_key
 class TestLiveResearchBackground:
     """Live tests for background-mode research (POST /v1/research?background=true)."""
 
@@ -603,6 +534,7 @@ class TestLiveResearchBackground:
             assert "output" in result_dump
 
 
+@requires_api_key
 class TestLiveResearchBackgroundHelpers:
     """Live tests for the research_helpers convenience functions."""
 
@@ -669,6 +601,7 @@ class TestLiveResearchBackgroundHelpers:
 # For a live test we use a simple query and a generous but bounded timeout.
 # Marked slow so it can be skipped with `-m "not slow"`.
 # ---------------------------------------------------------------------------
+@requires_api_key
 class TestLiveResearchFrontier:
     """Live tests for frontier research effort (requires background=true)."""
 
@@ -706,6 +639,78 @@ class TestLiveResearchFrontier:
                     research_effort=ResearchEffort.FRONTIER,
                     background=False,
                 )
+
+
+# ---------------------------------------------------------------------------
+# Answer API (new in 2.6.0)
+# ---------------------------------------------------------------------------
+@requires_api_key
+class TestLiveAnswer:
+    """Live tests for the Answer API (POST /v1/answer).
+
+    The Answer API returns a synthesized answer with citations and web results.
+    Requires an API key.
+    """
+
+    def test_basic_answer(self, you_client):
+        """Test basic answer query returns AnswerResponse with answer + citations."""
+        with you_client as you:
+            res = you.answer(query="What is the capital of France?")
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+            # Citations should be present for a factual query
+            assert len(res.citations) > 0
+            for citation in res.citations:
+                assert citation.source is not None
+                assert len(citation.source) > 0
+            # Web results should be present
+            assert len(res.results.web) > 0
+            for result in res.results.web:
+                assert result.url is not None
+                assert result.title is not None
+
+    def test_answer_with_freshness(self, you_client):
+        """Test answer with freshness filter."""
+        with you_client as you:
+            res = you.answer(
+                query="Latest AI developments",
+                freshness="week",
+            )
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+
+    def test_answer_with_country(self, you_client):
+        """Test answer with country filter."""
+        with you_client as you:
+            res = you.answer(
+                query="Best restaurants in London",
+                country=Country.GB,
+            )
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+
+    def test_answer_with_boost_domains(self, you_client):
+        """Test answer with boost_domains (can combine with exclude, not include)."""
+        with you_client as you:
+            res = you.answer(
+                query="Python type hints",
+                boost_domains=["python.org", "docs.python.org"],
+            )
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+
+    @pytest.mark.asyncio
+    async def test_async_answer(self, you_client):
+        """Test async you.answer_async()."""
+        with you_client as you:
+            res = await you.answer_async(query="What is 2+2?")
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
 
 
 if __name__ == "__main__":

@@ -175,8 +175,8 @@ class TestResearchBackground:
     async def test_research_background_async_returns_task_response(self, server_url, api_key):
         async_client = httpx.AsyncClient(
             headers={
-                "x-speakeasy-test-name": "post_/v1/research-background",
-                "x-speakeasy-test-instance-id": str(uuid.uuid4()),
+                "x-test-name": "post_/v1/research-background",
+                "x-test-instance-id": str(uuid.uuid4()),
             },
             follow_redirects=True,
         )
@@ -292,8 +292,8 @@ class TestPollResearchTask:
     async def test_poll_async_returns_completed_task_detail(self, server_url, api_key):
         async_client = httpx.AsyncClient(
             headers={
-                "x-speakeasy-test-name": "get_/v1/research/{task_id}",
-                "x-speakeasy-test-instance-id": str(uuid.uuid4()),
+                "x-test-name": "get_/v1/research/{task_id}",
+                "x-test-instance-id": str(uuid.uuid4()),
             },
             follow_redirects=True,
         )
@@ -731,9 +731,9 @@ class TestResearchAndWait:
 class TestStreamResearchEventsTolerant:
     def test_tolerant_stream_yields_all_events_with_unknown_name(self):
         # Inject a fake SSE stream with one workflow-internal event type
-        # (research.searching) that's NOT in the documented enum. The strict
-        # speakeasy decoder would raise ValidationError on it; our tolerant
-        # helper must surface it as RawStreamEvent(event="research.searching").
+        # (research.searching) that's NOT in the documented enum. A strict
+        # decoder would raise ValidationError on it; our tolerant helper must
+        # surface it as RawStreamEvent(event="research.searching").
         recorded_ua: dict = {}
 
         def record_send(request):
@@ -756,8 +756,8 @@ class TestStreamResearchEventsTolerant:
         sdk_client = httpx.Client(
             transport=transport,
             headers={
-                "x-speakeasy-test-name": "get_/v1/research/{task_id}/stream",
-                "x-speakeasy-test-instance-id": str(uuid.uuid4()),
+                "x-test-name": "get_/v1/research/{task_id}/stream",
+                "x-test-instance-id": str(uuid.uuid4()),
             },
         )
         you = You(
@@ -779,7 +779,7 @@ class TestStreamResearchEventsTolerant:
         assert isinstance(events[1], RawStreamEvent)
         assert events[1].data == {"query": "markets", "phase": "searching"}
         # And confirm the SDK still set User-Agent on the underlying request
-        # (the YDCUserAgentOverrideHook ran before send).
+        # (BaseSDK._build_request sets it directly).
         assert recorded_ua["value"] == f"youdotcom-python-sdk/{you.sdk_configuration.sdk_version}"
 # ---------------------------------------------------------------------------
 # _resolve_default_timeout: auto-adjust timeout based on research_effort.

@@ -26,7 +26,7 @@ class TestContentsBasic:
         client = create_test_http_client("post_/v1/contents")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.python.org", "https://www.example.com"],
                 formats=[ContentsFormats.HTML],
                 server_url=server_url,
@@ -41,7 +41,7 @@ class TestContentsBasic:
         client = create_test_http_client("post_/v1/contents")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.python.org"],
                 formats=[ContentsFormats.MARKDOWN],
                 server_url=server_url,
@@ -55,7 +55,7 @@ class TestContentsBasic:
         client = create_test_http_client("post_/v1/contents")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.python.org"],
                 formats=[ContentsFormats.METADATA],
                 server_url=server_url,
@@ -71,7 +71,7 @@ class TestContentsBasic:
         client = create_test_http_client("post_/v1/contents")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.python.org"],
                 formats=[ContentsFormats.HTML, ContentsFormats.MARKDOWN, ContentsFormats.METADATA],
                 server_url=server_url,
@@ -85,7 +85,7 @@ class TestContentsBasic:
         client = create_test_http_client("post_/v1/contents")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=[
                     "https://www.you.com",
                     "https://www.github.com",
@@ -103,7 +103,7 @@ class TestContentsBasic:
         client = create_test_http_client("post_/v1/contents")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.example.com"],
                 formats=[ContentsFormats.HTML],
                 server_url=server_url,
@@ -117,7 +117,7 @@ class TestContentsBasic:
         client = create_test_http_client("post_/v1/contents")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.example.com"],
                 server_url=server_url,
             )
@@ -130,7 +130,7 @@ class TestContentsBasic:
         client = create_test_http_client("post_/v1/contents")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.example.com"],
                 formats=[ContentsFormats.HTML],
                 crawl_timeout=30,  # Set timeout to 30 seconds
@@ -145,7 +145,7 @@ class TestContentsBasic:
         client = create_test_http_client("post_/v1/contents")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.example.com"],
                 formats=[ContentsFormats.MARKDOWN],
                 max_age=86400,  # 1 day in seconds
@@ -162,7 +162,7 @@ class TestContentsErrors:
         
         with You(server_url=server_url, client=client, api_key_auth="invalid") as you:
             with pytest.raises(ContentsUnauthorizedError):
-                you.contents.generate(
+                you.contents(
                     urls=["https://www.example.com"],
                     server_url=server_url,
                 )
@@ -172,7 +172,7 @@ class TestContentsErrors:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             with pytest.raises(ContentsForbiddenError):
-                you.contents.generate(
+                you.contents(
                     urls=["https://www.example.com"],
                     server_url=server_url,
                 )
@@ -181,7 +181,7 @@ class TestContentsErrors:
         client = create_test_http_client("post_/v1/contents")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=[],
                 formats=[ContentsFormats.HTML],
                 server_url=server_url,

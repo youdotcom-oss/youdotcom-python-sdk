@@ -13,8 +13,8 @@ import (
 
 func pathPostV1FinanceResearch(dir *logging.HTTPFileDirectory, rt *tracking.RequestTracker) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		test := req.Header.Get("x-speakeasy-test-name")
-		instanceID := req.Header.Get("x-speakeasy-test-instance-id")
+		test := req.Header.Get("x-test-name")
+		instanceID := req.Header.Get("x-test-instance-id")
 
 		count := rt.GetRequestCount(test, instanceID)
 

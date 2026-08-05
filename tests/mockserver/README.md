@@ -64,4 +64,4 @@ docker run -i -p 18080:18080 -t --rm mockserver -log-level=DEBUG
 ## Code Structure
 
 - **Auto-generated**: Core mock server framework, routing, and SDK models (`internal/sdk/`, `internal/server/`, `internal/logging/`, `internal/tracking/`)
-- **Custom**: Test-specific handlers with success and error scenarios for comprehensive testing (`internal/handler/pathgetv1search.go`, `internal/handler/pathpostv1contents.go`, `internal/handler/pathpostv1agentsruns.go`)
+- **Custom**: Test-specific handlers with success and error scenarios for comprehensive testing (`internal/handler/pathgetv1search.go`, `internal/handler/pathpostv1contents.go`, `internal/handler/pathpostv1search.go`)

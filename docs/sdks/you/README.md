@@ -2,13 +2,13 @@
 
 ## Overview
 
-You.com API: Unified API for Express, Advanced, and Custom Agents from You.com
+You.com API: Unified API for search, answers, research, and content from You.com
 Get the best search results from web and news sources
 Returns the HTML or Markdown of a target webpage
 Multi-step reasoning with comprehensive research capabilities
 Finance-focused multi-step research with competitive accuracy at same price points and latencies as the Research API
 Comprehensive API for You.com services:
-- **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
+- **Answer API**: Get synthesized, citation-backed answers grounded in real-time web results
 - **Research API**: In-depth, multi-step research with citations and sources
 - **Finance Research API**: Finance-focused multi-step research with citations and sources
 - **Search API**: Get search results from web and news sources
@@ -16,21 +16,38 @@ Comprehensive API for You.com services:
 
 ### Available Operations
 
-* [search_post](#search_post) - Returns a list of unified search results from web and news sources
+* [answer](#answer) - Returns a synthesized answer with citations from web search results
+* [search](#search) - Returns a list of unified search results from web and news sources
+* [contents](#contents) - Returns the content of the web pages
 * [research](#research) - Returns comprehensive research-grade answers with multi-step reasoning
 * [get_research_task](#get_research_task) - Get the status of a background research task
 * [stream_research_task](#stream_research_task) - Stream updates for a background research task
 * [finance_research](#finance_research) - Returns comprehensive finance-grade research answers with multi-step reasoning
 
-## search_post
+## answer
 
-This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
+Returns a synthesized answer with citations from web search results.
 
-`POST` is the recommended method when using complex parameters such as `include_domains` or `exclude_domains`. These fields accept JSON arrays in the request body, which is unambiguous and supports up to 500 domains per request—something that would exceed URL length limits with GET. Use GET for simple queries where HTTP cacheability matters.
+### Example Usage
 
-### Example Usage: authFailure
+```python
+import os
+from youdotcom import You
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="authFailure" -->
+with You(
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
+) as you:
+    res = you.answer(query="What is the capital of France?")
+    print(res)
+```
+
+## search
+
+Search via `POST /v1/search`. Returns unified search results from web and news sources. Requires an API key. Country and language accept plain strings and are normalized to uppercase.
+
+### Example Usage
+
+<!-- UsageSnippet language="python" operationID="search" method="post" path="/v1/search" example="authFailure" -->
 ```python
 import os
 from youdotcom import You, models
@@ -40,7 +57,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -54,7 +71,7 @@ with You(
 ```
 ### Example Usage: authorizationFailure
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="authorizationFailure" -->
+<!-- UsageSnippet language="python" operationID="search" method="post" path="/v1/search" example="authorizationFailure" -->
 ```python
 import os
 from youdotcom import You, models
@@ -64,7 +81,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -78,7 +95,7 @@ with You(
 ```
 ### Example Usage: invalidOrExpired
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="invalidOrExpired" -->
+<!-- UsageSnippet language="python" operationID="search" method="post" path="/v1/search" example="invalidOrExpired" -->
 ```python
 import os
 from youdotcom import You, models
@@ -88,7 +105,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -102,7 +119,7 @@ with You(
 ```
 ### Example Usage: invalidParams
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="invalidParams" -->
+<!-- UsageSnippet language="python" operationID="search" method="post" path="/v1/search" example="invalidParams" -->
 ```python
 import os
 from youdotcom import You, models
@@ -112,7 +129,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -126,7 +143,7 @@ with You(
 ```
 ### Example Usage: missingApiKey
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="missingApiKey" -->
+<!-- UsageSnippet language="python" operationID="search" method="post" path="/v1/search" example="missingApiKey" -->
 ```python
 import os
 from youdotcom import You, models
@@ -136,7 +153,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -150,7 +167,7 @@ with You(
 ```
 ### Example Usage: missingScopes
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="missingScopes" -->
+<!-- UsageSnippet language="python" operationID="search" method="post" path="/v1/search" example="missingScopes" -->
 ```python
 import os
 from youdotcom import You, models
@@ -160,7 +177,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -174,7 +191,7 @@ with You(
 ```
 ### Example Usage: otherAuthParsing
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="otherAuthParsing" -->
+<!-- UsageSnippet language="python" operationID="search" method="post" path="/v1/search" example="otherAuthParsing" -->
 ```python
 import os
 from youdotcom import You, models
@@ -184,7 +201,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -230,6 +247,23 @@ with You(
 | errors.UnprocessableEntityResponseError | 422                                     | application/json                        |
 | errors.InternalServerErrorResponse      | 500                                     | application/json                        |
 | errors.YouDefaultError                  | 4XX, 5XX                                | \*/\*                                   |
+
+## contents
+
+Returns the HTML or Markdown of target web pages.
+
+### Example Usage
+
+```python
+import os
+from youdotcom import You, models
+
+with You(
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
+) as you:
+    res = you.contents(urls=["https://example.com"], formats=[models.ContentsFormats.MARKDOWN])
+    print(res)
+```
 
 ## research
 
@@ -722,7 +756,7 @@ with You(
 | Parameter                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Required                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Example                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `input`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | *str*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | :heavy_check_mark:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | The financial research question or complex query requiring in-depth investigation and multi-step reasoning.<br/><br/>Note: The maximum length of the input is 40,000 characters.                                                                                                                                                                                                                                                                                                                                                                                                                        | What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `research_effort`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | [Optional[models.FinanceResearchEffort]](../../models/financeresearcheffort.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Controls how much time and effort the Finance Research API spends on your question. Higher effort levels run more searches and dig deeper into sources, at the cost of a longer response time.<br/><br/>Available levels:<br/>- `lite`: Returns answers quickly. Good for straightforward financial questions that just need a fast, reliable answer.<br/>- `deep`: The default. Spends more time researching and cross-referencing sources. Good for most financial questions, including multi-company comparisons, earnings analysis, and regulatory research.<br/>- `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex financial research tasks where you want the highest quality result. | deep                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `research_effort`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | [Optional[models.FinanceResearchEffort]](../../models/financeresearcheffort.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Controls how much time and effort the Finance Research API spends on your question. Higher effort levels run more searches and dig deeper into sources, at the cost of a longer response time.<br/><br/>Available levels:<br/>- `deep`: The default. Spends more time researching and cross-referencing sources. Good for most financial questions, including multi-company comparisons, earnings analysis, and regulatory research.<br/>- `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex financial research tasks where you want the highest quality result. | deep                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `retries`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Configuration to override the default retry behavior of the client.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 ### Response

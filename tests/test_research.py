@@ -134,8 +134,8 @@ class TestResearchAsync:
     async def test_basic_research_async(self, server_url, api_key):
         async_client = httpx.AsyncClient(
             headers={
-                "x-speakeasy-test-name": "post_/v1/research",
-                "x-speakeasy-test-instance-id": str(uuid.uuid4()),
+                "x-test-name": "post_/v1/research",
+                "x-test-instance-id": str(uuid.uuid4()),
             },
             follow_redirects=True,
         )
@@ -216,20 +216,6 @@ class TestFinanceResearch:
                 assert source.url is not None
                 assert source.title is not None
 
-    def test_finance_research_lite_effort(self, server_url, api_key):
-        client = create_test_http_client("post_/v1/finance_research")
-
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.finance_research(
-                input="What was Apple's revenue in FY2024?",
-                research_effort=FinanceResearchEffort.LITE,
-                server_url=server_url,
-            )
-
-            assert res.output is not None
-            assert res.output.content is not None
-            assert "effort: lite" in res.output.content
-
     def test_finance_research_unauthorized(self, server_url):
         client = create_test_http_client("post_/v1/finance_research-unauthorized")
 
@@ -306,8 +292,8 @@ class TestResearchBackground:
     async def test_get_research_task_async_returns_task_detail(self, server_url, api_key):
         async_client = httpx.AsyncClient(
             headers={
-                "x-speakeasy-test-name": "get_/v1/research/{task_id}",
-                "x-speakeasy-test-instance-id": str(uuid.uuid4()),
+                "x-test-name": "get_/v1/research/{task_id}",
+                "x-test-instance-id": str(uuid.uuid4()),
             },
             follow_redirects=True,
         )

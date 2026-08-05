@@ -7,7 +7,7 @@ import uuid
 def create_test_http_client(test_name: str) -> httpx.Client:
     return httpx.Client(
         headers={
-            "x-speakeasy-test-name": test_name,
-            "x-speakeasy-test-instance-id": str(uuid.uuid4()),
+            "x-test-name": test_name,
+            "x-test-instance-id": str(uuid.uuid4()),
         }
     )
