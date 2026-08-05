@@ -2,7 +2,7 @@
 
 ## 2.5.0 → 2.6.0
 
-> **This release adds new direct methods, removes the Agents API, and moves search to `POST /v1/search`.** The old sub-SDK patterns still work but emit `DeprecationWarning`. Migrate at your convenience.
+> **This release adds the Answer API, removes the Agents API, and makes `search()` a direct method on `You`.** The old sub-SDK patterns still work but emit `DeprecationWarning`. Migrate at your convenience.
 
 ### Answer API
 
