@@ -1,6 +1,6 @@
 # Contents
 
-> **DEPRECATED — removed in the current major version.** The `ContentsSDK` sub-SDK is no longer available. Use the direct method on the `You` client instead:
+> **DEPRECATED** — The `ContentsSDK` sub-SDK pattern still works but emits `DeprecationWarning`. Use the direct method on the `You` client instead:
 >
 > - `you.contents(urls=...)` (was `you.contents.generate(urls=...)`)
 > - `you.contents_async(urls=...)` (was `you.contents.generate_async(urls=...)`)
