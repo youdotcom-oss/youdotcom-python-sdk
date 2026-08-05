@@ -88,13 +88,17 @@ class You(BaseSDK):
         ), "The provided async_client must implement the AsyncHttpClient protocol."
 
         security: Any = None
-        if api_key_auth is None:
-            security = None
-        elif callable(api_key_auth):
+        # Normalize empty strings to None so keyless calls aren't broken by
+        # an empty X-API-Key header (e.g. You(api_key_auth=os.getenv("YDC_API_KEY", "")))
+        if callable(api_key_auth):
             # pylint: disable=unnecessary-lambda-assignment
-            security = lambda: models.Security(api_key_auth=api_key_auth())
-        else:
+            security = lambda: models.Security(
+                api_key_auth=(api_key_auth() or None)
+            )
+        elif api_key_auth:
             security = models.Security(api_key_auth=api_key_auth)
+        else:
+            security = None
 
         if server_url is not None:
             if url_params is not None:

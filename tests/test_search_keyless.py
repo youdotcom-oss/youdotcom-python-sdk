@@ -239,12 +239,17 @@ def _mock_server_url() -> str:
 def mock_server_running():
     """Skip if the mock server isn't running."""
     import socket
+    from urllib.parse import urlparse
+
+    parsed = urlparse(_mock_server_url())
+    host = parsed.hostname or "localhost"
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
 
     try:
-        with socket.create_connection(("localhost", 18080), timeout=1):
+        with socket.create_connection((host, port), timeout=1):
             pass
     except (ConnectionRefusedError, OSError):
-        pytest.skip("Mock server not running on localhost:18080")
+        pytest.skip(f"Mock server not running on {host}:{port}")
 
 
 @pytest.mark.usefixtures("mock_server_running")

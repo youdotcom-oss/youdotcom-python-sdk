@@ -72,9 +72,10 @@ Search via `POST /v1/agents/search` — the keyless-capable proxy. With no API k
 from youdotcom import You
 
 # No API key — uses the free tier
-you = You()
-res = you.search(query="What is the capital of France?", count=5)
-print(res.results.web[0].title)
+with You() as you:
+    res = you.search(query="What is the capital of France?", count=5)
+    if res.results and res.results.web:
+        print(res.results.web[0].title)
 ```
 
 ### Example Usage: authFailure

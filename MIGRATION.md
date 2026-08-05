@@ -39,7 +39,7 @@ you.search(query="...")
 
 ### Host Change: ydc-index.io → api.you.com
 
-`SEARCH_OP_SERVERS`, `SEARCH_POST_OP_SERVERS`, and `CONTENTS_OP_SERVERS` changed from `https://ydc-index.io` to `https://api.you.com`. This aligns with the MCP server and published docs. No code changes required — the SDK resolves the server automatically.
+`SEARCH_OP_SERVERS` and `CONTENTS_OP_SERVERS` changed from `https://ydc-index.io` to `https://api.you.com`. This aligns with the MCP server and published docs. No code changes required — the SDK resolves the server automatically.
 
 ### FreeTierLimitError → PaymentRequiredResponseError
 
@@ -51,7 +51,7 @@ from youdotcom.errors import PaymentRequiredResponseError
 
 with You() as you:
     try:
-        you.search(query="test", count=100)  # exceeds free tier
+        you.search(query="test", count=5)  # may raise 402 if out of credits
     except PaymentRequiredResponseError as e:
         print(e.data.message)       # "Insufficient credits"
         print(e.data.upgrade_url)   # "https://you.com/platform"
