@@ -27,7 +27,14 @@ If you encounter any bugs or have suggestions for improvements, please open an i
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e .
+pip install mypy pylint pyright pytest pytest-asyncio
+```
+
+Or with [uv](https://docs.astral.sh/uv/):
+
+```bash
+uv sync --dev
 ```
 
 ## Contact

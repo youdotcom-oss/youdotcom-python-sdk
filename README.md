@@ -557,7 +557,7 @@ with You(
     ], boost_domains=[
         "nytimes.com",
         "wired.com",
-    ], crawl_timeout=10, server_url="https://ydc-index.io")
+    ], crawl_timeout=10, server_url="https://api.you.com")
 
     # Handle response
     print(res)
