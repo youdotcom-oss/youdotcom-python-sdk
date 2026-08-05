@@ -1,5 +1,12 @@
 # Contents
 
+> **DEPRECATED — removed in the current major version.** The `ContentsSDK` sub-SDK is no longer available. Use the direct method on the `You` client instead:
+>
+> - `you.contents(urls=...)` (was `you.contents.generate(urls=...)`)
+> - `you.contents_async(urls=...)` (was `you.contents.generate_async(urls=...)`)
+>
+> See [docs/sdks/you/README.md](../you/README.md#contents) for the current API. The content below is kept for reference only.
+
 ## Overview
 
 ### Available Operations

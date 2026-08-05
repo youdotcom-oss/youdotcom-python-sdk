@@ -1,5 +1,12 @@
 # Search
 
+> **DEPRECATED — removed in the current major version.** The `Search` sub-SDK is no longer available. `GET /v1/search` (`you.search.unified()`) has been removed. Use the direct `POST /v1/search` method on the `You` client instead:
+>
+> - `you.search(query=...)` (was `you.search.unified(query=...)` and `you.search_post(query=...)`)
+> - `you.search_async(query=...)` (was `you.search_post_async(query=...)`)
+>
+> See [docs/sdks/you/README.md](../you/README.md#search) for the current API. The content below is kept for reference only.
+
 ## Overview
 
 ### Available Operations

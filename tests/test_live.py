@@ -95,7 +95,7 @@ class TestLiveSearch:
     def test_basic_search(self, you_client):
         """Test basic search functionality against live API."""
         with you_client as you:
-            res = you.search.unified(query="Python programming language")
+            res = you.search(query="Python programming language")
             
             assert res.results is not None
             assert res.metadata is not None
@@ -106,7 +106,7 @@ class TestLiveSearch:
     def test_search_with_filters(self, you_client):
         """Test search with filters against live API."""
         with you_client as you:
-            res = you.search.unified(
+            res = you.search(
                 query="artificial intelligence",
                 count=5,
                 freshness=Freshness.WEEK,
@@ -123,7 +123,7 @@ class TestLiveSearch:
     def test_search_with_livecrawl_web(self, you_client):
         """Test search with livecrawl for web results."""
         with you_client as you:
-            res = you.search.unified(
+            res = you.search(
                 query="machine learning tutorials",
                 count=3,
                 livecrawl=LiveCrawl.WEB,
@@ -143,7 +143,7 @@ class TestLiveSearch:
     def test_search_with_livecrawl_news(self, you_client):
         """Test search with livecrawl for news results (new in 2.2.0)."""
         with you_client as you:
-            res = you.search.unified(
+            res = you.search(
                 query="technology news today",
                 count=3,
                 livecrawl=LiveCrawl.NEWS,
@@ -163,7 +163,7 @@ class TestLiveSearch:
     def test_search_with_livecrawl_all(self, you_client):
         """Test search with livecrawl=ALL for both web and news."""
         with you_client as you:
-            res = you.search.unified(
+            res = you.search(
                 query="breaking tech news",
                 count=3,
                 livecrawl=LiveCrawl.ALL,
@@ -180,7 +180,7 @@ class TestLiveContents:
     def test_html_format(self, you_client):
         """Test fetching content in HTML format."""
         with you_client as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.example.com"],
                 formats=[ContentsFormats.HTML],
             )
@@ -195,7 +195,7 @@ class TestLiveContents:
     def test_markdown_format(self, you_client):
         """Test fetching content in Markdown format."""
         with you_client as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.example.com"],
                 formats=[ContentsFormats.MARKDOWN],
             )
@@ -206,7 +206,7 @@ class TestLiveContents:
     def test_metadata_format(self, you_client):
         """Test fetching metadata from a page."""
         with you_client as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.python.org"],
                 formats=[ContentsFormats.METADATA],
             )
@@ -219,7 +219,7 @@ class TestLiveContents:
     def test_multiple_formats(self, you_client):
         """Test fetching multiple formats at once."""
         with you_client as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.example.com"],
                 formats=[ContentsFormats.HTML, ContentsFormats.MARKDOWN],
             )
@@ -235,7 +235,7 @@ class TestLiveAgents:
     def test_express_agent(self, you_client):
         """Test Express agent with basic query."""
         with you_client as you:
-            res = you.agents.runs.create(
+            res = you.agents(
                 request=ExpressAgentRunsRequest(
                     input="What is the capital of France?",
                     stream=False,
@@ -250,7 +250,7 @@ class TestLiveAgents:
     def test_advanced_agent_with_research(self, you_client):
         """Test Advanced agent with ResearchTool."""
         with you_client as you:
-            res = you.agents.runs.create(
+            res = you.agents(
                 request=AdvancedAgentRunsRequest(
                     input="What are the latest developments in AI?",
                     stream=False,
@@ -445,7 +445,7 @@ class TestLiveContentsMaxAge:
     def test_contents_with_max_age(self, you_client):
         """max_age is accepted as an optional parameter."""
         with you_client as you:
-            res = you.contents.generate(
+            res = you.contents(
                 urls=["https://www.example.com"],
                 formats=[ContentsFormats.MARKDOWN],
                 max_age=86400,  # 1 day
@@ -466,7 +466,7 @@ class TestLiveSearchBoostDomains:
     def test_search_post_boost_domains_list(self, you_client):
         """search_post accepts a Python list of boost domains."""
         with you_client as you:
-            res = you.search_post(
+            res = you.search(
                 query="Python type hints vs TypeScript inference",
                 count=5,
                 boost_domains=["python.org", "realpython.com"],

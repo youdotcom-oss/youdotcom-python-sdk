@@ -141,7 +141,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -169,7 +169,7 @@ async def main():
         api_key_auth=os.getenv("YDC_API_KEY", ""),
     ) as you:
 
-        res = await you.search_post_async(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+        res = await you.search_async(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
             "spam-site.com",
             "other-site.com",
         ], boost_domains=[
@@ -206,7 +206,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -228,32 +228,14 @@ with You(
 
 ### [You SDK](docs/sdks/you/README.md)
 
-* [search_post](docs/sdks/you/README.md#search_post) - Returns a list of unified search results from web and news sources
+* [answer](docs/sdks/answer/README.md#answer) - Returns a synthesized answer with citations from web search results
+* [agents](docs/sdks/you/README.md#agents) - Run an Agent
+* [search](docs/sdks/you/README.md#search) - Returns a list of unified search results from web and news sources
+* [contents](docs/sdks/you/README.md#contents) - Returns the content of the web pages
 * [research](docs/sdks/you/README.md#research) - Returns comprehensive research-grade answers with multi-step reasoning
 * [get_research_task](docs/sdks/you/README.md#get_research_task) - Get the status of a background research task
 * [stream_research_task](docs/sdks/you/README.md#stream_research_task) - Stream updates for a background research task
 * [finance_research](docs/sdks/you/README.md#finance_research) - Returns comprehensive finance-grade research answers with multi-step reasoning
-
-* [answer](docs/sdks/answer/README.md#answer) - Returns a synthesized answer with citations from web search results
-* [create_run](docs/sdks/you/README.md#create_run) - Run an Agent
-* [search_unified](docs/sdks/you/README.md#search_unified) - Returns a list of unified search results from web and news sources
-* [generate_contents](docs/sdks/you/README.md#generate_contents) - Returns the content of the web pages
-
-### [Agents.Runs](docs/sdks/runs/README.md) (deprecated — use `you.create_run()`)
-
-* [create](docs/sdks/runs/README.md#create) - Run an Agent
-
-### [Contents](docs/sdks/contentssdk/README.md) (deprecated — use `you.generate_contents()`)
-
-* [generate](docs/sdks/contentssdk/README.md#generate) - Returns the content of the web pages
-
-### [Search](docs/sdks/search/README.md) (deprecated — use `you.search_unified()`)
-
-* [unified](docs/sdks/search/README.md#unified) - Returns a list of unified search results from web and news sources
-
-### [Answer](docs/sdks/answer/README.md)
-
-* [answer](docs/sdks/answer/README.md#answer) - Returns a synthesized answer with citations from web search results
 
 ### Keyless Search
 
@@ -307,7 +289,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    response = you.agents.runs.create(request=ExpressAgentRunsRequest(
+    response = you.agents(request=ExpressAgentRunsRequest(
         input="Restaurants in San Francisco",
         stream=True,
         tools=[
@@ -377,7 +359,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -403,7 +385,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -443,7 +425,7 @@ with You(
     res = None
     try:
 
-        res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+        res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
             "spam-site.com",
             "other-site.com",
         ], boost_domains=[
@@ -551,7 +533,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[

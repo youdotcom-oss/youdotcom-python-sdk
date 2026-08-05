@@ -338,7 +338,7 @@ def test_search_with_new_filter(self, server_url, api_key, iterations, show_deta
     
     with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
         def call():
-            you.search.unified(query="test", new_filter="value")
+            you.search(query="test", new_filter="value")
         
         metrics = measure_sdk_call(call, client, iterations, "Search: new filter")
         ALL_METRICS.append(metrics)

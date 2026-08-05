@@ -172,7 +172,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="latest AI developments", server_url=server_url)
+                you.search(query="latest AI developments", server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: basic query")
             ALL_METRICS.append(metrics)
@@ -185,7 +185,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="python programming", count=10, server_url=server_url)
+                you.search(query="python programming", count=10, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: with count=10")
             ALL_METRICS.append(metrics)
@@ -198,7 +198,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="breaking news", freshness=Freshness.DAY, server_url=server_url)
+                you.search(query="breaking news", freshness=Freshness.DAY, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: freshness=DAY")
             ALL_METRICS.append(metrics)
@@ -211,7 +211,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="renewable energy", freshness=Freshness.WEEK, server_url=server_url)
+                you.search(query="renewable energy", freshness=Freshness.WEEK, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: freshness=WEEK")
             ALL_METRICS.append(metrics)
@@ -224,7 +224,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="local restaurants", country=Country.US, server_url=server_url)
+                you.search(query="local restaurants", country=Country.US, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: country=US")
             ALL_METRICS.append(metrics)
@@ -237,7 +237,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="football news", country=Country.GB, server_url=server_url)
+                you.search(query="football news", country=Country.GB, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: country=GB")
             ALL_METRICS.append(metrics)
@@ -250,7 +250,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="machine learning", language=Language.EN, server_url=server_url)
+                you.search(query="machine learning", language=Language.EN, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: language=EN")
             ALL_METRICS.append(metrics)
@@ -263,7 +263,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="tecnología", language=Language.ES, server_url=server_url)
+                you.search(query="tecnología", language=Language.ES, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: language=ES")
             ALL_METRICS.append(metrics)
@@ -276,7 +276,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="research", safesearch=SafeSearch.OFF, server_url=server_url)
+                you.search(query="research", safesearch=SafeSearch.OFF, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: safesearch=OFF")
             ALL_METRICS.append(metrics)
@@ -289,7 +289,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="family content", safesearch=SafeSearch.MODERATE, server_url=server_url)
+                you.search(query="family content", safesearch=SafeSearch.MODERATE, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: safesearch=MODERATE")
             ALL_METRICS.append(metrics)
@@ -302,7 +302,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="kids learning", safesearch=SafeSearch.STRICT, server_url=server_url)
+                you.search(query="kids learning", safesearch=SafeSearch.STRICT, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: safesearch=STRICT")
             ALL_METRICS.append(metrics)
@@ -315,7 +315,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(query="python tutorials", count=5, offset=2, server_url=server_url)
+                you.search(query="python tutorials", count=5, offset=2, server_url=server_url)
             
             metrics = measure_sdk_call(call, client, iterations, "Search: with pagination (offset=2)")
             ALL_METRICS.append(metrics)
@@ -328,7 +328,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(
+                you.search(
                     query="machine learning tutorials",
                     count=3,
                     livecrawl=LiveCrawl.WEB,
@@ -346,7 +346,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(
+                you.search(
                     query="tech news",
                     count=3,
                     livecrawl=LiveCrawl.NEWS,
@@ -364,7 +364,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(
+                you.search(
                     query="quantum computing",
                     count=3,
                     livecrawl=LiveCrawl.ALL,
@@ -382,7 +382,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(
+                you.search(
                     query="AI research",
                     count=3,
                     livecrawl=LiveCrawl.WEB,
@@ -401,7 +401,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(
+                you.search(
                     query="documentation guides",
                     count=3,
                     livecrawl=LiveCrawl.WEB,
@@ -420,7 +420,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(
+                you.search(
                     query="quantum computing research",
                     count=10,
                     freshness=Freshness.MONTH,
@@ -442,7 +442,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(
+                you.search(
                     query="AI developments",
                     count=5,
                     freshness=Freshness.WEEK,
@@ -463,7 +463,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(
+                you.search(
                     query="technology news",
                     count=5,
                     livecrawl=LiveCrawl.NEWS,
@@ -482,7 +482,7 @@ class TestSearchPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.search.unified(
+                you.search(
                     query="breaking tech news",
                     count=3,
                     livecrawl=LiveCrawl.ALL,
@@ -509,7 +509,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=ExpressAgentRunsRequest(
                         input="Teach me how to make an omelet",
                         stream=False,
@@ -528,7 +528,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=ExpressAgentRunsRequest(
                         input="What are the latest AI developments?",
                         stream=False,
@@ -548,7 +548,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=ExpressAgentRunsRequest(
                         input="Tell me about Python",
                         stream=False,
@@ -568,7 +568,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=AdvancedAgentRunsRequest(
                         input="Explain quantum entanglement",
                         stream=False,
@@ -587,7 +587,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=AdvancedAgentRunsRequest(
                         input="Research the latest breakthroughs in quantum computing",
                         stream=False,
@@ -610,7 +610,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=AdvancedAgentRunsRequest(
                         input="Quick research on AI",
                         stream=False,
@@ -633,7 +633,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=AdvancedAgentRunsRequest(
                         input="Deep research on climate change",
                         stream=False,
@@ -656,7 +656,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=AdvancedAgentRunsRequest(
                         input="Brief summary of AI trends",
                         stream=False,
@@ -679,7 +679,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=AdvancedAgentRunsRequest(
                         input="Detailed analysis of blockchain",
                         stream=False,
@@ -702,7 +702,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=AdvancedAgentRunsRequest(
                         input="Calculate the square root of 169",
                         stream=False,
@@ -722,7 +722,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=AdvancedAgentRunsRequest(
                         input="Find and research AI startups",
                         stream=False,
@@ -745,7 +745,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=AdvancedAgentRunsRequest(
                         input="Find stock prices and calculate averages",
                         stream=False,
@@ -765,7 +765,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=AdvancedAgentRunsRequest(
                         input="Research market trends and calculate growth rates",
                         stream=False,
@@ -788,7 +788,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=AdvancedAgentRunsRequest(
                         input="Research tech trends, find data, and calculate statistics",
                         stream=False,
@@ -811,7 +811,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=ExpressAgentRunsRequest(
                         input="Brief overview of Python",
                         stream=False,
@@ -830,7 +830,7 @@ class TestAgentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.agents.runs.create(
+                you.agents(
                     request=ExpressAgentRunsRequest(
                         input="Detailed explanation of Python",
                         stream=False,
@@ -857,7 +857,7 @@ class TestContentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.contents.generate(
+                you.contents(
                     urls=["https://www.python.org"],
                     formats=[ContentsFormats.HTML],
                     server_url=server_url,
@@ -874,7 +874,7 @@ class TestContentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.contents.generate(
+                you.contents(
                     urls=["https://www.python.org"],
                     formats=[ContentsFormats.MARKDOWN],
                     server_url=server_url,
@@ -891,7 +891,7 @@ class TestContentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.contents.generate(
+                you.contents(
                     urls=["https://www.python.org"],
                     formats=[ContentsFormats.METADATA],
                     server_url=server_url,
@@ -908,7 +908,7 @@ class TestContentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.contents.generate(
+                you.contents(
                     urls=["https://www.python.org"],
                     formats=[ContentsFormats.HTML, ContentsFormats.MARKDOWN, ContentsFormats.METADATA],
                     server_url=server_url,
@@ -925,7 +925,7 @@ class TestContentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.contents.generate(
+                you.contents(
                     urls=["https://www.python.org"],
                     formats=[ContentsFormats.HTML],
                     crawl_timeout=30,
@@ -943,7 +943,7 @@ class TestContentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.contents.generate(
+                you.contents(
                     urls=[
                         "https://www.python.org",
                         "https://www.github.com",
@@ -964,7 +964,7 @@ class TestContentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.contents.generate(
+                you.contents(
                     urls=[
                         "https://www.python.org",
                         "https://www.github.com",
@@ -985,7 +985,7 @@ class TestContentsPerformance:
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
-                you.contents.generate(
+                you.contents(
                     urls=[
                         "https://www.python.org",
                         "https://www.github.com",

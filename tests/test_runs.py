@@ -37,7 +37,7 @@ class TestExpressAgent:
         client = create_test_http_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.agents.runs.create(
+            res = you.agents(
                 request=ExpressAgentRunsRequest(
                     input="Teach me how to make an omelet",
                     stream=False,
@@ -54,7 +54,7 @@ class TestExpressAgent:
         client = create_test_http_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.agents.runs.create(
+            res = you.agents(
                 request=ExpressAgentRunsRequest(
                     input="Teach me how to make an omelet",
                     stream=True,
@@ -70,7 +70,7 @@ class TestExpressAgent:
         client = create_test_http_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.agents.runs.create(
+            res = you.agents(
                 request=ExpressAgentRunsRequest(
                     input="Summarize today's top AI research headlines.",
                     stream=False,
@@ -88,7 +88,7 @@ class TestAdvancedAgent:
         client = create_test_http_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.agents.runs.create(
+            res = you.agents(
                 request=AdvancedAgentRunsRequest(
                     input="Summarize today's top AI research headlines.",
                     stream=False,
@@ -107,7 +107,7 @@ class TestAdvancedAgent:
         client = create_test_http_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.agents.runs.create(
+            res = you.agents(
                 request=AdvancedAgentRunsRequest(
                     input="Calculate 15 * 23 and explain the steps.",
                     stream=False,
@@ -123,7 +123,7 @@ class TestAdvancedAgent:
         client = create_test_http_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.agents.runs.create(
+            res = you.agents(
                 request=AdvancedAgentRunsRequest(
                     input="Research and calculate the square root of 169.",
                     stream=True,
@@ -146,7 +146,7 @@ class TestAdvancedAgent:
         client = create_test_http_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.agents.runs.create(
+            res = you.agents(
                 request=AdvancedAgentRunsRequest(
                     input="Research quantum computing breakthroughs.",
                     stream=False,
@@ -169,7 +169,7 @@ class TestCustomAgent:
         client = create_test_http_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.agents.runs.create(
+            res = you.agents(
                 request=CustomAgentRunsRequest(
                     agent="c12fa027-424e-4002-9659-746c16e74faa",
                     input="Teach me how to make an omelet",
@@ -185,7 +185,7 @@ class TestCustomAgent:
         client = create_test_http_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.agents.runs.create(
+            res = you.agents(
                 request=CustomAgentRunsRequest(
                     agent="c12fa027-424e-4002-9659-746c16e74faa",
                     input="Search for Python best practices.",
@@ -205,7 +205,7 @@ class TestRunsErrors:
         
         with You(server_url=server_url, client=client, api_key_auth="invalid") as you:
             with pytest.raises(AgentRuns401ResponseError):
-                you.agents.runs.create(
+                you.agents(
                     request=ExpressAgentRunsRequest(
                         input="test",
                         stream=False,
@@ -220,7 +220,7 @@ class TestRunsErrors:
             # Mock server returns 403 which gets caught as a default error
             # In production API, this would be a more specific error type
             with pytest.raises(YouDefaultError):
-                you.agents.runs.create(
+                you.agents(
                     request=ExpressAgentRunsRequest(
                         input="test",
                         stream=False,
@@ -233,7 +233,7 @@ class TestRunsErrors:
 
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             with pytest.raises((AgentRuns400ResponseError, YouDefaultError)):
-                you.agents.runs.create(
+                you.agents(
                     request=ExpressAgentRunsRequest(
                         input="test",
                         stream=False,
@@ -245,7 +245,7 @@ class TestRunsErrors:
         client = create_test_http_client("post_/v1/agents/runs")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.agents.runs.create(
+            res = you.agents(
                 request=ExpressAgentRunsRequest(
                     input="",
                     stream=False,

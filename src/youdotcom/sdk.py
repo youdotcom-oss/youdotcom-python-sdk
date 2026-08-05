@@ -7,8 +7,6 @@ from .utils.logger import Logger, get_default_logger
 from .utils.retries import RetryConfig
 import httpx
 import importlib
-import sys
-import warnings
 from typing import (
     Any,
     Callable,
@@ -24,14 +22,9 @@ from typing import (
 import weakref
 from youdotcom import errors, models, utils
 from youdotcom._hooks import HookContext, SDKHooks
-from youdotcom.types import OptionalNullable, UNSET
+from youdotcom.types import BaseModel, OptionalNullable, UNSET
 from youdotcom.utils import eventstreaming, get_security_from_env
 from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
-
-if TYPE_CHECKING:
-    from youdotcom.agents import Agents
-    from youdotcom.contents_sdk import ContentsSDK
-    from youdotcom.search import Search
 
 
 class You(BaseSDK):
@@ -48,15 +41,6 @@ class You(BaseSDK):
     - **Search API**: Get search results from web and news sources
     - **Contents API**: Retrieve and process web page content
     """
-
-    agents: "Agents"
-    search: "Search"
-    contents: "ContentsSDK"
-    _sub_sdk_map = {
-        "agents": ("youdotcom.agents", "Agents"),
-        "search": ("youdotcom.search", "Search"),
-        "contents": ("youdotcom.contents_sdk", "ContentsSDK"),
-    }
 
     def __init__(
         self,
@@ -150,56 +134,6 @@ class You(BaseSDK):
             self.sdk_configuration.async_client,
             self.sdk_configuration.async_client_supplied,
         )
-
-    def dynamic_import(self, modname, retries=3):
-        for attempt in range(retries):
-            try:
-                return importlib.import_module(modname)
-            except KeyError:
-                # Clear any half-initialized module and retry
-                sys.modules.pop(modname, None)
-                if attempt == retries - 1:
-                    break
-        raise KeyError(f"Failed to import module '{modname}' after {retries} attempts")
-
-    def __getattr__(self, name: str):
-        if name in self._sub_sdk_map:
-            _DEPRECATED_SUB_SDKS = {
-                "agents": "you.create_run()",
-                "search": "you.search_unified()",
-                "contents": "you.generate_contents()",
-            }
-            if name in _DEPRECATED_SUB_SDKS:
-                warnings.warn(
-                    f"you.{name} is deprecated and will be removed in a future major version. "
-                    f"Use {_DEPRECATED_SUB_SDKS[name]} instead.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
-            module_path, class_name = self._sub_sdk_map[name]
-            try:
-                module = self.dynamic_import(module_path)
-                klass = getattr(module, class_name)
-                instance = klass(self.sdk_configuration, parent_ref=self)
-                setattr(self, name, instance)
-                return instance
-            except ImportError as e:
-                raise AttributeError(
-                    f"Failed to import module {module_path} for attribute {name}: {e}"
-                ) from e
-            except AttributeError as e:
-                raise AttributeError(
-                    f"Failed to find class {class_name} in module {module_path} for attribute {name}: {e}"
-                ) from e
-
-        raise AttributeError(
-            f"'{type(self).__name__}' object has no attribute '{name}'"
-        )
-
-    def __dir__(self):
-        default_attrs = list(super().__dir__())
-        lazy_attrs = list(self._sub_sdk_map.keys())
-        return sorted(list(set(default_attrs + lazy_attrs)))
 
     def __enter__(self):
         return self
@@ -519,13 +453,7 @@ class You(BaseSDK):
 
         raise errors.YouDefaultError("Unexpected response received", http_res)
 
-    def _get_sub_sdk(self, name: str):
-        """Access a sub-SDK without triggering the deprecation warning."""
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            return getattr(self, name)
-
-    def create_run(
+    def agents(
         self,
         *,
         request: Union[models.AgentsRunsRequest, models.AgentsRunsRequestTypedDict],
@@ -537,25 +465,136 @@ class You(BaseSDK):
         models.AgentRunsBatchResponse,
         eventstreaming.EventStream[models.AgentRunsStreamingResponse],
     ]:
-        r"""Run an Agent.
+        r"""Run an Agent
 
-        Direct method replacing ``you.agents.runs.create()``.
+        Execute queries using You.com's AI agents. This endpoint supports three agent types:
+
+        - **Express Agent**: Fast responses with optional web search (max 1 search)
+        - **Advanced Agent**: Complex queries with multi-turn reasoning, planning, and tool usage
+        - **Custom Agent**: User-configured assistants created in the You.com UI
+
+        The response format depends on the `stream` parameter - either a complete JSON payload or Server-Sent Events (SSE).
+
 
         :param request: The request object to send.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
-        :param timeout_ms: Override the default request timeout in milliseconds
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
         :param http_headers: Additional headers to set or replace on requests.
         """
-        return self._get_sub_sdk("agents").runs.create(
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = self._get_url(None, None)
+
+        if not isinstance(request, BaseModel):
+            request = utils.unmarshal(request, models.AgentsRunsRequest)
+        request = cast(models.AgentsRunsRequest, request)
+
+        req = self._build_request(
+            method="POST",
+            path="/v1/agents/runs",
+            base_url=base_url,
+            url_variables=url_variables,
             request=request,
-            retries=retries,
-            server_url=server_url,
-            timeout_ms=timeout_ms,
+            request_body_required=True,
+            request_has_path_params=False,
+            request_has_query_params=True,
+            user_agent_header="user-agent",
+            accept_header_value="text/event-stream"
+            if getattr(request, "stream", False) is True
+            else "application/json",
             http_headers=http_headers,
+            security=self.sdk_configuration.security,
+            get_serialized_body=lambda: utils.serialize_request_body(
+                request, False, False, "json", models.AgentsRunsRequest
+            ),
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
         )
 
-    async def create_run_async(
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = self.do_request(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="AgentsRuns",
+                oauth2_scopes=None,
+                security_source=get_security_from_env(
+                    self.sdk_configuration.security, models.Security
+                ),
+                tags=["agents.runs"],
+                extensions=None,
+            ),
+            request=req,
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
+            stream=getattr(request, "stream", False) is True,
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
+            return unmarshal_json_response(
+                models.AgentRunsBatchResponse, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "200", "text/event-stream"):
+            return eventstreaming.EventStream(
+                http_res,
+                lambda raw: unmarshal_json_response(
+                    models.AgentRunsStreamingResponse, http_res, raw
+                ),
+                client_ref=self,
+            )
+        if utils.match_response(http_res, "400", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
+            response_data = unmarshal_json_response(
+                errors.AgentRuns400ResponseErrorData, http_res, http_res_text
+            )
+            raise errors.AgentRuns400ResponseError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "401", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
+            response_data = unmarshal_json_response(
+                errors.AgentRuns401ResponseErrorData, http_res, http_res_text
+            )
+            raise errors.AgentRuns401ResponseError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "422", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
+            response_data = unmarshal_json_response(
+                errors.AgentRuns422ResponseErrorData, http_res, http_res_text
+            )
+            raise errors.AgentRuns422ResponseError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        http_res_text = utils.stream_to_text(http_res)
+        raise errors.YouDefaultError(
+            "Unexpected response received", http_res, http_res_text
+        )
+
+    async def agents_async(
         self,
         *,
         request: Union[models.AgentsRunsRequest, models.AgentsRunsRequestTypedDict],
@@ -567,137 +606,136 @@ class You(BaseSDK):
         models.AgentRunsBatchResponse,
         eventstreaming.EventStreamAsync[models.AgentRunsStreamingResponse],
     ]:
-        r"""Run an Agent (async).
+        r"""Run an Agent
 
-        Direct method replacing ``you.agents.runs.create_async()``.
+        Execute queries using You.com's AI agents. This endpoint supports three agent types:
+
+        - **Express Agent**: Fast responses with optional web search (max 1 search)
+        - **Advanced Agent**: Complex queries with multi-turn reasoning, planning, and tool usage
+        - **Custom Agent**: User-configured assistants created in the You.com UI
+
+        The response format depends on the `stream` parameter - either a complete JSON payload or Server-Sent Events (SSE).
+
 
         :param request: The request object to send.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
-        :param timeout_ms: Override the default request timeout in milliseconds
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
         :param http_headers: Additional headers to set or replace on requests.
         """
-        return await self._get_sub_sdk("agents").runs.create_async(
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = self._get_url(None, None)
+
+        if not isinstance(request, BaseModel):
+            request = utils.unmarshal(request, models.AgentsRunsRequest)
+        request = cast(models.AgentsRunsRequest, request)
+
+        req = self._build_request_async(
+            method="POST",
+            path="/v1/agents/runs",
+            base_url=base_url,
+            url_variables=url_variables,
             request=request,
-            retries=retries,
-            server_url=server_url,
-            timeout_ms=timeout_ms,
+            request_body_required=True,
+            request_has_path_params=False,
+            request_has_query_params=True,
+            user_agent_header="user-agent",
+            accept_header_value="text/event-stream"
+            if getattr(request, "stream", False) is True
+            else "application/json",
             http_headers=http_headers,
+            security=self.sdk_configuration.security,
+            get_serialized_body=lambda: utils.serialize_request_body(
+                request, False, False, "json", models.AgentsRunsRequest
+            ),
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
         )
 
-    def search_unified(
-        self,
-        *,
-        query: str,
-        count: Optional[int] = 10,
-        freshness: Optional[
-            Union[models.FreshnessValue, models.FreshnessValueTypedDict]
-        ] = None,
-        offset: Optional[int] = None,
-        country: Optional[models.Country] = None,
-        language: Optional[models.Language] = models.Language.EN,
-        safesearch: Optional[models.SafeSearch] = None,
-        livecrawl: Optional[models.LiveCrawl] = None,
-        livecrawl_formats: Optional[Iterable[models.LiveCrawlFormats]] = None,
-        include_domains: Optional[str] = None,
-        exclude_domains: Optional[str] = None,
-        boost_domains: Optional[str] = None,
-        crawl_timeout: Optional[int] = 10,
-        retries: OptionalNullable[utils.RetryConfig] = UNSET,
-        server_url: Optional[str] = None,
-        timeout_ms: Optional[int] = None,
-        http_headers: Optional[Mapping[str, str]] = None,
-    ) -> models.SearchResponse:
-        r"""Returns a list of unified search results from web and news sources.
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
 
-        Direct method replacing ``you.search.unified()``.
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
 
-        :param query: The search query.
-        :param count: Max results per section.
-        :param freshness: ``day``, ``week``, ``month``, ``year``, or ``YYYY-MM-DDtoYYYY-MM-DD``.
-        :param offset: Pagination offset.
-        :param country: Country code for geographical focus.
-        :param language: BCP 47 language code (default ``EN``).
-        :param safesearch: ``strict``, ``moderate``, or ``off``.
-        :param livecrawl: ``web``, ``news``, or ``all``.
-        :param livecrawl_formats: ``["html"]``, ``["markdown"]``, or both.
-        :param include_domains: Comma-separated domains to restrict results to.
-        :param exclude_domains: Comma-separated domains to exclude.
-        :param boost_domains: Comma-separated domains to boost in ranking.
-        :param crawl_timeout: Max seconds to wait for livecrawl (1-60, default 10).
-        :param retries: Override the default retry configuration.
-        :param server_url: Override the default server URL.
-        :param timeout_ms: Override the request timeout in milliseconds.
-        :param http_headers: Additional headers to set or replace.
-        """
-        return self._get_sub_sdk("search").unified(
-            query=query,
-            count=count,
-            freshness=freshness,
-            offset=offset,
-            country=country,
-            language=language,
-            safesearch=safesearch,
-            livecrawl=livecrawl,
-            livecrawl_formats=livecrawl_formats,
-            include_domains=include_domains,
-            exclude_domains=exclude_domains,
-            boost_domains=boost_domains,
-            crawl_timeout=crawl_timeout,
-            retries=retries,
-            server_url=server_url,
-            timeout_ms=timeout_ms,
-            http_headers=http_headers,
+        http_res = await self.do_request_async(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="AgentsRuns",
+                oauth2_scopes=None,
+                security_source=get_security_from_env(
+                    self.sdk_configuration.security, models.Security
+                ),
+                tags=["agents.runs"],
+                extensions=None,
+            ),
+            request=req,
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
+            stream=getattr(request, "stream", False) is True,
+            retry_config=retry_config,
         )
 
-    async def search_unified_async(
-        self,
-        *,
-        query: str,
-        count: Optional[int] = 10,
-        freshness: Optional[
-            Union[models.FreshnessValue, models.FreshnessValueTypedDict]
-        ] = None,
-        offset: Optional[int] = None,
-        country: Optional[models.Country] = None,
-        language: Optional[models.Language] = models.Language.EN,
-        safesearch: Optional[models.SafeSearch] = None,
-        livecrawl: Optional[models.LiveCrawl] = None,
-        livecrawl_formats: Optional[Iterable[models.LiveCrawlFormats]] = None,
-        include_domains: Optional[str] = None,
-        exclude_domains: Optional[str] = None,
-        boost_domains: Optional[str] = None,
-        crawl_timeout: Optional[int] = 10,
-        retries: OptionalNullable[utils.RetryConfig] = UNSET,
-        server_url: Optional[str] = None,
-        timeout_ms: Optional[int] = None,
-        http_headers: Optional[Mapping[str, str]] = None,
-    ) -> models.SearchResponse:
-        r"""Returns a list of unified search results from web and news sources (async).
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            return unmarshal_json_response(
+                models.AgentRunsBatchResponse, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "200", "text/event-stream"):
+            return eventstreaming.EventStreamAsync(
+                http_res,
+                lambda raw: unmarshal_json_response(
+                    models.AgentRunsStreamingResponse, http_res, raw
+                ),
+                client_ref=self,
+            )
+        if utils.match_response(http_res, "400", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            response_data = unmarshal_json_response(
+                errors.AgentRuns400ResponseErrorData, http_res, http_res_text
+            )
+            raise errors.AgentRuns400ResponseError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "401", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            response_data = unmarshal_json_response(
+                errors.AgentRuns401ResponseErrorData, http_res, http_res_text
+            )
+            raise errors.AgentRuns401ResponseError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "422", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            response_data = unmarshal_json_response(
+                errors.AgentRuns422ResponseErrorData, http_res, http_res_text
+            )
+            raise errors.AgentRuns422ResponseError(
+                response_data, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
 
-        Direct method replacing ``you.search.unified_async()``.
-        """
-        return await self._get_sub_sdk("search").unified_async(
-            query=query,
-            count=count,
-            freshness=freshness,
-            offset=offset,
-            country=country,
-            language=language,
-            safesearch=safesearch,
-            livecrawl=livecrawl,
-            livecrawl_formats=livecrawl_formats,
-            include_domains=include_domains,
-            exclude_domains=exclude_domains,
-            boost_domains=boost_domains,
-            crawl_timeout=crawl_timeout,
-            retries=retries,
-            server_url=server_url,
-            timeout_ms=timeout_ms,
-            http_headers=http_headers,
+        http_res_text = await utils.stream_to_text_async(http_res)
+        raise errors.YouDefaultError(
+            "Unexpected response received", http_res, http_res_text
         )
 
-    def generate_contents(
+    def contents(
         self,
         *,
         urls: Optional[Iterable[str]] = None,
@@ -709,31 +747,109 @@ class You(BaseSDK):
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
     ) -> List[models.ContentsResponse]:
-        r"""Returns the content of the web pages.
+        r"""Returns the content of the web pages
 
-        Direct method replacing ``you.contents.generate()``.
+        Returns the HTML or Markdown of a target webpage.
 
         :param urls: Array of URLs to fetch the contents from.
-        :param formats: Array of content formats to return (``html``, ``markdown``, ``metadata``).
-        :param crawl_timeout: Maximum time in seconds to wait for page content (1-60, default 10).
-        :param max_age: Maximum allowed age of cached content in seconds.
-        :param retries: Override the default retry configuration.
-        :param server_url: Override the default server URL.
-        :param timeout_ms: Override the request timeout in milliseconds.
-        :param http_headers: Additional headers to set or replace.
+        :param formats: Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available.
+        :param crawl_timeout: Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds.
+        :param max_age: Maximum allowed age of cached content in seconds. When set, cached content older than this threshold is ignored and the page is re-fetched. Must be 0 or greater. Default: null (no age limit, cached content is returned regardless of age).
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
         """
-        return self._get_sub_sdk("contents").generate(
-            urls=urls,
-            formats=formats,
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = self._get_url(None, None)
+
+        request = models.ContentsRequest(
+            urls=utils.unmarshal(urls, Optional[List[str]]),
+            formats=utils.unmarshal(formats, Optional[List[models.ContentsFormats]]),
             crawl_timeout=crawl_timeout,
             max_age=max_age,
-            retries=retries,
-            server_url=server_url,
-            timeout_ms=timeout_ms,
-            http_headers=http_headers,
         )
 
-    async def generate_contents_async(
+        req = self._build_request(
+            method="POST",
+            path="/v1/contents",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=True,
+            request_has_path_params=False,
+            request_has_query_params=True,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            security=self.sdk_configuration.security,
+            get_serialized_body=lambda: utils.serialize_request_body(
+                request, False, False, "json", models.ContentsRequest
+            ),
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = self.do_request(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="contents",
+                oauth2_scopes=None,
+                security_source=get_security_from_env(
+                    self.sdk_configuration.security, models.Security
+                ),
+                tags=["contents"],
+                extensions=None,
+            ),
+            request=req,
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(List[models.ContentsResponse], http_res)
+        if utils.match_response(http_res, "401", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ContentsUnauthorizedErrorData, http_res
+            )
+            raise errors.ContentsUnauthorizedError(response_data, http_res)
+        if utils.match_response(http_res, "403", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ContentsForbiddenErrorData, http_res
+            )
+            raise errors.ContentsForbiddenError(response_data, http_res)
+        if utils.match_response(http_res, "500", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ContentsInternalServerErrorData, http_res
+            )
+            raise errors.ContentsInternalServerError(response_data, http_res)
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = utils.stream_to_text(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    async def contents_async(
         self,
         *,
         urls: Optional[Iterable[str]] = None,
@@ -745,22 +861,109 @@ class You(BaseSDK):
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
     ) -> List[models.ContentsResponse]:
-        r"""Returns the content of the web pages (async).
+        r"""Returns the content of the web pages
 
-        Direct method replacing ``you.contents.generate_async()``.
+        Returns the HTML or Markdown of a target webpage.
+
+        :param urls: Array of URLs to fetch the contents from.
+        :param formats: Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available.
+        :param crawl_timeout: Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds.
+        :param max_age: Maximum allowed age of cached content in seconds. When set, cached content older than this threshold is ignored and the page is re-fetched. Must be 0 or greater. Default: null (no age limit, cached content is returned regardless of age).
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
         """
-        return await self._get_sub_sdk("contents").generate_async(
-            urls=urls,
-            formats=formats,
+        base_url = None
+        url_variables = None
+        if timeout_ms is None:
+            timeout_ms = self.sdk_configuration.timeout_ms
+
+        if server_url is not None:
+            base_url = server_url
+        else:
+            base_url = self._get_url(None, None)
+
+        request = models.ContentsRequest(
+            urls=utils.unmarshal(urls, Optional[List[str]]),
+            formats=utils.unmarshal(formats, Optional[List[models.ContentsFormats]]),
             crawl_timeout=crawl_timeout,
             max_age=max_age,
-            retries=retries,
-            server_url=server_url,
-            timeout_ms=timeout_ms,
-            http_headers=http_headers,
         )
 
-    def search_post(
+        req = self._build_request_async(
+            method="POST",
+            path="/v1/contents",
+            base_url=base_url,
+            url_variables=url_variables,
+            request=request,
+            request_body_required=True,
+            request_has_path_params=False,
+            request_has_query_params=True,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            security=self.sdk_configuration.security,
+            get_serialized_body=lambda: utils.serialize_request_body(
+                request, False, False, "json", models.ContentsRequest
+            ),
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, ["429", "500", "502", "503", "504"])
+
+        http_res = await self.do_request_async(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="contents",
+                oauth2_scopes=None,
+                security_source=get_security_from_env(
+                    self.sdk_configuration.security, models.Security
+                ),
+                tags=["contents"],
+                extensions=None,
+            ),
+            request=req,
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
+            retry_config=retry_config,
+        )
+
+        response_data: Any = None
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(List[models.ContentsResponse], http_res)
+        if utils.match_response(http_res, "401", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ContentsUnauthorizedErrorData, http_res
+            )
+            raise errors.ContentsUnauthorizedError(response_data, http_res)
+        if utils.match_response(http_res, "403", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ContentsForbiddenErrorData, http_res
+            )
+            raise errors.ContentsForbiddenError(response_data, http_res)
+        if utils.match_response(http_res, "500", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.ContentsInternalServerErrorData, http_res
+            )
+            raise errors.ContentsInternalServerError(response_data, http_res)
+        if utils.match_response(http_res, "4XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+        if utils.match_response(http_res, "5XX", "*"):
+            http_res_text = await utils.stream_to_text_async(http_res)
+            raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    def search(
         self,
         *,
         query: str,
@@ -918,7 +1121,7 @@ class You(BaseSDK):
 
         raise errors.YouDefaultError("Unexpected response received", http_res)
 
-    async def search_post_async(
+    async def search_async(
         self,
         *,
         query: str,

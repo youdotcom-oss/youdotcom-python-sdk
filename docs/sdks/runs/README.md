@@ -1,5 +1,12 @@
 # Agents.Runs
 
+> **DEPRECATED — removed in the current major version.** The `Agents` sub-SDK is no longer available. Use the direct method on the `You` client instead:
+>
+> - `you.agents(request=...)` (was `you.agents.runs.create(request=...)`)
+> - `you.agents_async(request=...)` (was `you.agents.runs.create_async(request=...)`)
+>
+> See [docs/sdks/you/README.md](../you/README.md#agents) for the current API. The content below is kept for reference only.
+
 ## Overview
 
 ### Available Operations

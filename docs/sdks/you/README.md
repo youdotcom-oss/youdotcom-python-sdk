@@ -18,16 +18,15 @@ Comprehensive API for You.com services:
 ### Available Operations
 
 * [answer](#answer) - Returns a synthesized answer with citations from web search results
-* [create_run](#create_run) - Run an Agent
-* [search_unified](#search_unified) - Returns a list of unified search results from web and news sources
-* [generate_contents](#generate_contents) - Returns the content of the web pages
-* [search_post](#search_post) - Returns a list of unified search results from web and news sources
+* [agents](#agents) - Run an Agent
+* [search](#search) - Returns a list of unified search results from web and news sources
+* [contents](#contents) - Returns the content of the web pages
 * [research](#research) - Returns comprehensive research-grade answers with multi-step reasoning
 * [get_research_task](#get_research_task) - Get the status of a background research task
 * [stream_research_task](#stream_research_task) - Stream updates for a background research task
 * [finance_research](#finance_research) - Returns comprehensive finance-grade research answers with multi-step reasoning
 
-## search_post
+## search
 
 This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
 
@@ -45,7 +44,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -69,7 +68,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -93,7 +92,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -117,7 +116,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -141,7 +140,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -165,7 +164,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -189,7 +188,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
