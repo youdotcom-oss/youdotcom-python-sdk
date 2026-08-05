@@ -15,8 +15,10 @@ from youdotcom import You
 with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
     res = you.answer(query="What causes the 2008 financial crisis?")
     print(res.answer)           # markdown with [[1, 2]] citations
-    print(res.citations[0].source)  # source URL
-    print(res.results.web[0].title) # web result title
+    if res.citations:
+        print(res.citations[0].source)  # source URL
+    if res.results and res.results.web:
+        print(res.results.web[0].title) # web result title
 ```
 
 Requires an API key. `country` and `language` accept plain strings (e.g. `"us"`, `"en"`) and are normalized to uppercase.

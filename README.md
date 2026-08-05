@@ -245,9 +245,10 @@ with You(
 from youdotcom import You
 
 # No API key — uses the free tier
-you = You()
-res = you.search(query="What is the capital of France?", count=5)
-print(res.results.web[0].title)
+with You() as you:
+    res = you.search(query="What is the capital of France?", count=5)
+    if res.results and res.results.web:
+        print(res.results.web[0].title)
 ```
 
 With an API key, the same method forwards to the full search endpoint with no restrictions. A `402` response raises `PaymentRequiredResponseError` with structured data (`message`, `upgrade_url`, `limit`, `used`, `period`, `reset_at`).
