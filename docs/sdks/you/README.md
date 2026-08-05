@@ -275,6 +275,7 @@ with You(
 
 | Error Type                              | Status Code                             | Content Type                            |
 | --------------------------------------- | --------------------------------------- | --------------------------------------- |
+| errors.PaymentRequiredResponseError     | 402                                     | application/json                        |
 | errors.UnauthorizedResponseError        | 401                                     | application/json                        |
 | errors.ForbiddenResponseError           | 403                                     | application/json                        |
 | errors.UnprocessableEntityResponseError | 422                                     | application/json                        |
