@@ -2,7 +2,7 @@
 
 ## 2.5.0 → 2.6.0
 
-> **This release adds new direct methods, removes the Agents API, and reverts search to keyed `POST /v1/search`.** The old sub-SDK patterns still work but emit `DeprecationWarning`. Migrate at your convenience.
+> **This release adds new direct methods, removes the Agents API, and moves search to `POST /v1/search`.** The old sub-SDK patterns still work but emit `DeprecationWarning`. Migrate at your convenience.
 
 ### Answer API
 
@@ -23,7 +23,7 @@ with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
 
 Requires an API key. `country` and `language` accept plain strings (e.g. `"us"`, `"en"`) and are normalized to uppercase.
 
-### Search Reverted to Keyed POST /v1/search
+### Search Moved to Direct Method
 
 `you.search()` / `you.search_async()` target `POST /v1/search` on `ydc-index.io`. Search requires an API key.
 
