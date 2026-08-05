@@ -54,11 +54,12 @@ pytest tests/ -v
 - `test_client.py` - Helper utilities for creating test HTTP clients
 - `test_search.py` - Tests for the Search API (`/v1/search`)
 - `test_contents.py` - Tests for the Contents API (`/v1/contents`)
-- `test_runs.py` - Tests for the Agents/Runs API (`/v1/agents/runs`)
+- `test_answer.py` - Tests for the Answer API (`/v1/answer`)
+- `test_direct_methods.py` - Tests for direct methods on `You` (search, contents)
+- `test_shims.py` - Tests for backward-compat sub-SDK shims with DeprecationWarning
 - `test_research.py` - Tests for the Research API (`/v1/research`) including background mode, output_schema, and source_control
 - `test_research_helpers.py` - Tests for the hand-maintained `research_helpers` module (background submission, polling, streaming, research_and_wait)
 - `test_security_env.py` - Tests for environment variable precedence (`YDC_API_KEY` / `YOU_API_KEY_AUTH`)
-- `test_user_agent_hook.py` - Tests for the `YDCUserAgentOverrideHook` custom user-agent pass-through
 - `test_performance.py` - Performance/instrumentation tests measuring SDK overhead
 - `test_live.py` - Live API tests that run against the real You.com API (requires API key)
 
@@ -79,13 +80,6 @@ Tests are organized into logical classes using pytest:
 - Optional format parameter
 - Error handling (unauthorized, forbidden, empty URLs)
 
-**Agents/Runs API** (12 tests):
-- Express agent (basic, streaming, with tools)
-- Advanced agent (with research, compute, multiple tools)
-- Custom agents (UUID-based)
-- Tool configurations and verbosity
-- Error handling (unauthorized, forbidden, empty input)
-
 **Research API**:
 - Basic research functionality (standard, deep, exhaustive effort)
 - Background mode (task submission, get_research_task, status polling)
@@ -103,7 +97,7 @@ Tests are organized into logical classes using pytest:
 
 ### Running Live Tests
 
-The `test_live.py` file contains tests that run against the real You.com API. These are skipped by default unless an API key is provided:
+The `test_live.py` file contains tests that run against the real You.com API. All tests require an API key and are skipped unless `YDC_API_KEY` or `YOU_API_KEY_AUTH` is set:
 
 ```bash
 # Run live tests with your API key
@@ -116,9 +110,7 @@ pytest tests/ --ignore=tests/test_live.py -v
 ## Test Coverage
 
 All tests cover the functionality demonstrated in the `examples/` directory:
-- ✓ All search examples (`examples/search.py`)
-- ✓ All contents examples (`examples/contents.py`)
-- ✓ All agents examples (`examples/agents.py`)
+- ✓ All API examples (`examples/api-example-calls.py`)
 
 Additionally, tests include:
 - ✓ Error response handling for all endpoints
