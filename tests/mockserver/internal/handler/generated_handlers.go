@@ -13,7 +13,7 @@ import (
 func GeneratedHandlers(ctx context.Context, dir *logging.HTTPFileDirectory, rt *tracking.RequestTracker) []*GeneratedHandler {
 	return []*GeneratedHandler{
 		NewGeneratedHandler(ctx, http.MethodGet, "/v1/search", pathGetV1Search(dir, rt)),
-		NewGeneratedHandler(ctx, http.MethodPost, "/v1/search", pathPostV1Search(dir, rt)),
+		NewGeneratedHandler(ctx, http.MethodPost, "/v1/agents/search", pathPostV1Search(dir, rt)),
 		NewGeneratedHandler(ctx, http.MethodPost, "/v1/agents/runs", pathPostV1AgentsRuns(dir, rt)),
 		NewGeneratedHandler(ctx, http.MethodPost, "/v1/contents", pathPostV1Contents(dir, rt)),
 		NewGeneratedHandler(ctx, http.MethodPost, "/v1/research", pathPostV1Research(dir, rt)),

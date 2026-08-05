@@ -65,13 +65,22 @@ with You(
 
 ## search
 
-This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
+Search via `POST /v1/agents/search` — the keyless-capable proxy. With no API key configured, runs in the free tier (100 queries/day, count ≤ 50, no livecrawl). With a key, the proxy forwards to the full search endpoint. Country and language accept plain strings and are normalized to uppercase.
 
-`POST` is the recommended method when using complex parameters such as `include_domains` or `exclude_domains`. These fields accept JSON arrays in the request body, which is unambiguous and supports up to 500 domains per request—something that would exceed URL length limits with GET. Use GET for simple queries where HTTP cacheability matters.
+### Example Usage: keyless
+
+```python
+from youdotcom import You
+
+# No API key — uses the free tier
+you = You()
+res = you.search(query="What is the capital of France?", count=5)
+print(res.results.web[0].title)
+```
 
 ### Example Usage: authFailure
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="authFailure" -->
+<!-- UsageSnippet language="python" operationID="agentsSearch" method="post" path="/v1/agents/search" example="authFailure" -->
 ```python
 import os
 from youdotcom import You, models
@@ -95,7 +104,7 @@ with You(
 ```
 ### Example Usage: authorizationFailure
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="authorizationFailure" -->
+<!-- UsageSnippet language="python" operationID="agentsSearch" method="post" path="/v1/agents/search" example="authorizationFailure" -->
 ```python
 import os
 from youdotcom import You, models
@@ -119,7 +128,7 @@ with You(
 ```
 ### Example Usage: invalidOrExpired
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="invalidOrExpired" -->
+<!-- UsageSnippet language="python" operationID="agentsSearch" method="post" path="/v1/agents/search" example="invalidOrExpired" -->
 ```python
 import os
 from youdotcom import You, models
@@ -143,7 +152,7 @@ with You(
 ```
 ### Example Usage: invalidParams
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="invalidParams" -->
+<!-- UsageSnippet language="python" operationID="agentsSearch" method="post" path="/v1/agents/search" example="invalidParams" -->
 ```python
 import os
 from youdotcom import You, models
@@ -167,7 +176,7 @@ with You(
 ```
 ### Example Usage: missingApiKey
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="missingApiKey" -->
+<!-- UsageSnippet language="python" operationID="agentsSearch" method="post" path="/v1/agents/search" example="missingApiKey" -->
 ```python
 import os
 from youdotcom import You, models
@@ -191,7 +200,7 @@ with You(
 ```
 ### Example Usage: missingScopes
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="missingScopes" -->
+<!-- UsageSnippet language="python" operationID="agentsSearch" method="post" path="/v1/agents/search" example="missingScopes" -->
 ```python
 import os
 from youdotcom import You, models
@@ -215,7 +224,7 @@ with You(
 ```
 ### Example Usage: otherAuthParsing
 
-<!-- UsageSnippet language="python" operationID="searchPost" method="post" path="/v1/search" example="otherAuthParsing" -->
+<!-- UsageSnippet language="python" operationID="agentsSearch" method="post" path="/v1/agents/search" example="otherAuthParsing" -->
 ```python
 import os
 from youdotcom import You, models

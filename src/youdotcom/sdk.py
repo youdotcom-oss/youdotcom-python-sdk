@@ -966,15 +966,13 @@ class You(BaseSDK):
         *,
         query: str,
         count: Optional[int] = 10,
-        freshness: Optional[
-            Union[models.FreshnessValue, models.FreshnessValueTypedDict]
-        ] = None,
+        freshness: Optional[str] = None,
         offset: Optional[int] = None,
-        country: Optional[models.Country] = None,
-        language: Optional[models.Language] = models.Language.EN,
-        safesearch: Optional[models.SafeSearch] = None,
-        livecrawl: Optional[models.LiveCrawl] = None,
-        livecrawl_formats: Optional[Iterable[models.LiveCrawlFormats]] = None,
+        country: Optional[str] = None,
+        language: Optional[str] = None,
+        safesearch: Optional[str] = None,
+        livecrawl: Optional[str] = None,
+        livecrawl_formats: Optional[Iterable[str]] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -984,31 +982,33 @@ class You(BaseSDK):
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
     ) -> models.SearchResponse:
-        r"""Returns a list of unified search results from web and news sources
+        r"""Search via ``POST /v1/agents/search`` (keyless-capable).
 
-        This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
+        With no API key configured, runs in the free tier
+        (100 queries/day, count <= 50, no livecrawl).
+        With a key, the proxy forwards to the full search endpoint.
+        A ``402`` response raises
+        :class:`~youdotcom.errors.PaymentRequiredResponseError`.
 
-        `POST` is the recommended method when using complex parameters such as `include_domains` or `exclude_domains`. These fields accept JSON arrays in the request body, which is unambiguous and supports up to 500 domains per request—something that would exceed URL length limits with GET. Use GET for simple queries where HTTP cacheability matters.
+        Enum-typed parameters (``country``, ``safesearch``, ``livecrawl``,
+        ``freshness``) accept plain strings -- pydantic coerces them when
+        building the request body, so callers don't need to import enum classes.
 
-        :param query: The search query used to retrieve relevant results from the web. You can also include [search operators](https://docs.you.com/search/search-operators) to refine your search.
-        :param count: Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them).
-        :param freshness: Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
-
-            When your search query includes a temporal keyword and you also set a freshness parameter, the search will use the broader (i.e., less restrictive) of the two timeframes. For example, if you use `query=news+this+week&freshness=month`, the results will use a freshness of month.
-        :param offset: Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`.
-        :param country: The country code that determines the geographical focus of the web results.
-        :param language: The language of the web results that will be returned (BCP 47 format).
-        :param safesearch: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
-        :param livecrawl: Indicates which section(s) of search results to livecrawl and return full page content.
-        :param livecrawl_formats: Indicates the format(s) of the livecrawled content. Pass one or both values (`html`, `markdown`). In a GET request, repeat the parameter: `?livecrawl_formats=html&livecrawl_formats=markdown`. In a POST body, provide a JSON array: `[\"html\", \"markdown\"]`.
-        :param include_domains: A list of domains to restrict search results to. Only results from these domains will be returned. Supports up to 500 domains. This is a strict allowlist, not a boost — results are limited exclusively to the specified domains.
-
-            Cannot be combined with `exclude_domains`; passing both will return a `422` error.
-        :param exclude_domains: A list of domains to exclude from search results. Results from these domains will be filtered out. Supports up to 500 domains.
-
-            Cannot be combined with `include_domains`; passing both will return a `422` error.
-        :param boost_domains: A list of domains to boost in search ranking. Matching results from these domains receive a relative ranking boost, but results are not limited to these domains. Supports up to 500 domains. Can be combined with `exclude_domains`, but cannot be combined with `include_domains` (returns `422`).
-        :param crawl_timeout: Maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Default is 10 seconds.
+        :param query: The search query used to retrieve relevant results from the web.
+        :param count: Max results per section (1-50 on the free tier).
+        :param freshness: ``"day"``, ``"week"``, ``"month"``, ``"year"``, or
+            ``"YYYY-MM-DDtoYYYY-MM-DD"``.
+        :param offset: Pagination offset (multiples of ``count``).
+        :param country: Country code for geographical focus.
+        :param language: BCP 47 language code (default ``"en"``).
+        :param safesearch: ``"strict"``, ``"moderate"``, or ``"off"``.
+        :param livecrawl: ``"web"``, ``"news"``, or ``"all"`` (not allowed on
+            the free tier).
+        :param livecrawl_formats: ``["html"]``, ``["markdown"]``, or both.
+        :param include_domains: Restrict results to these domains (<= 500).
+        :param exclude_domains: Exclude these domains (<= 500).
+        :param boost_domains: Boost these domains in ranking (<= 500).
+        :param crawl_timeout: Max seconds to wait for livecrawl (1-60, default 10).
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -1024,13 +1024,12 @@ class You(BaseSDK):
         else:
             base_url = self._get_url(None, None)
 
-        request = models.SearchRequestBody(
+        body: dict[str, Any] = dict(
             query=query,
             count=count,
             freshness=freshness,
             offset=offset,
-            country=country,
-            language=language,
+            country=country.upper() if isinstance(country, str) else country,
             safesearch=safesearch,
             livecrawl=livecrawl,
             livecrawl_formats=utils.unmarshal(
@@ -1041,10 +1040,13 @@ class You(BaseSDK):
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),
             crawl_timeout=crawl_timeout,
         )
+        if language is not None:
+            body["language"] = language.upper() if isinstance(language, str) else language
+        request = models.SearchRequestBody(**body)
 
         req = self._build_request(
             method="POST",
-            path="/v1/search",
+            path="/v1/agents/search",
             base_url=base_url,
             url_variables=url_variables,
             request=request,
@@ -1074,12 +1076,12 @@ class You(BaseSDK):
             hook_ctx=HookContext(
                 config=self.sdk_configuration,
                 base_url=base_url or "",
-                operation_id="searchPost",
+                operation_id="agentsSearch",
                 oauth2_scopes=None,
                 security_source=get_security_from_env(
                     self.sdk_configuration.security, models.Security
                 ),
-                tags=None,
+                tags=["search"],
                 extensions=None,
             ),
             request=req,
@@ -1090,6 +1092,11 @@ class You(BaseSDK):
         response_data: Any = None
         if utils.match_response(http_res, "200", "application/json"):
             return unmarshal_json_response(models.SearchResponse, http_res)
+        if utils.match_response(http_res, "402", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.PaymentRequiredResponseErrorData, http_res
+            )
+            raise errors.PaymentRequiredResponseError(response_data, http_res)
         if utils.match_response(http_res, "401", "application/json"):
             response_data = unmarshal_json_response(
                 errors.UnauthorizedResponseErrorData, http_res
@@ -1124,15 +1131,13 @@ class You(BaseSDK):
         *,
         query: str,
         count: Optional[int] = 10,
-        freshness: Optional[
-            Union[models.FreshnessValue, models.FreshnessValueTypedDict]
-        ] = None,
+        freshness: Optional[str] = None,
         offset: Optional[int] = None,
-        country: Optional[models.Country] = None,
-        language: Optional[models.Language] = models.Language.EN,
-        safesearch: Optional[models.SafeSearch] = None,
-        livecrawl: Optional[models.LiveCrawl] = None,
-        livecrawl_formats: Optional[Iterable[models.LiveCrawlFormats]] = None,
+        country: Optional[str] = None,
+        language: Optional[str] = None,
+        safesearch: Optional[str] = None,
+        livecrawl: Optional[str] = None,
+        livecrawl_formats: Optional[Iterable[str]] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -1142,35 +1147,9 @@ class You(BaseSDK):
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
     ) -> models.SearchResponse:
-        r"""Returns a list of unified search results from web and news sources
+        r"""Search via ``POST /v1/agents/search`` (keyless-capable).
 
-        This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
-
-        `POST` is the recommended method when using complex parameters such as `include_domains` or `exclude_domains`. These fields accept JSON arrays in the request body, which is unambiguous and supports up to 500 domains per request—something that would exceed URL length limits with GET. Use GET for simple queries where HTTP cacheability matters.
-
-        :param query: The search query used to retrieve relevant results from the web. You can also include [search operators](https://docs.you.com/search/search-operators) to refine your search.
-        :param count: Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them).
-        :param freshness: Specifies the freshness of the results to return. Provide either one of `day`, `week`, `month`, `year`, or a date range string in the format `YYYY-MM-DDtoYYYY-MM-DD`.
-
-            When your search query includes a temporal keyword and you also set a freshness parameter, the search will use the broader (i.e., less restrictive) of the two timeframes. For example, if you use `query=news+this+week&freshness=month`, the results will use a freshness of month.
-        :param offset: Indicates the `offset` for pagination. The `offset` is calculated in multiples of `count`. For example, if `count = 5` and `offset = 1`, results 5–10 will be returned. Range `0 ≤ offset ≤ 9`.
-        :param country: The country code that determines the geographical focus of the web results.
-        :param language: The language of the web results that will be returned (BCP 47 format).
-        :param safesearch: Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.
-        :param livecrawl: Indicates which section(s) of search results to livecrawl and return full page content.
-        :param livecrawl_formats: Indicates the format(s) of the livecrawled content. Pass one or both values (`html`, `markdown`). In a GET request, repeat the parameter: `?livecrawl_formats=html&livecrawl_formats=markdown`. In a POST body, provide a JSON array: `[\"html\", \"markdown\"]`.
-        :param include_domains: A list of domains to restrict search results to. Only results from these domains will be returned. Supports up to 500 domains. This is a strict allowlist, not a boost — results are limited exclusively to the specified domains.
-
-            Cannot be combined with `exclude_domains`; passing both will return a `422` error.
-        :param exclude_domains: A list of domains to exclude from search results. Results from these domains will be filtered out. Supports up to 500 domains.
-
-            Cannot be combined with `include_domains`; passing both will return a `422` error.
-        :param boost_domains: A list of domains to boost in search ranking. Matching results from these domains receive a relative ranking boost, but results are not limited to these domains. Supports up to 500 domains. Can be combined with `exclude_domains`, but cannot be combined with `include_domains` (returns `422`).
-        :param crawl_timeout: Maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Default is 10 seconds.
-        :param retries: Override the default retry configuration for this method
-        :param server_url: Override the default server URL for this method
-        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
-        :param http_headers: Additional headers to set or replace on requests.
+        Async variant of :meth:`search`.
         """
         base_url = None
         url_variables = None
@@ -1182,13 +1161,12 @@ class You(BaseSDK):
         else:
             base_url = self._get_url(None, None)
 
-        request = models.SearchRequestBody(
+        body: dict[str, Any] = dict(
             query=query,
             count=count,
             freshness=freshness,
             offset=offset,
-            country=country,
-            language=language,
+            country=country.upper() if isinstance(country, str) else country,
             safesearch=safesearch,
             livecrawl=livecrawl,
             livecrawl_formats=utils.unmarshal(
@@ -1199,10 +1177,13 @@ class You(BaseSDK):
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),
             crawl_timeout=crawl_timeout,
         )
+        if language is not None:
+            body["language"] = language.upper() if isinstance(language, str) else language
+        request = models.SearchRequestBody(**body)
 
         req = self._build_request_async(
             method="POST",
-            path="/v1/search",
+            path="/v1/agents/search",
             base_url=base_url,
             url_variables=url_variables,
             request=request,
@@ -1232,12 +1213,12 @@ class You(BaseSDK):
             hook_ctx=HookContext(
                 config=self.sdk_configuration,
                 base_url=base_url or "",
-                operation_id="searchPost",
+                operation_id="agentsSearch",
                 oauth2_scopes=None,
                 security_source=get_security_from_env(
                     self.sdk_configuration.security, models.Security
                 ),
-                tags=None,
+                tags=["search"],
                 extensions=None,
             ),
             request=req,
@@ -1248,6 +1229,11 @@ class You(BaseSDK):
         response_data: Any = None
         if utils.match_response(http_res, "200", "application/json"):
             return unmarshal_json_response(models.SearchResponse, http_res)
+        if utils.match_response(http_res, "402", "application/json"):
+            response_data = unmarshal_json_response(
+                errors.PaymentRequiredResponseErrorData, http_res
+            )
+            raise errors.PaymentRequiredResponseError(response_data, http_res)
         if utils.match_response(http_res, "401", "application/json"):
             response_data = unmarshal_json_response(
                 errors.UnauthorizedResponseErrorData, http_res

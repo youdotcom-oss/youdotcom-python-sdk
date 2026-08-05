@@ -52,7 +52,7 @@ pytest tests/ -v
 ### Test Files
 
 - `test_client.py` - Helper utilities for creating test HTTP clients
-- `test_search.py` - Tests for the Search API (`/v1/search`)
+- `test_search.py` - Tests for the Search API (`/v1/agents/search`)
 - `test_contents.py` - Tests for the Contents API (`/v1/contents`)
 - `test_runs.py` - Tests for the Agents/Runs API (`/v1/agents/runs`)
 - `test_research.py` - Tests for the Research API (`/v1/research`) including background mode, output_schema, and source_control
@@ -102,14 +102,14 @@ Tests are organized into logical classes using pytest:
 
 ### Running Live Tests
 
-The `test_live.py` file contains tests that run against the real You.com API. Keyed tests are skipped unless an API key is provided. Keyless search tests (`TestLiveSearchHelpers`) run without an API key by default, since they verify the free-tier `/v1/agents/search` proxy:
+The `test_live.py` file contains tests that run against the real You.com API. Keyed tests are skipped unless an API key is provided. Keyless search tests (`TestLiveSearchKeyless`) run without an API key by default, since they verify the free-tier `/v1/agents/search` proxy:
 
 ```bash
 # Run live tests with your API key (enables keyed tests)
 YDC_API_KEY="your-api-key" pytest tests/test_live.py -v
 
 # Run only keyless live tests (no API key needed)
-pytest tests/test_live.py::TestLiveSearchHelpers -v
+pytest tests/test_live.py::TestLiveSearchKeyless -v
 
 # Run all tests except live tests
 pytest tests/ --ignore=tests/test_live.py -v

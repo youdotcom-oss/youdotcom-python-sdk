@@ -239,19 +239,18 @@ with You(
 
 ### Keyless Search
 
-The SDK supports keyless search via the `/v1/agents/search` proxy endpoint. No API key required for the free tier (100 queries/day, count ≤ 50, no livecrawl).
+`you.search()` targets `POST /v1/agents/search` — the keyless-capable proxy. No API key required for the free tier (100 queries/day, count ≤ 50, no livecrawl).
 
 ```python
 from youdotcom import You
-from youdotcom.search_helpers import search
 
 # No API key — uses the free tier
 you = You()
-res = search(you, query="What is the capital of France?", count=5)
+res = you.search(query="What is the capital of France?", count=5)
 print(res.results.web[0].title)
 ```
 
-With an API key, the same helper forwards to the full `/v1/search` endpoint with no restrictions. A `402` response raises `PaymentRequiredResponseError` with structured data (`message`, `upgrade_url`, `limit`, `used`, `period`, `reset_at`).
+With an API key, the same method forwards to the full search endpoint with no restrictions. A `402` response raises `PaymentRequiredResponseError` with structured data (`message`, `upgrade_url`, `limit`, `used`, `period`, `reset_at`).
 
 </details>
 <!-- End Available Resources and Operations [operations] -->

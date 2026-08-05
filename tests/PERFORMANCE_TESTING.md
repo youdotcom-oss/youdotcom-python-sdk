@@ -334,7 +334,7 @@ Example:
 ```python
 def test_search_with_new_filter(self, server_url, api_key, iterations, show_detailed):
     """Test description."""
-    client = create_test_http_client("get_/v1/search")
+    client = create_test_http_client("post_/v1/agents/search")
     
     with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
         def call():

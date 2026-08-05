@@ -12,9 +12,8 @@ from youdotcom.errors import (
 
 
 # ---------------------------------------------------------------------------
-# POST-side error tests: search() must raise the same consolidated
-# *ResponseError classes.  Uses MockTransport because the mockserver has no
-# POST /v1/search handler.
+# Error tests: search() (POST /v1/agents/search) must raise the same
+# consolidated *ResponseError classes.  Uses MockTransport.
 # ---------------------------------------------------------------------------
 
 

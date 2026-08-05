@@ -40,7 +40,7 @@ from youdotcom.models import (
     FinanceResearchEffort,
     AnswerResponse,
 )
-from youdotcom.search_helpers import search as search_helper, search_async as search_helper_async
+
 from youdotcom.research_helpers import (
     research_background,
     poll_research_task,
@@ -780,38 +780,37 @@ class TestLiveAnswer:
 # ---------------------------------------------------------------------------
 # Search helpers (keyless-capable /v1/agents/search)
 # ---------------------------------------------------------------------------
-class TestLiveSearchHelpers:
-    """Live tests for search_helpers.search() → POST /v1/agents/search.
+class TestLiveSearchKeyless:
+    """Live tests for you.search() → POST /v1/agents/search (keyless-capable).
 
-    These verify the keyless-capable search helper against the real API.
+    These verify the keyless-capable search method against the real API.
     With an API key, the proxy forwards to /v1/search with full features.
     """
 
-    def test_keyed_search_helper(self, you_client):
+    def test_keyed_search(self, you_client):
         """search() with an API key returns full SearchResponse."""
         with you_client as you:
-            res = search_helper(you, query="Python programming language", count=5)
+            res = you.search(query="Python programming language", count=5)
 
             assert res.results is not None
             assert res.results.web is not None
             assert len(res.results.web) > 0
 
-    def test_keyless_search_helper(self):
+    def test_keyless_search(self):
         """search() with NO API key works via the free-tier proxy."""
         you = You(timeout_ms=LIVE_TIMEOUT_MS)
         with you:
-            res = search_helper(you, query="Python programming language", count=5)
+            res = you.search(query="Python programming language", count=5)
 
             assert res.results is not None
             assert res.results.web is not None
             assert len(res.results.web) > 0
 
-    def test_keyless_search_helper_with_filters(self):
+    def test_keyless_search_with_filters(self):
         """Keyless search accepts country/freshness/safesearch (server enforces limits)."""
         you = You(timeout_ms=LIVE_TIMEOUT_MS)
         with you:
-            res = search_helper(
-                you,
+            res = you.search(
                 query="artificial intelligence news",
                 count=3,
                 country="US",
@@ -823,11 +822,11 @@ class TestLiveSearchHelpers:
             assert res.results.web is not None
 
     @pytest.mark.asyncio
-    async def test_async_keyless_search_helper(self):
+    async def test_async_keyless_search(self):
         """search_async() with NO API key works via the free-tier proxy."""
         you = You(timeout_ms=LIVE_TIMEOUT_MS)
         async with you:
-            res = await search_helper_async(you, query="What is machine learning?", count=3)
+            res = await you.search_async(query="What is machine learning?", count=3)
 
             assert res.results is not None
             assert res.results.web is not None
@@ -838,7 +837,7 @@ class TestLiveSearchHelpers:
         you = You(timeout_ms=LIVE_TIMEOUT_MS)
         you.sdk_configuration.user_agent = "test-integration/1.0"
         with you:
-            res = search_helper(you, query="Python programming language", count=3)
+            res = you.search(query="Python programming language", count=3)
 
             assert res.results is not None
             assert res.results.web is not None

@@ -9,30 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
-- **Sub-SDK Removal**: The sub-SDKs (`Agents`, `Search`, `ContentsSDK`) have been removed. Methods are now direct on the `You` class. The `you.agents`, `you.search`, and `you.contents` attributes no longer resolve to sub-SDK objects — they are now method calls. `you.search.unified()` (GET `/v1/search`) has been removed; use `you.search()` (POST `/v1/search`) instead. The old→new mapping:
+- **Sub-SDK Removal**: The sub-SDKs (`Agents`, `Search`, `ContentsSDK`) and the `search_helpers` module have been removed. Methods are now direct on the `You` class. The `you.agents`, `you.search`, and `you.contents` attributes no longer resolve to sub-SDK objects — they are now method calls. `you.search.unified()` (GET `/v1/search`) has been removed; use `you.search()` (POST `/v1/agents/search`) instead. The standalone `search_helpers.search()` function has been merged into `you.search()`. The old→new mapping:
 
 | Old (removed) | New |
 |---------------|-----|
 | `you.agents.runs.create(request=...)` | `you.agents(request=...)` |
 | `you.agents.runs.create_async(request=...)` | `you.agents_async(request=...)` |
-| `you.search.unified(query=...)` | `you.search(query=...)` (POST `/v1/search`) |
+| `you.search.unified(query=...)` | `you.search(query=...)` (POST `/v1/agents/search`) |
 | `you.search_post(query=...)` | `you.search(query=...)` |
 | `you.search_post_async(query=...)` | `you.search_async(query=...)` |
 | `you.contents.generate(urls=...)` | `you.contents(urls=...)` |
 | `you.contents.generate_async(urls=...)` | `you.contents_async(urls=...)` |
+| `search_helpers.search(client, query=...)` | `you.search(query=...)` |
+| `search_helpers.search_async(client, query=...)` | `you.search_async(query=...)` |
 
 Accessing `you.agents`, `you.search`, or `you.contents` as attributes will now fail at runtime — update to the direct method calls above.
 
 ### Added
 
 - **Answer API**: New direct method `you.answer()` / `you.answer_async()` for `POST /v1/answer`. Returns a synthesized markdown answer with inline citations (`[[1, 2]]`), a citations array (source URLs + supporting excerpts), and web results. Accepts `query` (required), `freshness`, `country`, `language`, `include_domains`, `exclude_domains`, `boost_domains`. Requires an API key. Country and language accept plain strings (e.g. `"us"`, `"en"`) and are normalized to uppercase automatically.
-- **Keyless search helper**: `search_helpers.search()` / `search_async()` target `POST /v1/agents/search` on `api.you.com` — the keyless-capable proxy. With no API key, runs in the free tier (100 queries/day, count ≤ 50, no livecrawl). With a key, forwards to the full search endpoint. Language strings are normalized to uppercase.
+- **Keyless search**: `you.search()` / `you.search_async()` now target `POST /v1/agents/search` on `api.you.com` — the keyless-capable proxy. With no API key, runs in the free tier (100 queries/day, count ≤ 50, no livecrawl). With a key, the proxy forwards to the full search endpoint. Country and language strings are normalized to uppercase. The standalone `search_helpers` module has been removed; its functionality is now a direct method on `You`.
 - **`PaymentRequiredResponseError`**: New first-class error class for HTTP 402 responses, matching the `UpgradeRequiredResponse` schema (`error`, `message`, `upgrade_url`, `limit`, `used`, `period`, `reset_at`). Shared by both search and answer 402 handlers. Replaces the previous `FreeTierLimitError`.
 
 ### Changed
 
 - **Direct methods on `You`**: The sub-SDK access patterns (`you.agents.runs.create()`, `you.search.unified()`, `you.contents.generate()`) and the direct aliases (`you.create_run()`, `you.search_unified()`, `you.generate_contents()`, `you.search_post()`) from the prior deprecation have all been replaced with the final direct method names: `you.agents()`, `you.search()`, `you.contents()` (plus async variants). See the Breaking Changes table above.
-- **Search/Contents host**: `SEARCH_OP_SERVERS`, `SEARCH_POST_OP_SERVERS`, and `CONTENTS_OP_SERVERS` changed from `https://ydc-index.io` to `https://api.you.com` to align with the MCP server and published docs. The `search_helpers` module targets the keyless-capable proxy at `api.you.com/v1/agents/search`; the `you.search()` method targets `/v1/search` on the same host.
+- **Search/Contents host**: `SEARCH_OP_SERVERS`, `SEARCH_POST_OP_SERVERS`, and `CONTENTS_OP_SERVERS` changed from `https://ydc-index.io` to `https://api.you.com` to align with the MCP server and published docs. `you.search()` targets the keyless-capable proxy at `api.you.com/v1/agents/search`.
 - **422 error data model**: `UnprocessableEntityResponseErrorData` now includes optional `detail` (FastAPI validation array) and `errors` (JSON:API array) fields in addition to the existing `error` field. All three 422 response shapes deserialize without crashing. Backward compatible — existing code accessing `.error` still works.
 - **500 error data model**: `InternalServerErrorResponseData` now includes an optional `errors` field for JSON:API format 500 responses. Backward compatible.
 - **No longer generated by Speakeasy**: Removed all "Code generated by Speakeasy — DO NOT EDIT" disclaimers and the Speakeasy badge from the README. The SDK is now hand-maintained.

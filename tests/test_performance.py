@@ -168,7 +168,7 @@ class TestSearchPerformance:
     
     def test_search_basic(self, server_url, api_key, iterations, show_detailed):
         """Basic search with query only."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -181,7 +181,7 @@ class TestSearchPerformance:
     
     def test_search_with_count(self, server_url, api_key, iterations, show_detailed):
         """Search with result count limit."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -194,7 +194,7 @@ class TestSearchPerformance:
     
     def test_search_with_freshness_day(self, server_url, api_key, iterations, show_detailed):
         """Search with freshness filter (day)."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -207,7 +207,7 @@ class TestSearchPerformance:
     
     def test_search_with_freshness_week(self, server_url, api_key, iterations, show_detailed):
         """Search with freshness filter (week)."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -220,7 +220,7 @@ class TestSearchPerformance:
     
     def test_search_with_country_us(self, server_url, api_key, iterations, show_detailed):
         """Search with country filter (US)."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -233,7 +233,7 @@ class TestSearchPerformance:
     
     def test_search_with_country_gb(self, server_url, api_key, iterations, show_detailed):
         """Search with country filter (GB)."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -246,7 +246,7 @@ class TestSearchPerformance:
     
     def test_search_with_language_en(self, server_url, api_key, iterations, show_detailed):
         """Search with language filter (English)."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -259,7 +259,7 @@ class TestSearchPerformance:
     
     def test_search_with_language_es(self, server_url, api_key, iterations, show_detailed):
         """Search with language filter (Spanish)."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -272,7 +272,7 @@ class TestSearchPerformance:
     
     def test_search_with_safesearch_off(self, server_url, api_key, iterations, show_detailed):
         """Search with safesearch off."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -285,7 +285,7 @@ class TestSearchPerformance:
     
     def test_search_with_safesearch_moderate(self, server_url, api_key, iterations, show_detailed):
         """Search with safesearch moderate."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -298,7 +298,7 @@ class TestSearchPerformance:
     
     def test_search_with_safesearch_strict(self, server_url, api_key, iterations, show_detailed):
         """Search with safesearch strict."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -311,7 +311,7 @@ class TestSearchPerformance:
     
     def test_search_with_pagination(self, server_url, api_key, iterations, show_detailed):
         """Search with pagination (offset)."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -324,7 +324,7 @@ class TestSearchPerformance:
     
     def test_search_with_livecrawl_web(self, server_url, api_key, iterations, show_detailed):
         """Search with livecrawl enabled for web results."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -342,7 +342,7 @@ class TestSearchPerformance:
     
     def test_search_with_livecrawl_news(self, server_url, api_key, iterations, show_detailed):
         """Search with livecrawl enabled for news results."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -360,7 +360,7 @@ class TestSearchPerformance:
     
     def test_search_with_livecrawl_all(self, server_url, api_key, iterations, show_detailed):
         """Search with livecrawl enabled for all results."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -378,7 +378,7 @@ class TestSearchPerformance:
     
     def test_search_with_livecrawl_html(self, server_url, api_key, iterations, show_detailed):
         """Search with livecrawl returning HTML format."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -397,7 +397,7 @@ class TestSearchPerformance:
     
     def test_search_with_livecrawl_markdown(self, server_url, api_key, iterations, show_detailed):
         """Search with livecrawl returning Markdown format."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -416,7 +416,7 @@ class TestSearchPerformance:
     
     def test_search_with_all_filters(self, server_url, api_key, iterations, show_detailed):
         """Search with multiple filters combined."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -438,7 +438,7 @@ class TestSearchPerformance:
     
     def test_search_with_filters_and_livecrawl(self, server_url, api_key, iterations, show_detailed):
         """Search with filters and livecrawl combined."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -459,7 +459,7 @@ class TestSearchPerformance:
     
     def test_search_with_news_livecrawl(self, server_url, api_key, iterations, show_detailed):
         """Search with livecrawl for news results (news now supports contents)."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
@@ -478,7 +478,7 @@ class TestSearchPerformance:
     
     def test_search_with_livecrawl_all_news_contents(self, server_url, api_key, iterations, show_detailed):
         """Search with livecrawl=ALL for both web and news contents."""
-        client = create_timing_client("get_/v1/search")
+        client = create_timing_client("post_/v1/agents/search")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():

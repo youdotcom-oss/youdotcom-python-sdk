@@ -55,7 +55,7 @@ def _async_you(handler, *, api_key: str | None = "test-key"):
 
 
 # ---------------------------------------------------------------------------
-# you.search() — POST /v1/search
+# you.search() — POST /v1/agents/search (keyless-capable)
 # ---------------------------------------------------------------------------
 
 
@@ -81,7 +81,7 @@ class TestSearchDirect:
 
         _sync_you(handler).search(query="test")
         assert captured["method"] == "POST"
-        assert "/v1/search" in captured["url"]
+        assert "/v1/agents/search" in captured["url"]
 
     def test_passes_params_in_body(self):
         captured: dict = {}

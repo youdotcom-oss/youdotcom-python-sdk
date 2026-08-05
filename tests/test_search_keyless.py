@@ -1,4 +1,9 @@
-"""Tests for youdotcom.search_helpers — keyless-capable ``/v1/agents/search``."""
+"""Tests for you.search() — keyless-capable ``POST /v1/agents/search``.
+
+The search method now targets ``/v1/agents/search`` (the keyless-capable
+proxy) instead of ``/v1/search``.  With no API key it runs in the free tier;
+with a key the proxy forwards to the full search endpoint.
+"""
 
 import json
 
@@ -15,7 +20,6 @@ from youdotcom.errors import (
     YouDefaultError,
 )
 from youdotcom.models import SearchResponse
-from youdotcom.search_helpers import search, search_async
 
 
 _SEARCH_BODY = json.dumps(
@@ -54,7 +58,7 @@ def _async_you(handler, *, api_key: str | None = "test-key"):
 
 class TestSearchSuccess:
     def test_keyed_search_returns_search_response(self):
-        res = search(_sync_you(_make_handler(200)), query="python", count=5)
+        res = _sync_you(_make_handler(200)).search(query="python", count=5)
         assert isinstance(res, SearchResponse)
         assert res.results is not None
         assert res.results.web is not None
@@ -63,13 +67,12 @@ class TestSearchSuccess:
 
     def test_keyless_search_returns_search_response(self):
         """No api_key_auth → keyless free-tier path still returns SearchResponse."""
-        res = search(_sync_you(_make_handler(200), api_key=None), query="python", count=5)
+        res = _sync_you(_make_handler(200), api_key=None).search(query="python", count=5)
         assert isinstance(res, SearchResponse)
 
     def test_string_enum_params_accepted(self):
         """country/safesearch/livecrawl/freshness accept plain strings."""
-        res = search(
-            _sync_you(_make_handler(200)),
+        res = _sync_you(_make_handler(200)).search(
             query="python",
             country="US",
             safesearch="strict",
@@ -80,18 +83,17 @@ class TestSearchSuccess:
 
     def test_lowercase_language_is_normalized(self):
         """language='en' should be normalized to 'EN' before model validation."""
-        res = search(_sync_you(_make_handler(200)), query="python", language="en")
+        res = _sync_you(_make_handler(200)).search(query="python", language="en")
         assert isinstance(res, SearchResponse)
 
     def test_lowercase_country_is_normalized(self):
         """country='us' should be normalized to 'US' before model validation."""
-        res = search(_sync_you(_make_handler(200)), query="python", country="us")
+        res = _sync_you(_make_handler(200)).search(query="python", country="us")
         assert isinstance(res, SearchResponse)
 
     def test_exclude_and_boost_domains_accepted(self):
         """exclude_domains and boost_domains should be accepted as lists."""
-        res = search(
-            _sync_you(_make_handler(200)),
+        res = _sync_you(_make_handler(200)).search(
             query="python",
             exclude_domains=["spam.com"],
             boost_domains=["realpython.com"],
@@ -109,7 +111,7 @@ class TestSearchSuccess:
                 200, headers={"content-type": "application/json"}, content=_SEARCH_BODY
             )
 
-        search(_sync_you(handler), query="python")
+        _sync_you(handler).search(query="python")
         assert captured["method"] == "POST"
         assert "/v1/agents/search" in captured["url"]
 
@@ -123,7 +125,7 @@ class TestSearchSuccess:
                 200, headers={"content-type": "application/json"}, content=_SEARCH_BODY
             )
 
-        search(_sync_you(handler), query="python")
+        _sync_you(handler).search(query="python")
         assert captured["ua"] == f"youdotcom-python-sdk/{__version__}"
 
     def test_custom_user_agent_passes_through(self):
@@ -142,19 +144,17 @@ class TestSearchSuccess:
             client=httpx.Client(transport=httpx.MockTransport(handler)),
         )
         you.sdk_configuration.user_agent = "my-integration/1.0"
-        search(you, query="python")
+        you.search(query="python")
         assert captured["ua"] == "my-integration/1.0"
 
     @pytest.mark.asyncio
     async def test_async_keyed_search_returns_search_response(self):
-        res = await search_async(_async_you(_make_handler(200)), query="python", count=5)
+        res = await _async_you(_make_handler(200)).search_async(query="python", count=5)
         assert isinstance(res, SearchResponse)
 
     @pytest.mark.asyncio
     async def test_async_keyless_search_returns_search_response(self):
-        res = await search_async(
-            _async_you(_make_handler(200), api_key=None), query="python", count=5
-        )
+        res = await _async_you(_make_handler(200), api_key=None).search_async(query="python", count=5)
         assert isinstance(res, SearchResponse)
 
 
@@ -166,7 +166,7 @@ class TestSearchErrors:
             "upgrade_url": "https://you.com/platform",
         })
         with pytest.raises(PaymentRequiredResponseError) as exc_info:
-            search(_sync_you(_make_handler(402, body)), query="python", count=100)
+            _sync_you(_make_handler(402, body)).search(query="python", count=100)
         assert exc_info.value.status_code == 402
         assert exc_info.value.data.message == "Insufficient credits"
         assert exc_info.value.data.upgrade_url == "https://you.com/platform"
@@ -174,22 +174,22 @@ class TestSearchErrors:
     def test_401_raises_unauthorized_error(self):
         body = json.dumps({"detail": "invalid api key"})
         with pytest.raises(UnauthorizedResponseError):
-            search(_sync_you(_make_handler(401, body), api_key="bad-key"), query="python")
+            _sync_you(_make_handler(401, body), api_key="bad-key").search(query="python")
 
     def test_422_raises_unprocessable_entity_error(self):
         body = json.dumps({"error": "include_domains and exclude_domains are mutually exclusive"})
         with pytest.raises(UnprocessableEntityResponseError):
-            search(_sync_you(_make_handler(422, body)), query="python")
+            _sync_you(_make_handler(422, body)).search(query="python")
 
     def test_500_raises_internal_server_error(self):
         body = json.dumps({"detail": "internal server error"})
         with pytest.raises(InternalServerErrorResponse):
-            search(_sync_you(_make_handler(500, body)), query="python")
+            _sync_you(_make_handler(500, body)).search(query="python")
 
     def test_4xx_fallback_raises_default_error(self):
         body = json.dumps({"detail": "rate limited"})
         with pytest.raises(YouDefaultError):
-            search(_sync_you(_make_handler(429, body)), query="python")
+            _sync_you(_make_handler(429, body)).search(query="python")
 
     @pytest.mark.asyncio
     async def test_async_402_raises_payment_required_error(self):
@@ -199,7 +199,7 @@ class TestSearchErrors:
             "upgrade_url": "https://you.com/platform",
         })
         with pytest.raises(PaymentRequiredResponseError) as exc_info:
-            await search_async(_async_you(_make_handler(402, body)), query="python", count=100)
+            await _async_you(_make_handler(402, body)).search_async(query="python", count=100)
         assert exc_info.value.status_code == 402
         assert exc_info.value.data.error == "payment_required"
 
@@ -207,12 +207,10 @@ class TestSearchErrors:
     async def test_async_401_raises_unauthorized_error(self):
         body = json.dumps({"detail": "unauthorized"})
         with pytest.raises(UnauthorizedResponseError):
-            await search_async(
-                _async_you(_make_handler(401, body), api_key="bad-key"), query="python"
-            )
+            await _async_you(_make_handler(401, body), api_key="bad-key").search_async(query="python")
 
     @pytest.mark.asyncio
     async def test_async_500_raises_internal_server_error(self):
         body = json.dumps({"detail": "internal server error"})
         with pytest.raises(InternalServerErrorResponse):
-            await search_async(_async_you(_make_handler(500, body)), query="python")
+            await _async_you(_make_handler(500, body)).search_async(query="python")
