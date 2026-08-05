@@ -1,6 +1,6 @@
 # Agents.Runs
 
-> **DEPRECATED** — The `Agents.Runs` sub-SDK pattern still works but emits `DeprecationWarning`. Use the direct method on the `You` client instead:
+> **DEPRECATED** — The `Agents.Runs` sub-SDK pattern still works but emits `DeprecationWarning`. The sub-SDK layer was Speakeasy-generated indirection (`Agents` → `Runs` → `create()`); `you.agents()` is now a direct method on `You` with the same request types. Use the direct method instead:
 >
 > - `you.agents(request=...)` (was `you.agents.runs.create(request=...)`)
 > - `you.agents_async(request=...)` (was `you.agents.runs.create_async(request=...)`)

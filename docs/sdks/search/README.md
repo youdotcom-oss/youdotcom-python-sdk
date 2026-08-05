@@ -1,6 +1,6 @@
 # Search
 
-> **DEPRECATED** — The `Search` sub-SDK pattern still works but emits `DeprecationWarning`. Use the direct method on the `You` client instead:
+> **DEPRECATED** — The `Search` sub-SDK pattern still works but emits `DeprecationWarning`. The sub-SDK layer was Speakeasy-generated indirection; `you.search()` is now a direct method on `You` with a simpler signature (accepts plain strings for `country`, `safesearch`, `freshness` — no enum imports needed). Use the direct method instead:
 >
 > - `you.search(query=...)` (was `you.search.unified(query=...)` and `you.search_post(query=...)`)
 > - `you.search_async(query=...)` (was `you.search_post_async(query=...)`)

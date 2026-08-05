@@ -1,6 +1,6 @@
 # Contents
 
-> **DEPRECATED** — The `ContentsSDK` sub-SDK pattern still works but emits `DeprecationWarning`. Use the direct method on the `You` client instead:
+> **DEPRECATED** — The `ContentsSDK` sub-SDK pattern still works but emits `DeprecationWarning`. The sub-SDK layer was Speakeasy-generated indirection; `you.contents()` is now a direct method on `You` with the same parameters. Use the direct method instead:
 >
 > - `you.contents(urls=...)` (was `you.contents.generate(urls=...)`)
 > - `you.contents_async(urls=...)` (was `you.contents.generate_async(urls=...)`)
