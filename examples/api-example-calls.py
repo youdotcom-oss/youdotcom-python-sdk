@@ -60,7 +60,7 @@ def express_batch_request():
 
     assert you is not None, "SDK client not initialized"
 
-    results = you.agents.runs.create(request=ExpressAgentRunsRequest(
+    results = you.agents(request=ExpressAgentRunsRequest(
         input="What is the capital of France?",
         stream=False,
         tools=[
@@ -90,7 +90,7 @@ def express_streaming_request():
 
     assert you is not None, "SDK client not initialized"
 
-    response = you.agents.runs.create(request=ExpressAgentRunsRequest(
+    response = you.agents(request=ExpressAgentRunsRequest(
         input="Restaurants in San Francisco",
         stream=True,
         tools=[
@@ -159,7 +159,7 @@ def advanced_batch_request():
         ]
     )
 
-    results = you.agents.runs.create(request=request)
+    results = you.agents(request=request)
 
     # Access the results - check if it's a batch response
     if isinstance(results, AgentRunsBatchResponse):
@@ -195,7 +195,7 @@ def custom_batch_request():
     )
 
     try:
-        results = you.agents.runs.create(request=request)
+        results = you.agents(request=request)
         print(results)
     except Exception as e:
         print(f"Error: {e}")
@@ -210,7 +210,7 @@ def search_request():
 
     assert you is not None, "SDK client not initialized"
 
-    results = you.search.unified(
+    results = you.search(
         query="artificial intelligence in farming",
         count=1,
         livecrawl=LiveCrawl.WEB,
@@ -242,7 +242,7 @@ def content_request():
 
     # Example 1: Get markdown content
     print("Example 1: Fetching markdown content...")
-    results = you.contents.generate(
+    results = you.contents(
         urls=["https://you.com"],
         formats=[ContentsFormats.MARKDOWN]
     )
@@ -257,7 +257,7 @@ def content_request():
     
     # Example 2: Get multiple formats including metadata (json+ld, opengraph info)
     print("Example 2: Fetching HTML + metadata...")
-    results = you.contents.generate(
+    results = you.contents(
         urls=["https://you.com"],
         formats=[ContentsFormats.HTML, ContentsFormats.METADATA],
         crawl_timeout=30  # Optional: set custom timeout (1-60 seconds)
@@ -487,10 +487,10 @@ def search_request_with_boost():
 
     assert you is not None, "SDK client not initialized"
 
-    results = you.search.unified(
+    results = you.search(
         query="latest advances in fusion energy research",
         count=5,
-        boost_domains="nature.com,science.org,arxiv.org",
+        boost_domains=["nature.com", "science.org", "arxiv.org"],
     )
 
     print("Top results:")
@@ -509,7 +509,7 @@ def content_request_with_max_age():
 
     assert you is not None, "SDK client not initialized"
 
-    results = you.contents.generate(
+    results = you.contents(
         urls=["https://example.com/page"],
         formats=[ContentsFormats.MARKDOWN],
         crawl_timeout=20,

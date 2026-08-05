@@ -463,8 +463,8 @@ class TestLiveSearchBoostDomains:
     other domains — for a more permissive alternative to `include_domains`.
     """
 
-    def test_search_post_boost_domains_list(self, you_client):
-        """search_post accepts a Python list of boost domains."""
+    def test_search_boost_domains_list(self, you_client):
+        """search accepts a Python list of boost domains."""
         with you_client as you:
             res = you.search(
                 query="Python type hints vs TypeScript inference",

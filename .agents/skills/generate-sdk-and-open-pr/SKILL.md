@@ -301,18 +301,18 @@ grep -rl "YOU_API_KEY_AUTH" --include="*.py" --include="*.md" . | grep -v __pyca
 # in the fallback precedence.
 ```
 
-#### 4i-2. Verify server URLs (do NOT change search/contents URLs)
+#### 4i-2. Verify server URLs
 
-The OpenAPI specs for search and contents use `https://ydc-index.io` as the server URL. This is correct and documented at `you.com/docs/api-reference/search/v1-search` (the page explicitly shows `GET https://ydc-index.io/v1/search`). The `api.you.com` host is a free MCP-only proxy (`/v1/agents/search`, 100 searches/day, IP-tracked) — the SDK should NOT use it for search or contents.
+The OpenAPI specs for search and contents use `https://api.you.com` as the server URL. This is the canonical host for the SDK and is documented at `you.com/docs/api-reference/search/v1-search`.
 
-**Verify** (do not change) that these files still have `ydc-index.io`:
+**Verify** (do not change) that these files still have `api.you.com`:
 
 ```bash
-grep "ydc-index.io" src/youdotcom/models/searchop.py src/youdotcom/models/searchpostop.py src/youdotcom/models/contentsop.py
-# All three should show "https://ydc-index.io"
+grep "api.you.com" src/youdotcom/models/searchop.py src/youdotcom/models/searchpostop.py src/youdotcom/models/contentsop.py
+# All three should show "https://api.you.com"
 ```
 
-The base `SERVERS` in `src/youdotcom/sdkconfiguration.py` should remain `https://api.you.com` (used by research, finance_research, agents).
+The base `SERVERS` in `src/youdotcom/sdkconfiguration.py` should also remain `https://api.you.com` (used by all endpoints: search, contents, research, finance_research, agents).
 
 #### 4i-3. Preserve and verify hand-maintained files
 
@@ -412,7 +412,7 @@ Speakeasy assembles per-parameter `example` values into one combined request. Fo
 - `boost_domains` **cannot** be combined with `include_domains` (returns `422`).
 - `exclude_domains` + `boost_domains` **is** valid.
 
-After every regen, grep the lead Search examples in `USAGE.md` and `README.md` (specifically the `<!-- Start SDK Example Usage -->` blocks) to confirm no `search_post`/`search.unified` example combines all three of `include_domains`, `exclude_domains`, and `boost_domains`:
+After every regen, grep the lead Search examples in `USAGE.md` and `README.md` (specifically the `<!-- Start SDK Example Usage -->` blocks) to confirm no `search` example combines all three of `include_domains`, `exclude_domains`, and `boost_domains`:
 
 ```bash
 # Each occurrence with all three is a bug — drop include_domains (keep
@@ -424,11 +424,11 @@ grep -nE 'include_domains=\[' USAGE.md README.md
 
 The long-term fix lives upstream: add a request-level `example` block on `SearchRequestBody` / `SearchRequest` in `overlays/python_overlay.yaml` (or the front-end OpenAPI specs) that uses a single valid pair, so Speakeasy prefers that example instead of concatenating per-field ones. Track that as a follow-up; the hand-fix above is what keeps 2.4.0 correct in the meantime.
 
-Also scan for the `RetryConfig(...)` positional-after-kwargs regression that Speakeasy can produce when `search_post` is the lead example operation:
+Also scan for the `RetryConfig(...)` positional-after-kwargs regression that Speakeasy can produce when `search` is the lead example operation:
 
 ```bash
 # If you see ", RetryConfig(...)" or similar after a keyword argument in a
-# search_post example, the generated Python is a SyntaxError. Fix by
+# search example, the generated Python is a SyntaxError. Fix by
 # passing `retries=RetryConfig(...)`.
 grep -nE ', RetryConfig\(' README.md USAGE.md
 ```

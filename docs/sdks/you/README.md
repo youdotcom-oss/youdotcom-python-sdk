@@ -26,6 +26,43 @@ Comprehensive API for You.com services:
 * [stream_research_task](#stream_research_task) - Stream updates for a background research task
 * [finance_research](#finance_research) - Returns comprehensive finance-grade research answers with multi-step reasoning
 
+## answer
+
+Returns a synthesized answer with citations from web search results.
+
+### Example Usage
+
+```python
+import os
+from youdotcom import You
+
+with You(
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
+) as you:
+    res = you.answer(query="What is the capital of France?")
+    print(res)
+```
+
+## agents
+
+Execute queries using You.com's AI agents (Express, Advanced, or Custom).
+
+### Example Usage
+
+```python
+import os
+from youdotcom import You, models
+
+with You(
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
+) as you:
+    res = you.agents(request=models.ExpressAgentRunsRequest(
+        agent=models.AgentType.EXPRESS,
+        input="What are the latest AI developments?",
+    ))
+    print(res)
+```
+
 ## search
 
 This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
@@ -234,6 +271,23 @@ with You(
 | errors.UnprocessableEntityResponseError | 422                                     | application/json                        |
 | errors.InternalServerErrorResponse      | 500                                     | application/json                        |
 | errors.YouDefaultError                  | 4XX, 5XX                                | \*/\*                                   |
+
+## contents
+
+Returns the HTML or Markdown of target web pages.
+
+### Example Usage
+
+```python
+import os
+from youdotcom import You, models
+
+with You(
+    api_key_auth=os.getenv("YDC_API_KEY", ""),
+) as you:
+    res = you.contents(urls=["https://example.com"], formats=[models.ContentsFormats.MARKDOWN])
+    print(res)
+```
 
 ## research
 
