@@ -1,6 +1,6 @@
 # Migration Guide
 
-## 2.5.0 → Unreleased (major version)
+## 2.5.0 → 2.6.0 (major version)
 
 > **This is a major version release with breaking changes.** Sub-SDKs have been removed and methods are now direct on the `You` class. Update your code before upgrading.
 
