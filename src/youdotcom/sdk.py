@@ -20,6 +20,7 @@ from typing import (
 import weakref
 from youdotcom import errors, models, utils
 from youdotcom._hooks import HookContext, SDKHooks
+from youdotcom._shims import AgentsShim, ContentsShim, SearchShim
 from youdotcom.types import BaseModel, OptionalNullable, UNSET
 from youdotcom.utils import eventstreaming, get_security_from_env
 from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
@@ -133,6 +134,14 @@ class You(BaseSDK):
             self.sdk_configuration.async_client_supplied,
         )
 
+        # Backward-compat shims: you.agents.runs.create(), you.search.unified(),
+        # you.contents.generate() still work but emit DeprecationWarning.
+        # you.agents(request=...), you.search(query=...), you.contents(urls=...)
+        # (the new API) go through __call__ with no warning.
+        self.agents = AgentsShim(self)
+        self.search = SearchShim(self)
+        self.contents = ContentsShim(self)
+
     def __enter__(self):
         return self
 
@@ -154,6 +163,18 @@ class You(BaseSDK):
         ):
             await self.sdk_configuration.async_client.aclose()
         self.sdk_configuration.async_client = None
+
+    async def agents_async(self, **kwargs: Any) -> Any:
+        """Async variant of :meth:`agents`."""
+        return await self._agents_async_impl(**kwargs)
+
+    async def search_async(self, **kwargs: Any) -> models.SearchResponse:
+        """Async variant of :meth:`search`."""
+        return await self._search_async_impl(**kwargs)
+
+    async def contents_async(self, **kwargs: Any) -> List[models.ContentsResponse]:
+        """Async variant of :meth:`contents`."""
+        return await self._contents_async_impl(**kwargs)
 
     def answer(
         self,
@@ -451,7 +472,7 @@ class You(BaseSDK):
 
         raise errors.YouDefaultError("Unexpected response received", http_res)
 
-    def agents(
+    def _agents_impl(
         self,
         *,
         request: Union[models.AgentsRunsRequest, models.AgentsRunsRequestTypedDict],
@@ -592,7 +613,7 @@ class You(BaseSDK):
             "Unexpected response received", http_res, http_res_text
         )
 
-    async def agents_async(
+    async def _agents_async_impl(
         self,
         *,
         request: Union[models.AgentsRunsRequest, models.AgentsRunsRequestTypedDict],
@@ -733,7 +754,7 @@ class You(BaseSDK):
             "Unexpected response received", http_res, http_res_text
         )
 
-    def contents(
+    def _contents_impl(
         self,
         *,
         urls: Optional[Iterable[str]] = None,
@@ -847,7 +868,7 @@ class You(BaseSDK):
 
         raise errors.YouDefaultError("Unexpected response received", http_res)
 
-    async def contents_async(
+    async def _contents_async_impl(
         self,
         *,
         urls: Optional[Iterable[str]] = None,
@@ -961,7 +982,7 @@ class You(BaseSDK):
 
         raise errors.YouDefaultError("Unexpected response received", http_res)
 
-    def search(
+    def _search_impl(
         self,
         *,
         query: str,
@@ -1126,7 +1147,7 @@ class You(BaseSDK):
 
         raise errors.YouDefaultError("Unexpected response received", http_res)
 
-    async def search_async(
+    async def _search_async_impl(
         self,
         *,
         query: str,
