@@ -6,7 +6,6 @@ The official developer-friendly & type-safe Python SDK specifically designed to 
 </div>
 <br >
 <div align="center">
-    <a href="https://www.speakeasy.com/?utm_source=openapi&utm_campaign=python"><img src="https://www.speakeasy.com/assets/badges/built-by-speakeasy.svg" /></a>
     <a href="https://opensource.org/licenses/MIT">
         <img src="https://img.shields.io/badge/License-MIT-blue.svg" style="width: 100px; height: 28px;" />
     </a>
@@ -15,13 +14,13 @@ The official developer-friendly & type-safe Python SDK specifically designed to 
 <!-- Start Summary [summary] -->
 ## Summary
 
-You.com API: Unified API for Express, Advanced, and Custom Agents from You.com
+You.com API: Unified API for search, answers, research, and content from You.com
 Get the best search results from web and news sources
 Returns the HTML or Markdown of a target webpage
 Multi-step reasoning with comprehensive research capabilities
 Finance-focused multi-step research with competitive accuracy at same price points and latencies as the Research API
 Comprehensive API for You.com services:
-- **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
+- **Answer API**: Get synthesized, citation-backed answers grounded in real-time web results
 - **Research API**: In-depth, multi-step research with citations and sources
 - **Finance Research API**: Finance-focused multi-step research with citations and sources
 - **Search API**: Get search results from web and news sources
@@ -141,7 +140,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -169,7 +168,7 @@ async def main():
         api_key_auth=os.getenv("YDC_API_KEY", ""),
     ) as you:
 
-        res = await you.search_post_async(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+        res = await you.search_async(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
             "spam-site.com",
             "other-site.com",
         ], boost_domains=[
@@ -206,7 +205,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -228,23 +227,13 @@ with You(
 
 ### [You SDK](docs/sdks/you/README.md)
 
-* [search_post](docs/sdks/you/README.md#search_post) - Returns a list of unified search results from web and news sources
+* [answer](docs/sdks/answer/README.md#answer) - Returns a synthesized answer with citations from web search results
+* [search](docs/sdks/you/README.md#search) - Returns a list of unified search results from web and news sources
+* [contents](docs/sdks/you/README.md#contents) - Returns the content of the web pages
 * [research](docs/sdks/you/README.md#research) - Returns comprehensive research-grade answers with multi-step reasoning
 * [get_research_task](docs/sdks/you/README.md#get_research_task) - Get the status of a background research task
 * [stream_research_task](docs/sdks/you/README.md#stream_research_task) - Stream updates for a background research task
 * [finance_research](docs/sdks/you/README.md#finance_research) - Returns comprehensive finance-grade research answers with multi-step reasoning
-
-### [Agents.Runs](docs/sdks/runs/README.md)
-
-* [create](docs/sdks/runs/README.md#create) - Run an Agent
-
-### [Contents](docs/sdks/contentssdk/README.md)
-
-* [generate](docs/sdks/contentssdk/README.md#generate) - Returns the content of the web pages
-
-### [Search](docs/sdks/search/README.md)
-
-* [unified](docs/sdks/search/README.md#unified) - Returns a list of unified search results from web and news sources
 
 </details>
 <!-- End Available Resources and Operations [operations] -->
@@ -264,17 +253,7 @@ underlying connection when the context is exited.
 ```python
 import os
 from youdotcom import You
-from youdotcom.models import (
-    ExpressAgentRunsRequest,
-    WebSearchTool,
-    ResponseCreated,
-    ResponseStarting,
-    ResponseOutputItemAdded,
-    ResponseOutputContentFull,
-    ResponseOutputTextDelta,
-    ResponseOutputItemDone,
-    ResponseDone,
-)
+from youdotcom.models import ResearchEffort
 from youdotcom.utils import eventstreaming
 
 
@@ -282,53 +261,16 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    response = you.agents.runs.create(request=ExpressAgentRunsRequest(
-        input="Restaurants in San Francisco",
-        stream=True,
-        tools=[
-            WebSearchTool()
-        ]
-    ))
+    # Stream updates for a background research task via SSE
+    response = you.stream_research_task(task_id="your-task-id")
 
     # Type narrow to ensure we have a streaming response
     assert isinstance(response, eventstreaming.EventStream), "Expected streaming response"
     with response as stream:
-        # Iterate through the stream and handle each event type
-        # Each chunk is an AgentRunsStreamingResponse with a 'data' field
+        # Iterate through the stream and handle each event
         for chunk in stream:
-            # The data field contains the actual event (discriminated by TYPE)
             event_data = chunk.data
-
-            # Use isinstance() to narrow the type and handle each event
-            if isinstance(event_data, ResponseCreated):
-                print(f"✨ Response created (seq: {event_data.seq_id})")
-
-            elif isinstance(event_data, ResponseStarting):
-                print(f"🚀 Response starting (seq: {event_data.seq_id})")
-
-            elif isinstance(event_data, ResponseOutputItemAdded):
-                print(f"➕ Output item added: {event_data.seq_id}")
-
-            elif isinstance(event_data, ResponseOutputContentFull):
-                print("\n🔍 Web Search Results:")
-                if event_data.response.full:
-                    for idx, result in enumerate(event_data.response.full, 1):
-                        print(f"  {idx}. {result.title} - {result.url}")
-
-            elif isinstance(event_data, ResponseOutputTextDelta):
-                # Print the delta text as it streams in (without newline)
-                print(event_data.response.delta, end='', flush=True)
-
-            elif isinstance(event_data, ResponseOutputItemDone):
-                print(f"\n✅ Output item done (index: {event_data.response.output_index})")
-
-            elif isinstance(event_data, ResponseDone):
-                print("\n🎉 Response completed!")
-                print(f"   Runtime: {event_data.response.run_time_ms} ms")
-                print(f"   Finished: {event_data.response.finished}")
-
-            else:
-                print(f"⚠️  Unknown event type: {type(event_data).__name__}")
+            print(event_data)
 ```
 
 [mdn-sse]: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
@@ -352,7 +294,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -378,7 +320,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -418,7 +360,7 @@ with You(
     res = None
     try:
 
-        res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+        res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
             "spam-site.com",
             "other-site.com",
         ], boost_domains=[
@@ -447,7 +389,7 @@ with You(
 **Primary error:**
 * [`YouError`](./src/youdotcom/errors/youerror.py): The base class for HTTP error responses.
 
-<details><summary>Less common errors (31)</summary>
+<details><summary>Less common errors (26)</summary>
 
 <br />
 
@@ -458,32 +400,32 @@ with You(
 
 
 **Inherit from [`YouError`](./src/youdotcom/errors/youerror.py)**:
-* [`UnauthorizedResponseError`](./src/youdotcom/errors/unauthorizedresponseerror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 2 of 8 methods.*
-* [`ForbiddenResponseError`](./src/youdotcom/errors/forbiddenresponseerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 2 of 8 methods.*
-* [`UnprocessableEntityResponseError`](./src/youdotcom/errors/unprocessableentityresponseerror.py): Unprocessable Entity. Invalid request parameter combination. Status code `422`. Applicable to 2 of 8 methods.*
-* [`InternalServerErrorResponse`](./src/youdotcom/errors/internalservererrorresponse.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 2 of 8 methods.*
-* [`AgentRuns400ResponseError`](./src/youdotcom/errors/agentruns400responseerror.py): The message returned by the error. Status code `400`. Applicable to 1 of 8 methods.*
-* [`ResearchUnauthorizedError`](./src/youdotcom/errors/researchunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
-* [`FinanceResearchUnauthorizedError`](./src/youdotcom/errors/financeresearchunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
-* [`ContentsUnauthorizedError`](./src/youdotcom/errors/contentsunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
-* [`AgentRuns401ResponseError`](./src/youdotcom/errors/agentruns401responseerror.py): The message returned by the error. Status code `401`. Applicable to 1 of 8 methods.*
-* [`ResearchForbiddenError`](./src/youdotcom/errors/researchforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
-* [`FinanceResearchForbiddenError`](./src/youdotcom/errors/financeresearchforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
-* [`ContentsForbiddenError`](./src/youdotcom/errors/contentsforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
-* [`ResearchUnprocessableEntityError`](./src/youdotcom/errors/researchunprocessableentityerror.py): Unprocessable Entity. Request validation failed. Status code `422`. Applicable to 1 of 8 methods.*
-* [`FinanceResearchUnprocessableEntityError`](./src/youdotcom/errors/financeresearchunprocessableentityerror.py): Unprocessable Entity. Request validation failed. Status code `422`. Applicable to 1 of 8 methods.*
-* [`AgentRuns422ResponseError`](./src/youdotcom/errors/agentruns422responseerror.py): Unprocessable Entity - Invalid request data. Status code `422`. Applicable to 1 of 8 methods.*
-* [`ResearchInternalServerError`](./src/youdotcom/errors/researchinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
-* [`FinanceResearchInternalServerError`](./src/youdotcom/errors/financeresearchinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
-* [`ContentsInternalServerError`](./src/youdotcom/errors/contentsinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
-* [`GetResearchTaskUnauthorizedError`](./src/youdotcom/errors/getresearchtaskop.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
-* [`GetResearchTaskForbiddenError`](./src/youdotcom/errors/getresearchtaskop.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
-* [`GetResearchTaskNotFoundError`](./src/youdotcom/errors/getresearchtaskop.py): Not Found. Task does not exist or does not belong to the caller. Status code `404`. Applicable to 1 of 8 methods.*
-* [`GetResearchTaskInternalServerError`](./src/youdotcom/errors/getresearchtaskop.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
-* [`StreamResearchTaskUnauthorizedError`](./src/youdotcom/errors/streamresearchtaskop.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
-* [`StreamResearchTaskForbiddenError`](./src/youdotcom/errors/streamresearchtaskop.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
-* [`StreamResearchTaskNotFoundError`](./src/youdotcom/errors/streamresearchtaskop.py): Not Found. Task does not exist or does not belong to the caller. Status code `404`. Applicable to 1 of 8 methods.*
-* [`StreamResearchTaskInternalServerError`](./src/youdotcom/errors/streamresearchtaskop.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
+* [`UnauthorizedResponseError`](./src/youdotcom/errors/unauthorizedresponseerror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 2 of 7 methods.*
+* [`ForbiddenResponseError`](./src/youdotcom/errors/forbiddenresponseerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 2 of 7 methods.*
+* [`UnprocessableEntityResponseError`](./src/youdotcom/errors/unprocessableentityresponseerror.py): Unprocessable Entity. Invalid request parameter combination. Status code `422`. Applicable to 2 of 7 methods.*
+* [`InternalServerErrorResponse`](./src/youdotcom/errors/internalservererrorresponse.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 2 of 7 methods.*
+
+* [`ResearchUnauthorizedError`](./src/youdotcom/errors/researchunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 7 methods.*
+* [`FinanceResearchUnauthorizedError`](./src/youdotcom/errors/financeresearchunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 7 methods.*
+* [`ContentsUnauthorizedError`](./src/youdotcom/errors/contentsunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 7 methods.*
+
+* [`ResearchForbiddenError`](./src/youdotcom/errors/researchforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 7 methods.*
+* [`FinanceResearchForbiddenError`](./src/youdotcom/errors/financeresearchforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 7 methods.*
+* [`ContentsForbiddenError`](./src/youdotcom/errors/contentsforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 7 methods.*
+* [`ResearchUnprocessableEntityError`](./src/youdotcom/errors/researchunprocessableentityerror.py): Unprocessable Entity. Request validation failed. Status code `422`. Applicable to 1 of 7 methods.*
+* [`FinanceResearchUnprocessableEntityError`](./src/youdotcom/errors/financeresearchunprocessableentityerror.py): Unprocessable Entity. Request validation failed. Status code `422`. Applicable to 1 of 7 methods.*
+
+* [`ResearchInternalServerError`](./src/youdotcom/errors/researchinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 7 methods.*
+* [`FinanceResearchInternalServerError`](./src/youdotcom/errors/financeresearchinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 7 methods.*
+* [`ContentsInternalServerError`](./src/youdotcom/errors/contentsinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 7 methods.*
+* [`GetResearchTaskUnauthorizedError`](./src/youdotcom/errors/getresearchtaskop.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 7 methods.*
+* [`GetResearchTaskForbiddenError`](./src/youdotcom/errors/getresearchtaskop.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 7 methods.*
+* [`GetResearchTaskNotFoundError`](./src/youdotcom/errors/getresearchtaskop.py): Not Found. Task does not exist or does not belong to the caller. Status code `404`. Applicable to 1 of 7 methods.*
+* [`GetResearchTaskInternalServerError`](./src/youdotcom/errors/getresearchtaskop.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 7 methods.*
+* [`StreamResearchTaskUnauthorizedError`](./src/youdotcom/errors/streamresearchtaskop.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 7 methods.*
+* [`StreamResearchTaskForbiddenError`](./src/youdotcom/errors/streamresearchtaskop.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 7 methods.*
+* [`StreamResearchTaskNotFoundError`](./src/youdotcom/errors/streamresearchtaskop.py): Not Found. Task does not exist or does not belong to the caller. Status code `404`. Applicable to 1 of 7 methods.*
+* [`StreamResearchTaskInternalServerError`](./src/youdotcom/errors/streamresearchtaskop.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 7 methods.*
 * [`ResponseValidationError`](./src/youdotcom/errors/responsevalidationerror.py): Type mismatch between the response data and the expected Pydantic model. Provides access to the Pydantic validation error via the `cause` attribute.
 
 </details>
@@ -503,7 +445,7 @@ from youdotcom import You, models
 
 
 with You(
-    server_url="https://api.you.com",
+    server_url="https://ydc-index.io",
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
@@ -526,7 +468,7 @@ with You(
     api_key_auth=os.getenv("YDC_API_KEY", ""),
 ) as you:
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
+    res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
         "spam-site.com",
         "other-site.com",
     ], boost_domains=[
@@ -664,9 +606,9 @@ s = You(debug_logger=logging.getLogger("youdotcom"))
 ```
 
 You can also enable a default debug logger by setting an environment variable `YOU_DEBUG` to true.
-<!-- End Debugging [debug] -->
 
-<!-- Placeholder for Future Speakeasy SDK Sections -->
+**Warning:** Debug logs include full request headers and bodies, which may contain API keys and sensitive data. Do not enable debug logging in production or commit debug logs to version control.
+<!-- End Debugging [debug] -->
 
 # Development
 
@@ -705,7 +647,5 @@ For more details on testing, see the [tests README](tests/README.md).
 
 ## Contributions
 
-While we value open-source contributions to this SDK, this library is generated programmatically. Any manual changes added to internal files will be overwritten on the next generation.
+While we value open-source contributions to this SDK, this library is hand-maintained. We welcome pull requests — see [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 We look forward to hearing your feedback. Feel free to open a PR or an issue with a proof of concept and we'll do our best to include it in a future release.
-
-### SDK Created by [Speakeasy](https://www.speakeasy.com/?utm_source=youdotcom&utm_campaign=python)

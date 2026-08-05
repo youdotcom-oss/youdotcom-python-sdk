@@ -19,11 +19,6 @@ actions:
       tags:
         - search
       x-speakeasy-name-override: unified
-  - target: $["paths"]["/v1/agents/runs"]["post"]
-    update:
-      tags:
-        - agents.runs
-      x-speakeasy-name-override: create
   # Allow extras on the anonymous object branch of `output.content` so
   # `output_schema=` requests preserve the structured payload through SDK
   # unmarshal (today: `class Content(BaseModel): pass` drops everything

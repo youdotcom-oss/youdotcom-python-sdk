@@ -1,5 +1,12 @@
 # Search
 
+> **DEPRECATED** — The `Search` sub-SDK pattern still works but emits `DeprecationWarning`. The sub-SDK layer was Speakeasy-generated indirection; `you.search()` is now a direct method on `You` with a simpler signature (accepts plain strings for `country`, `safesearch`, `freshness` — no enum imports needed). Use the direct method instead:
+>
+> - `you.search(query=...)` (was `you.search.unified(query=...)` and `you.search_post(query=...)`)
+> - `you.search_async(query=...)` (was `you.search_post_async(query=...)`)
+>
+> See [docs/sdks/you/README.md](../you/README.md#search) for the current API. The content below is kept for reference only.
+
 ## Overview
 
 ### Available Operations

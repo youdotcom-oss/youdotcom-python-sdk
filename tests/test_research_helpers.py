@@ -779,7 +779,7 @@ class TestStreamResearchEventsTolerant:
         assert isinstance(events[1], RawStreamEvent)
         assert events[1].data == {"query": "markets", "phase": "searching"}
         # And confirm the SDK still set User-Agent on the underlying request
-        # (the YDCUserAgentOverrideHook ran before send).
+        # (BaseSDK._build_request sets it directly).
         assert recorded_ua["value"] == f"youdotcom-python-sdk/{you.sdk_configuration.sdk_version}"
 # ---------------------------------------------------------------------------
 # _resolve_default_timeout: auto-adjust timeout based on research_effort.
