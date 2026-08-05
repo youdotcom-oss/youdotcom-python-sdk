@@ -437,7 +437,7 @@ res = you.contents.generate(urls=["https://example.com"], crawl_timeout=5)
 
 ## 1.x to 2.0
 
-> **Note:** If you are upgrading to 2.6.0+, the Agents API (`you.agents.runs.create()`) and all agent model classes (`ExpressAgentRunsRequest`, `AdvancedAgentRunsRequest`, `CustomAgentRunsRequest`, `AgentRunsBatchResponse`, `ResponseCreated`, `ResponseStarting`, `ResponseOutputTextDelta`, `ResponseOutputContentFull`, `ResponseDone`, `ReportVerbosity`, `SearchEffort`, `AgentRuns401ResponseError`, etc.) have been removed entirely. The migration steps below that reference agent imports and calls are no longer valid — see the [2.5.0 to 2.6.0](#250-to-260) section above. The Search and Contents API changes below still apply.
+> **Note:** If you are upgrading to 2.6.0+, the Agents API (`you.agents.runs.create()`) and all agent model classes (`ExpressAgentRunsRequest`, `AdvancedAgentRunsRequest`, `CustomAgentRunsRequest`, `AgentRunsBatchResponse`, `ResponseCreated`, `ResponseStarting`, `ResponseOutputTextDelta`, `ResponseOutputContentFull`, `ResponseDone`, `ReportVerbosity`, `SearchEffort`, `AgentRuns401ResponseError`, etc.) have been removed entirely. The migration steps below that reference agent imports and calls are no longer valid — see the [2.5.0 to 2.6.0](#250--260) section above. The Search and Contents API changes below still apply.
 
 This guide helps you upgrade your code from You.com Python SDK 1.x to 2.0.
 

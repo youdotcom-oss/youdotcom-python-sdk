@@ -87,15 +87,17 @@ class You(BaseSDK):
         ), "The provided async_client must implement the AsyncHttpClient protocol."
 
         security: Any = None
-        # Normalize empty strings to None so an empty X-API-Key header
-        # isn't sent (e.g. You(api_key_auth=os.getenv("YDC_API_KEY", "")))
+        # An explicit empty string (e.g. You(api_key_auth=os.getenv("YDC_API_KEY", "")))
+        # is treated as an opt-out: we construct Security with api_key_auth=None so no
+        # X-API-Key header is sent AND we don't fall back to env vars. Only api_key_auth=None
+        # (the default) allows env fallback via get_security_from_env.
         if callable(api_key_auth):
             # pylint: disable=unnecessary-lambda-assignment
             security = lambda: models.Security(
                 api_key_auth=(api_key_auth() or None)
             )
-        elif api_key_auth:
-            security = models.Security(api_key_auth=api_key_auth)
+        elif api_key_auth is not None:
+            security = models.Security(api_key_auth=(api_key_auth or None))
         else:
             security = None
 
