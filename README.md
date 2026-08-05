@@ -234,15 +234,20 @@ with You(
 * [stream_research_task](docs/sdks/you/README.md#stream_research_task) - Stream updates for a background research task
 * [finance_research](docs/sdks/you/README.md#finance_research) - Returns comprehensive finance-grade research answers with multi-step reasoning
 
-### [Agents.Runs](docs/sdks/runs/README.md)
+* [answer](docs/sdks/answer/README.md#answer) - Returns a synthesized answer with citations from web search results
+* [create_run](docs/sdks/you/README.md#create_run) - Run an Agent
+* [search_unified](docs/sdks/you/README.md#search_unified) - Returns a list of unified search results from web and news sources
+* [generate_contents](docs/sdks/you/README.md#generate_contents) - Returns the content of the web pages
+
+### [Agents.Runs](docs/sdks/runs/README.md) (deprecated — use `you.create_run()`)
 
 * [create](docs/sdks/runs/README.md#create) - Run an Agent
 
-### [Contents](docs/sdks/contentssdk/README.md)
+### [Contents](docs/sdks/contentssdk/README.md) (deprecated — use `you.generate_contents()`)
 
 * [generate](docs/sdks/contentssdk/README.md#generate) - Returns the content of the web pages
 
-### [Search](docs/sdks/search/README.md)
+### [Search](docs/sdks/search/README.md) (deprecated — use `you.search_unified()`)
 
 * [unified](docs/sdks/search/README.md#unified) - Returns a list of unified search results from web and news sources
 

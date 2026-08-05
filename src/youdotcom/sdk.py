@@ -8,6 +8,7 @@ from .utils.retries import RetryConfig
 import httpx
 import importlib
 import sys
+import warnings
 from typing import (
     Any,
     Callable,
@@ -163,6 +164,18 @@ class You(BaseSDK):
 
     def __getattr__(self, name: str):
         if name in self._sub_sdk_map:
+            _DEPRECATED_SUB_SDKS = {
+                "agents": "you.create_run()",
+                "search": "you.search_unified()",
+                "contents": "you.generate_contents()",
+            }
+            if name in _DEPRECATED_SUB_SDKS:
+                warnings.warn(
+                    f"you.{name} is deprecated and will be removed in a future major version. "
+                    f"Use {_DEPRECATED_SUB_SDKS[name]} instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
             module_path, class_name = self._sub_sdk_map[name]
             try:
                 module = self.dynamic_import(module_path)
@@ -505,6 +518,247 @@ class You(BaseSDK):
             raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
 
         raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    def _get_sub_sdk(self, name: str):
+        """Access a sub-SDK without triggering the deprecation warning."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return getattr(self, name)
+
+    def create_run(
+        self,
+        *,
+        request: Union[models.AgentsRunsRequest, models.AgentsRunsRequestTypedDict],
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> Union[
+        models.AgentRunsBatchResponse,
+        eventstreaming.EventStream[models.AgentRunsStreamingResponse],
+    ]:
+        r"""Run an Agent.
+
+        Direct method replacing ``you.agents.runs.create()``.
+
+        :param request: The request object to send.
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        return self._get_sub_sdk("agents").runs.create(
+            request=request,
+            retries=retries,
+            server_url=server_url,
+            timeout_ms=timeout_ms,
+            http_headers=http_headers,
+        )
+
+    async def create_run_async(
+        self,
+        *,
+        request: Union[models.AgentsRunsRequest, models.AgentsRunsRequestTypedDict],
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> Union[
+        models.AgentRunsBatchResponse,
+        eventstreaming.EventStreamAsync[models.AgentRunsStreamingResponse],
+    ]:
+        r"""Run an Agent (async).
+
+        Direct method replacing ``you.agents.runs.create_async()``.
+
+        :param request: The request object to send.
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        return await self._get_sub_sdk("agents").runs.create_async(
+            request=request,
+            retries=retries,
+            server_url=server_url,
+            timeout_ms=timeout_ms,
+            http_headers=http_headers,
+        )
+
+    def search_unified(
+        self,
+        *,
+        query: str,
+        count: Optional[int] = 10,
+        freshness: Optional[
+            Union[models.FreshnessValue, models.FreshnessValueTypedDict]
+        ] = None,
+        offset: Optional[int] = None,
+        country: Optional[models.Country] = None,
+        language: Optional[models.Language] = models.Language.EN,
+        safesearch: Optional[models.SafeSearch] = None,
+        livecrawl: Optional[models.LiveCrawl] = None,
+        livecrawl_formats: Optional[Iterable[models.LiveCrawlFormats]] = None,
+        include_domains: Optional[str] = None,
+        exclude_domains: Optional[str] = None,
+        boost_domains: Optional[str] = None,
+        crawl_timeout: Optional[int] = 10,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> models.SearchResponse:
+        r"""Returns a list of unified search results from web and news sources.
+
+        Direct method replacing ``you.search.unified()``.
+
+        :param query: The search query.
+        :param count: Max results per section.
+        :param freshness: ``day``, ``week``, ``month``, ``year``, or ``YYYY-MM-DDtoYYYY-MM-DD``.
+        :param offset: Pagination offset.
+        :param country: Country code for geographical focus.
+        :param language: BCP 47 language code (default ``EN``).
+        :param safesearch: ``strict``, ``moderate``, or ``off``.
+        :param livecrawl: ``web``, ``news``, or ``all``.
+        :param livecrawl_formats: ``["html"]``, ``["markdown"]``, or both.
+        :param include_domains: Comma-separated domains to restrict results to.
+        :param exclude_domains: Comma-separated domains to exclude.
+        :param boost_domains: Comma-separated domains to boost in ranking.
+        :param crawl_timeout: Max seconds to wait for livecrawl (1-60, default 10).
+        :param retries: Override the default retry configuration.
+        :param server_url: Override the default server URL.
+        :param timeout_ms: Override the request timeout in milliseconds.
+        :param http_headers: Additional headers to set or replace.
+        """
+        return self._get_sub_sdk("search").unified(
+            query=query,
+            count=count,
+            freshness=freshness,
+            offset=offset,
+            country=country,
+            language=language,
+            safesearch=safesearch,
+            livecrawl=livecrawl,
+            livecrawl_formats=livecrawl_formats,
+            include_domains=include_domains,
+            exclude_domains=exclude_domains,
+            boost_domains=boost_domains,
+            crawl_timeout=crawl_timeout,
+            retries=retries,
+            server_url=server_url,
+            timeout_ms=timeout_ms,
+            http_headers=http_headers,
+        )
+
+    async def search_unified_async(
+        self,
+        *,
+        query: str,
+        count: Optional[int] = 10,
+        freshness: Optional[
+            Union[models.FreshnessValue, models.FreshnessValueTypedDict]
+        ] = None,
+        offset: Optional[int] = None,
+        country: Optional[models.Country] = None,
+        language: Optional[models.Language] = models.Language.EN,
+        safesearch: Optional[models.SafeSearch] = None,
+        livecrawl: Optional[models.LiveCrawl] = None,
+        livecrawl_formats: Optional[Iterable[models.LiveCrawlFormats]] = None,
+        include_domains: Optional[str] = None,
+        exclude_domains: Optional[str] = None,
+        boost_domains: Optional[str] = None,
+        crawl_timeout: Optional[int] = 10,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> models.SearchResponse:
+        r"""Returns a list of unified search results from web and news sources (async).
+
+        Direct method replacing ``you.search.unified_async()``.
+        """
+        return await self._get_sub_sdk("search").unified_async(
+            query=query,
+            count=count,
+            freshness=freshness,
+            offset=offset,
+            country=country,
+            language=language,
+            safesearch=safesearch,
+            livecrawl=livecrawl,
+            livecrawl_formats=livecrawl_formats,
+            include_domains=include_domains,
+            exclude_domains=exclude_domains,
+            boost_domains=boost_domains,
+            crawl_timeout=crawl_timeout,
+            retries=retries,
+            server_url=server_url,
+            timeout_ms=timeout_ms,
+            http_headers=http_headers,
+        )
+
+    def generate_contents(
+        self,
+        *,
+        urls: Optional[Iterable[str]] = None,
+        formats: Optional[Iterable[models.ContentsFormats]] = None,
+        crawl_timeout: Optional[int] = 10,
+        max_age: OptionalNullable[int] = None,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> List[models.ContentsResponse]:
+        r"""Returns the content of the web pages.
+
+        Direct method replacing ``you.contents.generate()``.
+
+        :param urls: Array of URLs to fetch the contents from.
+        :param formats: Array of content formats to return (``html``, ``markdown``, ``metadata``).
+        :param crawl_timeout: Maximum time in seconds to wait for page content (1-60, default 10).
+        :param max_age: Maximum allowed age of cached content in seconds.
+        :param retries: Override the default retry configuration.
+        :param server_url: Override the default server URL.
+        :param timeout_ms: Override the request timeout in milliseconds.
+        :param http_headers: Additional headers to set or replace.
+        """
+        return self._get_sub_sdk("contents").generate(
+            urls=urls,
+            formats=formats,
+            crawl_timeout=crawl_timeout,
+            max_age=max_age,
+            retries=retries,
+            server_url=server_url,
+            timeout_ms=timeout_ms,
+            http_headers=http_headers,
+        )
+
+    async def generate_contents_async(
+        self,
+        *,
+        urls: Optional[Iterable[str]] = None,
+        formats: Optional[Iterable[models.ContentsFormats]] = None,
+        crawl_timeout: Optional[int] = 10,
+        max_age: OptionalNullable[int] = None,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> List[models.ContentsResponse]:
+        r"""Returns the content of the web pages (async).
+
+        Direct method replacing ``you.contents.generate_async()``.
+        """
+        return await self._get_sub_sdk("contents").generate_async(
+            urls=urls,
+            formats=formats,
+            crawl_timeout=crawl_timeout,
+            max_age=max_age,
+            retries=retries,
+            server_url=server_url,
+            timeout_ms=timeout_ms,
+            http_headers=http_headers,
+        )
 
     def search_post(
         self,
