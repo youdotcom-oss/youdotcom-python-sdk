@@ -28,6 +28,7 @@ from tests.metrics import (
     print_detailed_metrics,
     print_metrics_table,
 )
+from tests.test_client import register_test_client
 from tests.timing_client import SDKCallTiming, TimingHTTPClient
 from youdotcom import You
 from youdotcom.models import (
@@ -91,14 +92,20 @@ ALL_METRICS: List[PerformanceMetrics] = []
 
 
 def create_timing_client(test_name: str) -> TimingHTTPClient:
-    """Create a TimingHTTPClient with test headers."""
-    return TimingHTTPClient(
+    """Create a TimingHTTPClient with test headers.
+
+    Registered for teardown like the other test clients — see
+    ``tests/test_client.py``.
+    """
+    client = TimingHTTPClient(
         follow_redirects=True,
         headers={
             "x-test-name": test_name,
             "x-test-instance-id": str(uuid.uuid4()),
         }
     )
+    register_test_client(client)
+    return client
 
 
 def measure_sdk_call(func, timing_client: TimingHTTPClient, iterations: int, endpoint_name: str) -> PerformanceMetrics:

@@ -291,23 +291,22 @@ class TestPollResearchTask:
 
     @pytest.mark.asyncio
     async def test_poll_async_returns_completed_task_detail(self, server_url, api_key):
-        async_client = httpx.AsyncClient(
+        async with httpx.AsyncClient(
             headers={
                 "x-test-name": "get_/v1/research/{task_id}",
                 "x-test-instance-id": str(uuid.uuid4()),
             },
             follow_redirects=True,
-        )
-
-        async with You(
-            server_url=server_url, async_client=async_client, api_key_auth=api_key
-        ) as you:
-            detail = await poll_research_task_async(
-                you,
-                "00000000-0000-0000-0000-000000000001",
-                interval_s=0.01,
-                timeout_s=2.0,
-            )
+        ) as async_client:
+            async with You(
+                server_url=server_url, async_client=async_client, api_key_auth=api_key
+            ) as you:
+                detail = await poll_research_task_async(
+                    you,
+                    "00000000-0000-0000-0000-000000000001",
+                    interval_s=0.01,
+                    timeout_s=2.0,
+                )
 
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"

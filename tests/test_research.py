@@ -293,20 +293,22 @@ class TestResearchBackground:
 
     @pytest.mark.asyncio
     async def test_get_research_task_async_returns_task_detail(self, server_url, api_key):
-        async_client = httpx.AsyncClient(
+        async with httpx.AsyncClient(
             headers={
                 "x-test-name": "get_/v1/research/{task_id}",
                 "x-test-instance-id": str(uuid.uuid4()),
             },
             follow_redirects=True,
-        )
-        async with You(server_url=server_url, async_client=async_client, api_key_auth=api_key) as you:
-            detail = await you.get_research_task_async(
-                task_id="00000000-0000-0000-0000-000000000001",
-                server_url=server_url,
-            )
-            assert detail.id == "00000000-0000-0000-0000-000000000001"
-            assert detail.status.value == "completed"
+        ) as async_client:
+            async with You(
+                server_url=server_url, async_client=async_client, api_key_auth=api_key
+            ) as you:
+                detail = await you.get_research_task_async(
+                    task_id="00000000-0000-0000-0000-000000000001",
+                    server_url=server_url,
+                )
+                assert detail.id == "00000000-0000-0000-0000-000000000001"
+                assert detail.status.value == "completed"
 
 
 class TestResearchBackgroundErrors:

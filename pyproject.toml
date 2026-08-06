@@ -37,6 +37,13 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 pythonpath = ["src"]
+# The suite closes every client it opens; keep it that way. A leaked transport
+# surfaces during GC, which pytest reports as an unraisable exception rather
+# than a test failure, so both have to be errors for this to actually enforce.
+filterwarnings = [
+    "error::ResourceWarning",
+    "error::pytest.PytestUnraisableExceptionWarning",
+]
 markers = [
     "slow: marks tests as slow (DEEP/EXHAUSTIVE research); skip with '-m \"not slow\"'",
 ]
