@@ -40,7 +40,9 @@ still depend on the Agents API.
 
 ### Security
 
-- **Debug-log redaction**: `Authorization`, `X-API-Key`, `Cookie`, and `Set-Cookie` are replaced with `[REDACTED]` before request/response headers are written to the debug logger. Previously a debug logger would capture the API key in plaintext. Applies to both the sync and async paths.
+- **Debug-log redaction**: `Authorization`, `X-API-Key`, `Cookie`, and `Set-Cookie` are replaced with `[REDACTED]` before request/response headers are written to the debug logger, on both the sync and async paths.
+
+  Debug logging is off by default (`get_default_logger()` returns a `NoOpLogger` unless `YOU_DEBUG` is set), so a default configuration was never affected. Callers who enabled debug output — via `YOU_DEBUG` or by passing their own `debug_logger` — previously had the API key written in plaintext to that logger's sink. If that applies to you and those logs left the host, rotate the key.
 
 ### Changed
 
