@@ -6,6 +6,7 @@ async modes.  Uses httpx.MockTransport (no live server required).
 """
 
 import json
+from contextlib import asynccontextmanager, contextmanager
 
 import httpx
 import pytest
@@ -16,7 +17,6 @@ from youdotcom.models import (
     SearchResponse,
 )
 
-
 _SEARCH_BODY = json.dumps(
     {"results": {"web": [{"title": "Test", "url": "https://example.com"}]}}
 )
@@ -25,24 +25,28 @@ _CONTENTS_BODY = json.dumps(
 )
 
 
+@contextmanager
 def _sync_you(handler, *, api_key: str | None = "test-key"):
-    kwargs: dict = {
-        "server_url": "http://mock.local",
-        "client": httpx.Client(transport=httpx.MockTransport(handler)),
-    }
-    if api_key is not None:
-        kwargs["api_key_auth"] = api_key
-    return You(**kwargs)
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    try:
+        kwargs: dict = {"server_url": "http://mock.local", "client": client}
+        if api_key is not None:
+            kwargs["api_key_auth"] = api_key
+        yield You(**kwargs)
+    finally:
+        client.close()
 
 
-def _async_you(handler, *, api_key: str | None = "test-key"):
-    kwargs: dict = {
-        "server_url": "http://mock.local",
-        "async_client": httpx.AsyncClient(transport=httpx.MockTransport(handler)),
-    }
-    if api_key is not None:
-        kwargs["api_key_auth"] = api_key
-    return You(**kwargs)
+@asynccontextmanager
+async def _async_you(handler, *, api_key: str | None = "test-key"):
+    async_client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        kwargs: dict = {"server_url": "http://mock.local", "async_client": async_client}
+        if api_key is not None:
+            kwargs["api_key_auth"] = api_key
+        yield You(**kwargs)
+    finally:
+        await async_client.aclose()
 
 
 # ---------------------------------------------------------------------------
@@ -52,9 +56,10 @@ def _async_you(handler, *, api_key: str | None = "test-key"):
 
 class TestSearchDirect:
     def test_returns_search_response(self):
-        res = _sync_you(lambda req: httpx.Response(
+        with _sync_you(lambda req: httpx.Response(
             200, headers={"content-type": "application/json"}, content=_SEARCH_BODY
-        )).search(query="python")
+        )) as you:
+            res = you.search(query="python")
         assert isinstance(res, SearchResponse)
         assert res.results is not None
         assert res.results.web is not None
@@ -70,7 +75,8 @@ class TestSearchDirect:
                 200, headers={"content-type": "application/json"}, content=_SEARCH_BODY
             )
 
-        _sync_you(handler).search(query="test")
+        with _sync_you(handler) as you:
+            you.search(query="test")
         assert captured["method"] == "POST"
         assert "/v1/search" in captured["url"]
 
@@ -83,13 +89,14 @@ class TestSearchDirect:
                 200, headers={"content-type": "application/json"}, content=_SEARCH_BODY
             )
 
-        _sync_you(handler).search(
-            query="ai news",
-            count=5,
-            freshness="week",
-            country="US",
-            include_domains=["nature.com"],
-        )
+        with _sync_you(handler) as you:
+            you.search(
+                query="ai news",
+                count=5,
+                freshness="week",
+                country="US",
+                include_domains=["nature.com"],
+            )
         assert captured["body"]["query"] == "ai news"
         assert captured["body"]["count"] == 5
         assert captured["body"]["freshness"] == "week"
@@ -97,9 +104,10 @@ class TestSearchDirect:
 
     @pytest.mark.asyncio
     async def test_async_returns_search_response(self):
-        res = await _async_you(lambda req: httpx.Response(
+        async with _async_you(lambda req: httpx.Response(
             200, headers={"content-type": "application/json"}, content=_SEARCH_BODY
-        )).search_async(query="python")
+        )) as you:
+            res = await you.search_async(query="python")
         assert isinstance(res, SearchResponse)
 
 
@@ -110,9 +118,10 @@ class TestSearchDirect:
 
 class TestContentsDirect:
     def test_returns_contents_response_list(self):
-        res = _sync_you(lambda req: httpx.Response(
+        with _sync_you(lambda req: httpx.Response(
             200, headers={"content-type": "application/json"}, content=_CONTENTS_BODY
-        )).contents(urls=["https://example.com"])
+        )) as you:
+            res = you.contents(urls=["https://example.com"])
         assert isinstance(res, list)
         assert isinstance(res[0], ContentsResponse)
         assert res[0].url == "https://example.com"
@@ -127,7 +136,8 @@ class TestContentsDirect:
                 200, headers={"content-type": "application/json"}, content=_CONTENTS_BODY
             )
 
-        _sync_you(handler).contents(urls=["https://example.com"])
+        with _sync_you(handler) as you:
+            you.contents(urls=["https://example.com"])
         assert captured["method"] == "POST"
         assert "/v1/contents" in captured["url"]
 
@@ -140,13 +150,15 @@ class TestContentsDirect:
                 200, headers={"content-type": "application/json"}, content=_CONTENTS_BODY
             )
 
-        _sync_you(handler).contents(urls=["https://example.com", "https://python.org"])
+        with _sync_you(handler) as you:
+            you.contents(urls=["https://example.com", "https://python.org"])
         assert captured["body"]["urls"] == ["https://example.com", "https://python.org"]
 
     @pytest.mark.asyncio
     async def test_async_returns_contents_response_list(self):
-        res = await _async_you(lambda req: httpx.Response(
+        async with _async_you(lambda req: httpx.Response(
             200, headers={"content-type": "application/json"}, content=_CONTENTS_BODY
-        )).contents_async(urls=["https://example.com"])
+        )) as you:
+            res = await you.contents_async(urls=["https://example.com"])
         assert isinstance(res, list)
         assert isinstance(res[0], ContentsResponse)

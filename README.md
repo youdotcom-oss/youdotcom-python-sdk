@@ -267,23 +267,20 @@ underlying connection when the context is exited.
 ```python
 import os
 from youdotcom import You
-from youdotcom.utils import eventstreaming
+from youdotcom.research_helpers import stream_research
 
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
-    # Stream updates for a background research task via SSE
-    response = you.stream_research_task(task_id="your-task-id")
-
-    # Type narrow to ensure we have a streaming response
-    assert isinstance(response, eventstreaming.EventStream), "Expected streaming response"
-    with response as stream:
-        # Iterate through the stream and handle each event
-        for chunk in stream:
-            event_data = chunk.data
-            print(event_data)
+    # stream_research() uses a tolerant decoder that surfaces undocumented
+    # event types as raw dicts instead of raising ResponseValidationError.
+    # Prefer this over you.stream_research_task() for real research tasks.
+    for evt in stream_research(you, task_id="your-task-id"):
+        print(evt.event, evt.data)
+        if evt.event in ("response.done", "complete", "completed", "error", "failed", "cancelled"):
+            break
 ```
 
 [mdn-sse]: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events

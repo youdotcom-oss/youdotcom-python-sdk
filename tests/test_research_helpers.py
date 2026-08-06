@@ -5,6 +5,7 @@ import json
 import os
 import time
 import uuid
+from contextlib import asynccontextmanager, contextmanager
 
 import httpx
 import pytest
@@ -234,6 +235,7 @@ class TestResearchBackgroundTypeError:
                 input="What is the capital of France?",
                 research_effort=ResearchEffort.STANDARD,
             )
+        sdk_client.close()
 
     @pytest.mark.asyncio
     async def test_research_background_async_raises_type_error_on_sync_response(self):
@@ -267,6 +269,7 @@ class TestResearchBackgroundTypeError:
                 input="What is the capital of France?",
                 research_effort=ResearchEffort.STANDARD,
             )
+        await sdk_async_client.aclose()
 
 
 # ---------------------------------------------------------------------------
@@ -342,6 +345,7 @@ class TestResearchAndWait:
 
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
+        you.sdk_configuration.client.close()
 
     def test_research_and_wait_error_event_raises_runtime_error(self):
         """research_and_wait raises RuntimeError when the stream emits an
@@ -368,6 +372,7 @@ class TestResearchAndWait:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+        you.sdk_configuration.client.close()
 
     def test_research_and_wait_ok_event_but_get_non_completed_raises(self):
         """When the stream emits a terminal OK event (response.done) but the
@@ -395,6 +400,7 @@ class TestResearchAndWait:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+        you.sdk_configuration.client.close()
 
     def test_research_and_wait_ok_event_but_get_failed_raises_immediately(self):
         """When the stream emits a terminal OK event but the follow-up GET
@@ -422,6 +428,7 @@ class TestResearchAndWait:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+        you.sdk_configuration.client.close()
 
     def test_research_and_wait_ok_event_repoll_succeeds(self):
         """When the stream emits a terminal OK event and the first GET returns
@@ -472,6 +479,7 @@ class TestResearchAndWait:
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
         assert call_count["get"] == 2  # first running, second completed
+        you.sdk_configuration.client.close()
 
     def test_research_and_wait_timeout_raises_timeout_error(self):
         """research_and_wait raises TimeoutError when the stream never sends
@@ -496,6 +504,7 @@ class TestResearchAndWait:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+        you.sdk_configuration.client.close()
 
     def test_research_and_wait_timeout_falls_back_to_get(self):
         """When the stream times out (ReadTimeout) but the task has completed,
@@ -520,6 +529,7 @@ class TestResearchAndWait:
 
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
+        you.sdk_configuration.client.close()
 
     def test_research_and_wait_stream_close_falls_back_to_get(self):
         """When the stream closes without a terminal event, research_and_wait
@@ -544,6 +554,7 @@ class TestResearchAndWait:
 
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
+        you.sdk_configuration.client.close()
 
     def test_research_and_wait_stream_close_task_running_raises_timeout(self):
         """When the stream closes without a terminal event and the final GET
@@ -567,6 +578,7 @@ class TestResearchAndWait:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+        you.sdk_configuration.client.close()
 
     def test_research_and_wait_total_deadline_not_stall_timeout(self):
         """research_and_wait enforces a total wall-clock deadline, not just a
@@ -600,6 +612,7 @@ class TestResearchAndWait:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+        you.sdk_configuration.client.close()
 
     def test_stream_open_transport_error_falls_back_to_poll(self):
         """When _open_raw_stream raises a TransportError (can't reach server),
@@ -635,6 +648,7 @@ class TestResearchAndWait:
 
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
+        you.sdk_configuration.client.close()
 
     def test_stream_open_401_propagates_typed_error(self):
         """When _open_raw_stream gets a 401, the typed
@@ -674,6 +688,7 @@ class TestResearchAndWait:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+        you.sdk_configuration.client.close()
 
     def test_mid_stream_transport_error_falls_back_to_poll(self):
         """When a TransportError occurs mid-stream (dropped connection),
@@ -716,6 +731,7 @@ class TestResearchAndWait:
 
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
+        you.sdk_configuration.client.close()
 
 
 # ---------------------------------------------------------------------------
@@ -781,6 +797,7 @@ class TestStreamResearchEventsTolerant:
         # And confirm the SDK still set User-Agent on the underlying request
         # (BaseSDK._build_request sets it directly).
         assert recorded_ua["value"] == f"youdotcom-python-sdk/{you.sdk_configuration.sdk_version}"
+        sdk_client.close()
 # ---------------------------------------------------------------------------
 # _resolve_default_timeout: auto-adjust timeout based on research_effort.
 # ---------------------------------------------------------------------------
@@ -838,6 +855,7 @@ class TestResearchAndWaitFrontierAutoTimeout:
 
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
+        you.sdk_configuration.client.close()
 
     def test_explicit_timeout_overrides_auto_adjust(self):
         """When the user passes an explicit timeout_s, it takes precedence
@@ -861,6 +879,7 @@ class TestResearchAndWaitFrontierAutoTimeout:
                 input="test query",
                 research_effort=ResearchEffort.FRONTIER,
             )
+        you.sdk_configuration.client.close()
 
 
 # ---------------------------------------------------------------------------
@@ -905,80 +924,100 @@ class TestStreamResearchTypedErrors:
         return handler
 
     @staticmethod
+    @contextmanager
     def _sync_you(handler):
-        return You(
-            server_url="http://mock.local",
-            client=httpx.Client(transport=httpx.MockTransport(handler)),
-            api_key_auth="test-api-key",
-        )
+        client = httpx.Client(transport=httpx.MockTransport(handler))
+        try:
+            yield You(
+                server_url="http://mock.local",
+                client=client,
+                api_key_auth="test-api-key",
+            )
+        finally:
+            client.close()
 
     @staticmethod
-    def _async_you(handler):
-        return You(
-            server_url="http://mock.local",
-            async_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
-            api_key_auth="test-api-key",
-        )
+    @asynccontextmanager
+    async def _async_you(handler):
+        async_client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            yield You(
+                server_url="http://mock.local",
+                async_client=async_client,
+                api_key_auth="test-api-key",
+            )
+        finally:
+            await async_client.aclose()
 
     _TASK = "00000000-0000-0000-0000-000000000001"
 
     def test_401_raises_unauthorized_error(self):
         from youdotcom.errors import StreamResearchTaskUnauthorizedError
         with pytest.raises(StreamResearchTaskUnauthorizedError):
-            list(stream_research(self._sync_you(self._make_error_handler(401)), self._TASK))
+            with self._sync_you(self._make_error_handler(401)) as you:
+                list(stream_research(you, self._TASK))
 
     def test_403_raises_forbidden_error(self):
         from youdotcom.errors import StreamResearchTaskForbiddenError
         with pytest.raises(StreamResearchTaskForbiddenError):
-            list(stream_research(self._sync_you(self._make_error_handler(403)), self._TASK))
+            with self._sync_you(self._make_error_handler(403)) as you:
+                list(stream_research(you, self._TASK))
 
     def test_404_raises_not_found_error(self):
         from youdotcom.errors import StreamResearchTaskNotFoundError
         with pytest.raises(StreamResearchTaskNotFoundError):
-            list(stream_research(self._sync_you(self._make_error_handler(404)), self._TASK))
+            with self._sync_you(self._make_error_handler(404)) as you:
+                list(stream_research(you, self._TASK))
 
     def test_500_raises_internal_server_error(self):
         from youdotcom.errors import StreamResearchTaskInternalServerError
         with pytest.raises(StreamResearchTaskInternalServerError):
-            list(stream_research(self._sync_you(self._make_error_handler(500)), self._TASK))
+            with self._sync_you(self._make_error_handler(500)) as you:
+                list(stream_research(you, self._TASK))
 
     def test_4xx_fallback_raises_default_error(self):
         from youdotcom.errors import YouDefaultError
         with pytest.raises(YouDefaultError):
-            list(stream_research(self._sync_you(self._make_error_handler(400)), self._TASK))
+            with self._sync_you(self._make_error_handler(400)) as you:
+                list(stream_research(you, self._TASK))
 
     def test_5xx_fallback_raises_default_error(self):
         from youdotcom.errors import YouDefaultError
         with pytest.raises(YouDefaultError):
-            list(stream_research(self._sync_you(self._make_error_handler(502)), self._TASK))
+            with self._sync_you(self._make_error_handler(502)) as you:
+                list(stream_research(you, self._TASK))
 
     @pytest.mark.asyncio
     async def test_async_401_raises_unauthorized_error(self):
         from youdotcom.errors import StreamResearchTaskUnauthorizedError
         with pytest.raises(StreamResearchTaskUnauthorizedError):
-            async for _ in stream_research_async(self._async_you(self._make_error_handler(401)), self._TASK):
-                pass
+            async with self._async_you(self._make_error_handler(401)) as you:
+                async for _ in stream_research_async(you, self._TASK):
+                    pass
 
     @pytest.mark.asyncio
     async def test_async_403_raises_forbidden_error(self):
         from youdotcom.errors import StreamResearchTaskForbiddenError
         with pytest.raises(StreamResearchTaskForbiddenError):
-            async for _ in stream_research_async(self._async_you(self._make_error_handler(403)), self._TASK):
-                pass
+            async with self._async_you(self._make_error_handler(403)) as you:
+                async for _ in stream_research_async(you, self._TASK):
+                    pass
 
     @pytest.mark.asyncio
     async def test_async_404_raises_not_found_error(self):
         from youdotcom.errors import StreamResearchTaskNotFoundError
         with pytest.raises(StreamResearchTaskNotFoundError):
-            async for _ in stream_research_async(self._async_you(self._make_error_handler(404)), self._TASK):
-                pass
+            async with self._async_you(self._make_error_handler(404)) as you:
+                async for _ in stream_research_async(you, self._TASK):
+                    pass
 
     @pytest.mark.asyncio
     async def test_async_500_raises_internal_server_error(self):
         from youdotcom.errors import StreamResearchTaskInternalServerError
         with pytest.raises(StreamResearchTaskInternalServerError):
-            async for _ in stream_research_async(self._async_you(self._make_error_handler(500)), self._TASK):
-                pass
+            async with self._async_you(self._make_error_handler(500)) as you:
+                async for _ in stream_research_async(you, self._TASK):
+                    pass
 
 
 # ---------------------------------------------------------------------------
@@ -1019,6 +1058,7 @@ class TestPollResearchTaskErrorPaths:
                 interval_s=0.01,
                 timeout_s=0.05,
             )
+        sdk_client.close()
 
     def test_poll_failed_status_raises_runtime_error(self):
         """poll_research_task must raise RuntimeError when the task ends
@@ -1054,6 +1094,7 @@ class TestPollResearchTaskErrorPaths:
                 interval_s=0.01,
                 timeout_s=2.0,
             )
+        sdk_client.close()
 
 class TestPollResearchTaskAsyncErrorPaths:
     @pytest.mark.asyncio
@@ -1089,6 +1130,7 @@ class TestPollResearchTaskAsyncErrorPaths:
                 interval_s=0.01,
                 timeout_s=0.05,
             )
+        await sdk_async_client.aclose()
 
     @pytest.mark.asyncio
     async def test_poll_async_failed_status_raises_runtime_error(self):
@@ -1124,6 +1166,7 @@ class TestPollResearchTaskAsyncErrorPaths:
                 interval_s=0.01,
                 timeout_s=2.0,
             )
+        await sdk_async_client.aclose()
 
 
 # ---------------------------------------------------------------------------
@@ -1177,6 +1220,7 @@ class TestStreamResearchEventsTolerantAsync:
         assert isinstance(events[1], RawStreamEvent)
         assert events[1].data == {"query": "markets", "phase": "searching"}
         assert recorded_ua["value"] == f"youdotcom-python-sdk/{you.sdk_configuration.sdk_version}"
+        await sdk_async_client.aclose()
 
 
 class TestResearchAndWaitAsync:
@@ -1206,6 +1250,7 @@ class TestResearchAndWaitAsync:
 
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
+        await you.sdk_configuration.async_client.aclose()
 
     @pytest.mark.asyncio
     async def test_async_frontier_auto_timeout_completes_without_premature_timeout(self):
@@ -1235,6 +1280,7 @@ class TestResearchAndWaitAsync:
 
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
+        await you.sdk_configuration.async_client.aclose()
 
     @pytest.mark.asyncio
     async def test_async_research_and_wait_error_event_raises_runtime_error(self):
@@ -1262,6 +1308,7 @@ class TestResearchAndWaitAsync:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+        await you.sdk_configuration.async_client.aclose()
 
     @pytest.mark.asyncio
     async def test_async_research_and_wait_ok_event_repoll_succeeds(self):
@@ -1310,6 +1357,7 @@ class TestResearchAndWaitAsync:
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
         assert call_count["get"] == 2
+        await you.sdk_configuration.async_client.aclose()
 
     @pytest.mark.asyncio
     async def test_async_research_and_wait_ok_event_but_get_failed_raises_immediately(self):
@@ -1338,6 +1386,7 @@ class TestResearchAndWaitAsync:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+        await you.sdk_configuration.async_client.aclose()
 
     @pytest.mark.asyncio
     async def test_async_research_and_wait_timeout_raises_timeout_error(self):
@@ -1364,6 +1413,7 @@ class TestResearchAndWaitAsync:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+        await you.sdk_configuration.async_client.aclose()
 
     @pytest.mark.asyncio
     async def test_async_research_and_wait_httpx_readtimeout_falls_back_to_get(self):
@@ -1399,6 +1449,7 @@ class TestResearchAndWaitAsync:
 
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
+        await you.sdk_configuration.async_client.aclose()
 
     @pytest.mark.asyncio
     async def test_async_research_and_wait_timeout_falls_back_to_get(self):
@@ -1425,6 +1476,7 @@ class TestResearchAndWaitAsync:
 
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
+        await you.sdk_configuration.async_client.aclose()
 
     @pytest.mark.asyncio
     async def test_async_research_and_wait_stream_close_falls_back_to_get(self):
@@ -1451,6 +1503,7 @@ class TestResearchAndWaitAsync:
 
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
+        await you.sdk_configuration.async_client.aclose()
 
     @pytest.mark.asyncio
     async def test_async_research_and_wait_stream_close_task_running_raises_timeout(self):
@@ -1476,6 +1529,7 @@ class TestResearchAndWaitAsync:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+        await you.sdk_configuration.async_client.aclose()
 
     @pytest.mark.asyncio
     async def test_async_stream_open_transport_error_falls_back_to_poll(self):
@@ -1510,6 +1564,7 @@ class TestResearchAndWaitAsync:
 
         assert isinstance(detail, TaskDetail)
         assert detail.status.value == "completed"
+        await you.sdk_configuration.async_client.aclose()
 
     @pytest.mark.asyncio
     async def test_async_stream_open_401_propagates_typed_error(self):
@@ -1548,3 +1603,4 @@ class TestResearchAndWaitAsync:
                 input="test query",
                 research_effort=ResearchEffort.STANDARD,
             )
+        await you.sdk_configuration.async_client.aclose()
