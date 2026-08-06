@@ -34,8 +34,7 @@ jobs:
           # --group needs pip >= 25.1; the upgrade above guarantees it. Reading
           # the group from pyproject keeps CI and local dev on one dependency list.
           python -m pip install --upgrade pip
-          pip install -e .
-          pip install --group dev
+          pip install --group dev -e .
 
       - name: Build and start mock server
         working-directory: tests/mockserver
