@@ -3,7 +3,7 @@
 </div>
 
 <div align="center">
-  <strong>The official Python SDK for the You.com API</strong> — web search, citation-backed answers, page contents, and multi-step research.
+  <strong>The official Python SDK for the You.com API</strong>: web search, citation-backed answers, page contents, and multi-step research.
 </div>
 
 <div align="center">
@@ -29,10 +29,13 @@ Get an API key from [you.com/platform](https://you.com/platform) and set it as `
 import os
 from youdotcom import You
 
-with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     res = you.answer(query="What caused the 2008 financial crisis?")
     print(res.answer)
 ```
+
+`timeout_ms` is not optional here in practice. The default is httpx's 5 seconds,
+and the answer endpoint takes longer than that. See [Timeouts](#timeouts).
 
 That prints a markdown answer with inline `[[1, 2]]` citations. The sources behind
 them are on the response:
@@ -51,7 +54,7 @@ Every method is a direct call on `You`, and every one has an `_async` twin with
 the same signature.
 
 `search()` and `answer()` normalize their enum-typed parameters, so plain
-strings work in any case — `country="us"` and `safesearch="STRICT"` are both
+strings work in any case. `country="us"` and `safesearch="STRICT"` are both
 accepted. Elsewhere, pass the value as the API spells it (all lowercase) or
 import the enum from `youdotcom.models`.
 
@@ -89,7 +92,7 @@ for hit in res.results.web or []:
 
 `include_domains` restricts results to an allowlist; `exclude_domains` and
 `boost_domains` filter and re-rank. `include_domains` cannot be combined with
-either of the others — the API returns `422` if you try. Search also supports
+either of the others. The API returns `422` if you try. Search also supports
 [search operators](https://you.com/docs/guides/search-operators).
 
 ### Contents
@@ -129,7 +132,7 @@ for source in res.output.sources or []:
 `you.finance_research()` is the finance-tuned counterpart, taking
 `research_effort` of `deep` or `exhaustive`.
 
-Deep and exhaustive runs can take minutes, and `frontier` runs far longer — for
+Deep and exhaustive runs can take minutes, and `frontier` runs far longer. For
 anything beyond `standard`, use [background mode](#long-running-research).
 
 ## Async
@@ -178,7 +181,7 @@ detail = research_and_wait(
 print(detail.status, detail.result)
 ```
 
-The wait is bounded automatically — 10 minutes for standard, deep, and
+The wait is bounded automatically: 10 minutes for standard, deep, and
 exhaustive, 4 hours for `frontier`. Pass `timeout_s` to override. It raises
 `TimeoutError` if no terminal event arrives, and `RuntimeError` if the task ends
 in a non-completed state.
@@ -221,13 +224,13 @@ The API key is sent as the `X-API-Key` header. How it's resolved:
 | a non-empty string, or a callable returning one | That key is used; no environment lookup |
 | `""` or blank, or a callable returning an empty string | Raises `ValueError` |
 
-Every endpoint requires a key, so an empty string is never valid — it means a key
+Every endpoint requires a key, so an empty string is never valid. It means a key
 was expected and none arrived. The SDK raises rather than reading the
 environment, since falling back would run the request under whatever identity
 the environment happens to hold instead of the one the code asked for.
 
 In practice that shows up as `os.getenv("YDC_API_KEY", "")` with the variable
-unset. Use `os.getenv("YDC_API_KEY")` — `None` is how you ask for the lookup.
+unset. Use `os.getenv("YDC_API_KEY")`. `None` is how you ask for the lookup.
 
 A callable is resolved on each request, so it can return a rotating key.
 
@@ -247,9 +250,9 @@ from youdotcom.errors import (
 try:
     res = you.answer(query="...")
 except UnauthorizedResponseError:
-    ...                                  # 401 — bad or missing key
+    ...                                  # 401, bad or missing key
 except PaymentRequiredResponseError as e:
-    print(e.data.message, e.data.upgrade_url)   # 402 — out of credits
+    print(e.data.message, e.data.upgrade_url)   # 402, out of credits
 except YouError as e:
     print(e.status_code, e.body)         # anything else from the API
 ```
@@ -261,10 +264,10 @@ from research without catching one from search.
 | Status | Answer / Search | Contents | Research | Finance Research | Task get / stream |
 | --- | --- | --- | --- | --- | --- |
 | 401 | `UnauthorizedResponseError` | `ContentsUnauthorizedError` | `ResearchUnauthorizedError` | `FinanceResearchUnauthorizedError` | `GetResearchTask…` / `StreamResearchTask…UnauthorizedError` |
-| 402 | `PaymentRequiredResponseError` <sup>answer only</sup> | — | — | — | — |
+| 402 | `PaymentRequiredResponseError` <sup>answer only</sup> | n/a | n/a | n/a | n/a |
 | 403 | `ForbiddenResponseError` | `ContentsForbiddenError` | `ResearchForbiddenError` | `FinanceResearchForbiddenError` | `…ForbiddenError` |
-| 404 | — | — | — | — | `…NotFoundError` |
-| 422 | `UnprocessableEntityResponseError` | — | `ResearchUnprocessableEntityError` | `FinanceResearchUnprocessableEntityError` | — |
+| 404 | n/a | n/a | n/a | n/a | `…NotFoundError` |
+| 422 | `UnprocessableEntityResponseError` | n/a | `ResearchUnprocessableEntityError` | `FinanceResearchUnprocessableEntityError` | n/a |
 | 500 | `InternalServerErrorResponse` | `ContentsInternalServerError` | `ResearchInternalServerError` | `FinanceResearchInternalServerError` | `…InternalServerError` |
 
 Two errors sit outside that table: `ResponseValidationError` when a response
@@ -286,26 +289,37 @@ retries = RetryConfig(
     retry_connection_errors=True,
 )
 
-you = You(api_key_auth=key, retry_config=retries)   # whole client
-res = you.search(query="...", retries=retries)      # or one call
+with You(api_key_auth=key, retry_config=retries) as you:   # whole client
+    res = you.search(query="...", retries=retries)         # or one call
 ```
 
 Retries apply to `429`, `500`, `502`, `503`, and `504`.
 
 ### Timeouts
 
-`timeout_ms` sets a per-request timeout, on the client or a single call:
+**Set one.** With no `timeout_ms`, requests inherit the underlying httpx client's
+default of 5 seconds, which is far too short for `answer`, `research`, and
+`finance_research`. Those endpoints routinely take tens of seconds, so a call
+without a timeout will raise `httpx.ReadTimeout` before the API responds.
+
+`timeout_ms` applies to the whole client or to a single call:
 
 ```python
-you = You(api_key_auth=key, timeout_ms=30_000)
-res = you.search(query="...", timeout_ms=5_000)
+with You(api_key_auth=key, timeout_ms=60_000) as you:
+    answer = you.answer(query="...")                     # inherits 60s
+    results = you.search(query="...", timeout_ms=10_000)  # this call only
 ```
+
+Search and contents are fast enough for the default. Research in background mode
+is the exception: the helpers under
+[Long-running research](#long-running-research) manage their own deadlines, so
+`timeout_s` there bounds the wait rather than `timeout_ms`.
 
 ### Servers
 
-`search` and `contents` go to `https://ydc-index.io`; every other endpoint —
-`answer`, `research`, `finance_research`, and the research task endpoints — goes
-to `https://api.you.com`. The SDK routes each call for you. To point one call
+`search` and `contents` go to `https://ydc-index.io`. Everything else goes to
+`https://api.you.com`: `answer`, `research`, `finance_research`, and the research
+task endpoints. The SDK routes each call for you. To point one call
 elsewhere, at a proxy or a test server, pass `server_url` to the method:
 
 ```python
@@ -324,21 +338,23 @@ headers, or connection limits:
 ```python
 import httpx
 
-you = You(
-    api_key_auth=key,
-    client=httpx.Client(proxy="http://localhost:8030", headers={"x-team": "search"}),
-)
+http_client = httpx.Client(proxy="http://localhost:8030", headers={"x-team": "search"})
+
+with You(api_key_auth=key, client=http_client) as you:
+    ...
+
+http_client.close()   # a transport you supply is yours to close
 ```
 
 You can also pass anything satisfying the `HttpClient` / `AsyncHttpClient`
 protocols in `youdotcom.httpclient` to wrap requests with your own logic. Note
-that a transport you supply is yours to close — the SDK only closes the ones it
+that a transport you supply is yours to close. The SDK only closes the ones it
 creates.
 
 ### Resource management
 
-`You` holds open connections, so close it when you're done. The context manager
-is the easy way; both transports are released on exit.
+`You` holds open connections and has no public `close()`, so use it as a context
+manager. Both transports are released on exit.
 
 ```python
 with You(api_key_auth=key) as you:
@@ -356,7 +372,8 @@ Set `YOU_DEBUG=1` for request and response logging, or pass your own logger:
 ```python
 import logging
 
-you = You(api_key_auth=key, debug_logger=logging.getLogger("youdotcom"))
+with You(api_key_auth=key, debug_logger=logging.getLogger("youdotcom")) as you:
+    ...
 ```
 
 `Authorization`, `X-API-Key`, `Cookie`, and `Set-Cookie` are redacted. Request
@@ -365,12 +382,12 @@ logging in production, and don't commit debug logs to version control.
 
 ## Documentation
 
-- [API reference](https://you.com/docs/api-reference) — endpoints, parameters, response schemas
+- [API reference](https://you.com/docs/api-reference): endpoints, parameters, response schemas
 - [Quickstart](https://you.com/docs/quickstart)
 - [Pricing and plans](https://you.com/platform)
-- [`docs/`](docs/) — per-method SDK reference generated from this codebase
-- [`examples/`](examples/) — runnable, typed examples for every endpoint
-- [MIGRATION.md](MIGRATION.md) — upgrading between major versions
+- [`docs/`](docs/): per-method SDK reference generated from this codebase
+- [`examples/`](examples/): runnable, typed examples for every endpoint
+- [MIGRATION.md](MIGRATION.md): upgrading between major versions
 
 ## Development
 
@@ -388,8 +405,8 @@ Pass `--cleanup` to remove the virtualenv afterwards. See
 
 This SDK is hand-maintained rather than generated, so `scripts/check_drift.py`
 enforces what code generation used to guarantee: it diffs the published OpenAPI
-specs against the SDK surface — endpoints, server URLs, enum values, request
-parameters, response fields — and runs on every PR plus weekly.
+specs against the SDK surface (endpoints, server URLs, enum values, request
+parameters, response fields) and runs on every PR plus weekly.
 
 ```bash
 python scripts/check_drift.py --verbose
@@ -403,9 +420,9 @@ changes only land in major releases and are documented in
 
 ### Contributing
 
-Pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup and
+Pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and
 guidelines. For bugs and feature requests, open an issue.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
