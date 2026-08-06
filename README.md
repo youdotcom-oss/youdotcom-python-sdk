@@ -220,7 +220,7 @@ with You(
 | -------------------- | -------- |
 | omitted, or `None` | Reads the `YDC_API_KEY` environment variable, then the legacy `YOU_API_KEY_AUTH` |
 | a non-empty string, or a callable returning one | That key is used; no environment lookup |
-| `""` (or blank), or a callable returning one | Raises `ValueError` |
+| `""` (or blank), or a callable returning an empty string | Raises `ValueError` |
 
 Every endpoint requires an API key, so an empty string is never a valid
 argument — it means a key was expected and none arrived. The SDK raises rather

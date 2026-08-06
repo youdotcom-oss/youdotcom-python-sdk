@@ -42,7 +42,7 @@ there is no way to call these endpoints without a key.
 | -------------------- | -------- |
 | omitted, or `None` | Reads `YDC_API_KEY`, then the legacy `YOU_API_KEY_AUTH` |
 | a non-empty string, or a callable returning one | That key is used; no environment lookup |
-| `""` (or blank), or a callable returning one | Raises `ValueError` |
+| `""` (or blank), or a callable returning an empty string | Raises `ValueError` |
 
 A callable is resolved lazily, so a callable that returns an empty key raises
 on first use rather than at construction.
