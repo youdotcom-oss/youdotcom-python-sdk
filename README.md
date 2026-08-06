@@ -9,7 +9,7 @@
 <div align="center">
   <a href="https://pypi.org/project/youdotcom/"><img src="https://img.shields.io/pypi/v/youdotcom.svg" alt="PyPI" /></a>
   <a href="https://pypi.org/project/youdotcom/"><img src="https://img.shields.io/pypi/pyversions/youdotcom.svg" alt="Python versions" /></a>
-  <a href="https://docs.you.com"><img src="https://img.shields.io/badge/docs-docs.you.com-blue.svg" alt="Documentation" /></a>
+  <a href="https://you.com/docs"><img src="https://img.shields.io/badge/docs-you.com%2Fdocs-blue.svg" alt="Documentation" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT" /></a>
 </div>
 
@@ -90,7 +90,7 @@ for hit in res.results.web or []:
 `include_domains` restricts results to an allowlist; `exclude_domains` and
 `boost_domains` filter and re-rank. `include_domains` cannot be combined with
 either of the others — the API returns `422` if you try. Search also supports
-[search operators](https://docs.you.com/search/search-operators).
+[search operators](https://you.com/docs/guides/search-operators).
 
 ### Contents
 
@@ -363,8 +363,8 @@ logging in production, and don't commit debug logs to version control.
 
 ## Documentation
 
-- [API reference](https://docs.you.com/api-reference) — endpoints, parameters, response schemas
-- [Quickstart](https://docs.you.com/quickstart)
+- [API reference](https://you.com/docs/api-reference) — endpoints, parameters, response schemas
+- [Quickstart](https://you.com/docs/quickstart)
 - [Pricing and plans](https://you.com/platform)
 - [`docs/`](docs/) — per-method SDK reference generated from this codebase
 - [`examples/`](examples/) — runnable, typed examples for every endpoint

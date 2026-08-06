@@ -15,7 +15,7 @@ from youdotcom.types import BaseModel, UNSET_SENTINEL
 
 class SearchRequestBodyTypedDict(TypedDict):
     query: str
-    r"""The search query used to retrieve relevant results from the web. You can also include [search operators](https://docs.you.com/search/search-operators) to refine your search."""
+    r"""The search query used to retrieve relevant results from the web. You can also include [search operators](https://you.com/docs/guides/search-operators) to refine your search."""
     count: NotRequired[int]
     r"""Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them)."""
     freshness: NotRequired[FreshnessValueTypedDict]
@@ -53,7 +53,7 @@ class SearchRequestBodyTypedDict(TypedDict):
 
 class SearchRequestBody(BaseModel):
     query: str
-    r"""The search query used to retrieve relevant results from the web. You can also include [search operators](https://docs.you.com/search/search-operators) to refine your search."""
+    r"""The search query used to retrieve relevant results from the web. You can also include [search operators](https://you.com/docs/guides/search-operators) to refine your search."""
 
     count: Optional[int] = 10
     r"""Specifies the maximum number of search results to return per section (the sections are `web` and `news`. See the JSON response to visualize them)."""
