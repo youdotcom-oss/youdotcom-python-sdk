@@ -75,26 +75,25 @@ ENUM_CHECKS = [
 
 def fetch_specs() -> dict[str, dict[str, Any]]:
     """Fetch all OpenAPI specs from the You.com docs index."""
-    client = httpx.Client(timeout=30, follow_redirects=True)
-    r = client.get(OPENAPI_INDEX)
-    r.raise_for_status()
+    with httpx.Client(timeout=30, follow_redirects=True) as client:
+        r = client.get(OPENAPI_INDEX)
+        r.raise_for_status()
 
-    # The index page is HTML with relative links like:
-    #   <a href="openapi/web-search.json">Web Search</a>
-    import re
-    matches = re.findall(r'href="openapi/([\w-]+)\.json"', r.text)
-    if not matches:
-        raise RuntimeError("Could not find any OpenAPI spec links in the index page")
+        # The index page is HTML with relative links like:
+        #   <a href="openapi/web-search.json">Web Search</a>
+        import re
+        matches = re.findall(r'href="openapi/([\w-]+)\.json"', r.text)
+        if not matches:
+            raise RuntimeError("Could not find any OpenAPI spec links in the index page")
 
-    specs: dict[str, dict[str, Any]] = {}
-    for name in matches:
-        url = f"{OPENAPI_BASE}{name}.json"
-        resp = client.get(url)
-        resp.raise_for_status()
-        specs[name] = resp.json()
+        specs: dict[str, dict[str, Any]] = {}
+        for name in matches:
+            url = f"{OPENAPI_BASE}{name}.json"
+            resp = client.get(url)
+            resp.raise_for_status()
+            specs[name] = resp.json()
 
-    client.close()
-    return specs
+        return specs
 
 
 # ---------------------------------------------------------------------------
