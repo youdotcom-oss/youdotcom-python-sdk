@@ -88,7 +88,7 @@ def _populate_query_params(
             )
             for key, value in serialized_parms.items():
                 if key in query_param_values:
-                    query_param_values[key].extend(value)
+                    query_param_values[key].append(value)
                 else:
                     query_param_values[key] = [value]
         else:

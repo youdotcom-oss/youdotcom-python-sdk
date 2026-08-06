@@ -236,6 +236,9 @@ class BaseSDK:
 
         timeout = timeout_ms / 1000 if timeout_ms is not None else None
 
+        if client is None:
+            raise ValueError("client is required")
+
         return client.build_request(
             method,
             url,
