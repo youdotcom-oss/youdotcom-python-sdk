@@ -384,7 +384,7 @@ with You(
 **Primary error:**
 * [`YouError`](./src/youdotcom/errors/youerror.py): The base class for HTTP error responses.
 
-<details><summary>Less common errors (27)</summary>
+<details><summary>Less common errors (28)</summary>
 
 <br />
 

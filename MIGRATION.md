@@ -39,7 +39,7 @@ you.search(query="...")
 
 ### Server URLs
 
-`SEARCH_OP_SERVERS` and `CONTENTS_OP_SERVERS` point to `https://ydc-index.io` (used by `you.search()` and `you.contents()`). The default server URL (used by `you.answer()`, `you.research()`, `you.finance_research()`, etc.) is `https://api.you.com`. No code changes required — the SDK resolves the correct server per endpoint automatically.
+`SEARCH_OP_SERVERS` and `CONTENTS_OP_SERVERS` point to `https://ydc-index.io` (used by `you.search()` and `you.contents()`). The default server URL (used by `you.answer()`, `you.research()`, `you.finance_research()`, etc.) is `https://api.you.com`. No code changes required — the SDK resolves the correct server per endpoint automatically. This behavior was already the case in 2.5.0; it is documented here for reference.
 
 ### Agents API Removed
 

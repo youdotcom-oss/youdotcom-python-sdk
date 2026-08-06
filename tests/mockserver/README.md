@@ -1,6 +1,6 @@
 # Mock Server
 
-A generated HTTP mock server based on your OpenAPI Specification (OAS). This server contains a mixture of auto-generated code from Speakeasy and custom handlers for testing various scenarios including error responses.
+A hand-maintained HTTP mock server based on the You.com OpenAPI Specification. This server contains custom handlers for testing various scenarios including error responses.
 
 ## Running Tests
 
@@ -63,5 +63,5 @@ docker run -i -p 18080:18080 -t --rm mockserver -log-level=DEBUG
 
 ## Code Structure
 
-- **Auto-generated**: Core mock server framework, routing, and SDK models (`internal/sdk/`, `internal/server/`, `internal/logging/`, `internal/tracking/`)
-- **Custom**: Test-specific handlers with success and error scenarios for comprehensive testing (`internal/handler/pathgetv1search.go`, `internal/handler/pathpostv1contents.go`, `internal/handler/pathpostv1search.go`)
+- **Core framework**: Mock server framework, routing, and SDK models (`internal/sdk/`, `internal/server/`, `internal/logging/`, `internal/tracking/`)
+- **Custom handlers**: Test-specific handlers with success and error scenarios for comprehensive testing (`internal/handler/pathpostv1answer.go`, `internal/handler/pathpostv1contents.go`, `internal/handler/pathpostv1search.go`, `internal/handler/pathpostv1research.go`, `internal/handler/pathgetv1research.go`, `internal/handler/pathgetv1researchstream.go`, `internal/handler/pathpostv1financeresearch.go`)
