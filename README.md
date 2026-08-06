@@ -357,8 +357,9 @@ Set `YOU_DEBUG=1` for request and response logging, or pass your own logger:
 you = You(api_key_auth=key, debug_logger=logging.getLogger("youdotcom"))
 ```
 
-`Authorization`, `X-API-Key`, `Cookie`, and `Set-Cookie` are redacted. Bodies are
-not — treat debug output as sensitive.
+`Authorization`, `X-API-Key`, `Cookie`, and `Set-Cookie` are redacted. Request
+and response bodies are not, and may carry sensitive data. Don't enable debug
+logging in production, and don't commit debug logs to version control.
 
 ## Documentation
 
