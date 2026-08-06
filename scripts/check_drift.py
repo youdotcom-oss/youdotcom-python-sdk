@@ -124,7 +124,6 @@ def fetch_specs() -> dict[str, dict[str, Any]]:
 
         # The index page is HTML with relative links like:
         #   <a href="openapi/web-search.json">Web Search</a>
-        import re
         matches = re.findall(r'href="openapi/([\w-]+)\.json"', r.text)
         if not matches:
             raise RuntimeError("Could not find any OpenAPI spec links in the index page")
@@ -358,11 +357,7 @@ def check_request_params(specs: dict[str, dict[str, Any]]) -> list[str]:
         if not schema:
             continue
 
-        # Resolve $ref if the request body is a reference
-        if "$ref" in schema:
-            schema = _resolve_ref(schema["$ref"], spec)
-
-        spec_params = set(schema.get("properties", {}).keys())
+        spec_params = _get_schema_properties(schema, spec)
         sdk_params = _get_sdk_method_params(check["sdk_method"])
 
         missing_in_sdk = spec_params - sdk_params
@@ -429,7 +424,7 @@ def check_response_schemas(specs: dict[str, dict[str, Any]]) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Check SDK drift against You.com OpenAPI specs")
-    parser.add_argument("--strict", action="store_true", help="Exit 1 on drift (for scheduled workflow)")
+    parser.add_argument("--strict", action="store_true", help="Exit 1 on drift, 2 on fetch error (for scheduled workflow)")
     parser.add_argument("--verbose", action="store_true", help="Show all checks, even passing ones")
     args = parser.parse_args()
 
@@ -438,7 +433,8 @@ def main() -> int:
         specs = fetch_specs()
     except Exception as e:
         print(f"ERROR: Could not fetch specs: {e}", file=sys.stderr)
-        return 1 if args.strict else 0
+        print("RESULT: fetch_error")
+        return 2
 
     print(f"Found {len(specs)} specs: {', '.join(sorted(specs.keys()))}")
     print()
@@ -457,9 +453,11 @@ def main() -> int:
             print(f"  ⚠️  {w}")
         print()
         print("Review the above and update the SDK if needed.")
-        return 1 if args.strict else 0
+        print("RESULT: drift")
+        return 1
     else:
         print("No drift detected. SDK matches OpenAPI specs.")
+        print("RESULT: no_drift")
         if args.verbose:
             print(f"  Checked {len(specs)} specs, {len(EXPECTED_ENDPOINTS)} endpoints, "
                   f"{len(ENUM_CHECKS)} enum mappings, {len(EXPECTED_SERVERS)} server URLs, "

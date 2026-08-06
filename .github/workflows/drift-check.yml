@@ -28,40 +28,47 @@ jobs:
 
       - name: Run drift check
         id: drift
-        run: python scripts/check_drift.py --strict --verbose
-        continue-on-error: true
+        run: |
+          set +e
+          OUTPUT=$(python scripts/check_drift.py --strict --verbose 2>&1)
+          EXIT_CODE=$?
+          echo "$OUTPUT"
+          # Save output to GITHUB_ENV for downstream steps
+          {
+            echo "DRIFT_OUTPUT<<EOF"
+            echo "$OUTPUT"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
+          echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+          exit 0
 
       - name: Open issue on drift
-        if: steps.drift.outcome == 'failure'
+        if: steps.drift.outputs.exit_code == '1'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRIFT_OUTPUT: ${{ env.DRIFT_OUTPUT }}
         run: |
-          # Re-run to capture output for classification
-          OUTPUT=$(python scripts/check_drift.py --strict --verbose 2>&1 || true)
-
-          # Distinguish drift from fetch/runtime errors
-          if echo "$OUTPUT" | grep -q "DRIFT DETECTED"; then
-            # Create drift label if it doesn't exist
-            gh label create drift --color FBCA04 --description "SDK drift from OpenAPI specs" 2>/dev/null || true
-            gh issue create \
-              --title "SDK drift detected: OpenAPI specs vs SDK surface" \
-              --body "The weekly drift check found differences between the You.com OpenAPI specs and the SDK.
+          # Create drift label if it doesn't exist
+          gh label create drift --color FBCA04 --description "SDK drift from OpenAPI specs" 2>/dev/null || true
+          gh issue create \
+            --title "SDK drift detected: OpenAPI specs vs SDK surface" \
+            --body "The weekly drift check found differences between the You.com OpenAPI specs and the SDK.
 
           \`\`\`
-          ${OUTPUT}
+          ${DRIFT_OUTPUT}
           \`\`\`
 
           Review the warnings above and update the SDK as needed. Run \`python scripts/check_drift.py --verbose\` locally to reproduce." \
-              --label "drift"
-          elif echo "$OUTPUT" | grep -q "ERROR:"; then
-            echo "Drift check failed (not drift): $OUTPUT"
-            # Don't open an issue for transient errors
-          else
-            echo "Unexpected output: $OUTPUT"
-          fi
+            --label "drift"
+
+      - name: Report fetch error
+        if: steps.drift.outputs.exit_code == '2'
+        run: |
+          echo "Drift check failed (fetch error, not drift):"
+          echo "${{ env.DRIFT_OUTPUT }}"
 
       - name: Close stale drift issues
-        if: steps.drift.outcome == 'success'
+        if: steps.drift.outputs.exit_code == '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

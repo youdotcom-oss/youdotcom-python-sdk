@@ -315,6 +315,7 @@ class TestAnswerMockServer:
             assert len(res.results.web) > 0
             assert res.results.web[0].url is not None
             assert res.results.web[0].title is not None
+        client.close()
 
     def test_answer_with_freshness(self, server_url, api_key):
         """Test answer with freshness filter."""
@@ -324,6 +325,7 @@ class TestAnswerMockServer:
 
             assert isinstance(res, AnswerResponse)
             assert len(res.answer) > 0
+        client.close()
 
     def test_answer_with_boost_domains(self, server_url, api_key):
         """Test answer with boost_domains."""
@@ -336,18 +338,24 @@ class TestAnswerMockServer:
 
             assert isinstance(res, AnswerResponse)
             assert len(res.answer) > 0
+        client.close()
 
     @pytest.mark.asyncio
     async def test_async_answer(self, server_url, api_key):
         """Test async answer against mock server."""
-        client = create_test_http_client("post_/v1/answer")
-        async with You(
-            server_url=server_url,
-            client=client,
-            async_client=httpx.AsyncClient(),
-            api_key_auth=api_key,
-        ) as you:
-            res = await you.answer_async(query="What is 2+2?")
+        async_client = httpx.AsyncClient(transport=httpx.MockTransport(_make_handler(200)))
+        client = httpx.Client(transport=httpx.MockTransport(_make_handler(200)))
+        try:
+            async with You(
+                server_url=server_url,
+                client=client,
+                async_client=async_client,
+                api_key_auth=api_key,
+            ) as you:
+                res = await you.answer_async(query="What is 2+2?")
 
-            assert isinstance(res, AnswerResponse)
-            assert len(res.answer) > 0
+                assert isinstance(res, AnswerResponse)
+                assert len(res.answer) > 0
+        finally:
+            await async_client.aclose()
+            client.close()

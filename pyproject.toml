@@ -14,11 +14,11 @@ license = { text = "Apache-2.0" }
 
 [dependency-groups]
 dev = [
-    "mypy >=2.3.0",
-    "pylint >=4.0.0",
-    "pyright >=1.1.398",
-    "pytest >=9.0.0",
-    "pytest-asyncio >=1.0.0",
+    "mypy >=2.3.0, <3",
+    "pylint >=4.0.0, <5",
+    "pyright >=1.1.398, <2",
+    "pytest >=9.0.0, <10",
+    "pytest-asyncio >=1.0.0, <2",
 ]
 
 [tool.setuptools.packages.find]

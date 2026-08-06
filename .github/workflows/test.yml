@@ -29,21 +29,27 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .
-          pip install "mypy>=2.3.0" "pytest>=9.0.0" "pytest-asyncio>=1.0.0" "pytest-cov" "pylint>=4.0.0"
+          pip install "mypy>=2.3.0,<3" "pytest>=9.0.0,<10" "pytest-asyncio>=1.0.0,<2" "pytest-cov" "pylint>=4.0.0,<5"
 
       - name: Build and start mock server
         working-directory: tests/mockserver
         run: |
           go build -o mockserver .
           ./mockserver &
+          SERVER_READY=false
           for i in $(seq 1 10); do
             if curl -sf http://localhost:18080/_mockserver/health; then
               echo "mock server ready"
+              SERVER_READY=true
               break
             fi
             echo "waiting for mock server..."
             sleep 1
           done
+          if [ "$SERVER_READY" = false ]; then
+            echo "::error::mock server failed to start within 10 seconds"
+            exit 1
+          fi
 
       - name: Run tests with coverage
         run: pytest tests/ -v --tb=short --ignore=tests/test_live.py --ignore=tests/test_performance.py --cov=youdotcom --cov-report=term-missing
