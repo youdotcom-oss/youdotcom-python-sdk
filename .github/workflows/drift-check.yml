@@ -36,20 +36,29 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Create drift label if it doesn't exist
-          gh label create drift --color FBCA04 --description "SDK drift from OpenAPI specs" 2>/dev/null || true
-          # Re-run to capture output for the issue body
+          # Re-run to capture output for classification
           OUTPUT=$(python scripts/check_drift.py --strict --verbose 2>&1 || true)
-          gh issue create \
-            --title "SDK drift detected: OpenAPI specs vs SDK surface" \
-            --body "The weekly drift check found differences between the You.com OpenAPI specs and the SDK.
+
+          # Distinguish drift from fetch/runtime errors
+          if echo "$OUTPUT" | grep -q "DRIFT DETECTED"; then
+            # Create drift label if it doesn't exist
+            gh label create drift --color FBCA04 --description "SDK drift from OpenAPI specs" 2>/dev/null || true
+            gh issue create \
+              --title "SDK drift detected: OpenAPI specs vs SDK surface" \
+              --body "The weekly drift check found differences between the You.com OpenAPI specs and the SDK.
 
           \`\`\`
           ${OUTPUT}
           \`\`\`
 
           Review the warnings above and update the SDK as needed. Run \`python scripts/check_drift.py --verbose\` locally to reproduce." \
-            --label "drift"
+              --label "drift"
+          elif echo "$OUTPUT" | grep -q "ERROR:"; then
+            echo "Drift check failed (not drift): $OUTPUT"
+            # Don't open an issue for transient errors
+          else
+            echo "Unexpected output: $OUTPUT"
+          fi
 
       - name: Close stale drift issues
         if: steps.drift.outcome == 'success'

@@ -5,6 +5,7 @@ from .httpclient import AsyncHttpClient, ClientOwner, HttpClient, close_clients
 from .sdkconfiguration import SDKConfiguration
 from .utils.logger import Logger, get_default_logger
 from .utils.retries import RetryConfig
+import asyncio
 import httpx
 from typing import (
     Any,
@@ -159,6 +160,16 @@ class You(BaseSDK):
         ):
             self.sdk_configuration.client.close()
         self.sdk_configuration.client = None
+        # Also close SDK-owned async client
+        if (
+            self.sdk_configuration.async_client is not None
+            and not self.sdk_configuration.async_client_supplied
+        ):
+            try:
+                asyncio.run(self.sdk_configuration.async_client.aclose())
+            except RuntimeError:
+                pass
+        self.sdk_configuration.async_client = None
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if (
@@ -167,6 +178,13 @@ class You(BaseSDK):
         ):
             await self.sdk_configuration.async_client.aclose()
         self.sdk_configuration.async_client = None
+        # Also close SDK-owned sync client
+        if (
+            self.sdk_configuration.client is not None
+            and not self.sdk_configuration.client_supplied
+        ):
+            self.sdk_configuration.client.close()
+        self.sdk_configuration.client = None
 
     async def search_async(self, **kwargs: Any) -> models.SearchResponse:
         """Async variant of :meth:`search`."""

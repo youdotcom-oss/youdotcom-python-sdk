@@ -17,11 +17,9 @@
 
 This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
 
-`GET` is a good choice for simple queries where HTTP cacheability matters—GET responses can be cached at CDN and proxy layers, whereas POST responses are not cached by default per the HTTP spec. For requests with complex parameters such as `include_domains` or `exclude_domains`, use POST instead - domain lists are passed as comma-separated strings in GET and are limited by URL length.
-
 ### Example Usage
 
-<!-- UsageSnippet language="python" operationID="search" method="get" path="/v1/search" -->
+<!-- UsageSnippet language="python" operationID="search" method="post" path="/v1/search" -->
 ```python
 import os
 from youdotcom import You, models
