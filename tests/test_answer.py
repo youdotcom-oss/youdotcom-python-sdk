@@ -1,10 +1,12 @@
 """Tests for youdotcom.answer — POST /v1/answer."""
 
 import json
+import os
 
 import httpx
 import pytest
 
+from tests.test_client import create_test_http_client
 from youdotcom import You
 from youdotcom.errors import (
     ForbiddenResponseError,
@@ -280,3 +282,72 @@ class TestAnswerErrors:
         body = json.dumps({"detail": "internal server error"})
         with pytest.raises(InternalServerErrorResponse):
             await _async_you(_make_handler(500, body)).answer_async(query="test")
+
+
+# ---------------------------------------------------------------------------
+# Mock server tests (POST /v1/answer via Go mock server on localhost:18080)
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def server_url():
+    return os.getenv("TEST_SERVER_URL", "http://localhost:18080")
+
+
+@pytest.fixture
+def api_key():
+    return "test-api-key"
+
+
+class TestAnswerMockServer:
+    """Tests for POST /v1/answer against the Go mock server."""
+
+    def test_basic_answer(self, server_url, api_key):
+        """Test basic answer query returns AnswerResponse with answer + citations."""
+        client = create_test_http_client("post_/v1/answer")
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            res = you.answer(query="What is the capital of France?")
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+            assert len(res.citations) > 0
+            assert res.citations[0].source is not None
+            assert len(res.citations[0].source) > 0
+            assert len(res.results.web) > 0
+            assert res.results.web[0].url is not None
+            assert res.results.web[0].title is not None
+
+    def test_answer_with_freshness(self, server_url, api_key):
+        """Test answer with freshness filter."""
+        client = create_test_http_client("post_/v1/answer")
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            res = you.answer(query="Latest AI developments", freshness="week")
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+
+    def test_answer_with_boost_domains(self, server_url, api_key):
+        """Test answer with boost_domains."""
+        client = create_test_http_client("post_/v1/answer")
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            res = you.answer(
+                query="Python type hints",
+                boost_domains=["python.org", "docs.python.org"],
+            )
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+
+    @pytest.mark.asyncio
+    async def test_async_answer(self, server_url, api_key):
+        """Test async answer against mock server."""
+        client = create_test_http_client("post_/v1/answer")
+        async with You(
+            server_url=server_url,
+            client=client,
+            async_client=httpx.AsyncClient(),
+            api_key_auth=api_key,
+        ) as you:
+            res = await you.answer_async(query="What is 2+2?")
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0

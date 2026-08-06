@@ -80,7 +80,7 @@ Tests are organized into logical classes using pytest:
 - Optional format parameter
 - Error handling (unauthorized, forbidden, empty URLs)
 
-**Answer API** (19 tests):
+**Answer API** (23 tests):
 - Basic answer functionality
 - Answer with freshness, country, boost domains
 - Async answer
