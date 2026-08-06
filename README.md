@@ -10,6 +10,7 @@
   <a href="https://pypi.org/project/youdotcom/"><img src="https://img.shields.io/pypi/v/youdotcom.svg" alt="PyPI" /></a>
   <a href="https://pypi.org/project/youdotcom/"><img src="https://img.shields.io/pypi/pyversions/youdotcom.svg" alt="Python versions" /></a>
   <a href="https://docs.you.com"><img src="https://img.shields.io/badge/docs-docs.you.com-blue.svg" alt="Documentation" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT" /></a>
 </div>
 
 ## Install
@@ -218,7 +219,7 @@ The API key is sent as the `X-API-Key` header. How it's resolved:
 | --- | --- |
 | omitted, or `None` | Reads `YDC_API_KEY`, then the legacy `YOU_API_KEY_AUTH` |
 | a non-empty string, or a callable returning one | That key is used; no environment lookup |
-| `""` or blank, or a callable returning one | Raises `ValueError` |
+| `""` or blank, or a callable returning an empty string | Raises `ValueError` |
 
 Every endpoint requires a key, so an empty string is never valid — it means a key
 was expected and none arrived. The SDK raises rather than reading the
@@ -401,3 +402,7 @@ changes only land in major releases and are documented in
 
 Pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup and
 guidelines. For bugs and feature requests, open an issue.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

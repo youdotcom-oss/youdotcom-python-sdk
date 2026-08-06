@@ -10,7 +10,8 @@ dependencies = [
     "httpx >=0.28.1",
     "pydantic >=2.11.2",
 ]
-license = { text = "Apache-2.0" }
+license = "MIT"
+license-files = ["LICENSE"]
 
 [dependency-groups]
 # The single source of truth for dev tooling — CI installs this group with
