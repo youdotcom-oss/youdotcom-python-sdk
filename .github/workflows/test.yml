@@ -6,12 +6,16 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
 
@@ -27,17 +31,79 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # --group needs pip >= 25.1; the upgrade above guarantees it. Reading
+          # the group from pyproject keeps CI and local dev on one dependency list.
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-          pip install pytest pytest-asyncio
+          pip install --group dev -e .
 
       - name: Build and start mock server
         working-directory: tests/mockserver
         run: |
           go build -o mockserver .
           ./mockserver &
-          sleep 2
-          curl -sf http://localhost:18080/ || echo "mock server ready"
+          SERVER_READY=false
+          for i in $(seq 1 10); do
+            if curl -sf http://localhost:18080/_mockserver/health; then
+              echo "mock server ready"
+              SERVER_READY=true
+              break
+            fi
+            echo "waiting for mock server..."
+            sleep 1
+          done
+          if [ "$SERVER_READY" = false ]; then
+            echo "::error::mock server failed to start within 10 seconds"
+            exit 1
+          fi
 
-      - name: Run tests
-        run: pytest tests/ -v --tb=short -x
+      - name: Run tests with coverage
+        run: pytest tests/ -v --tb=short --ignore=tests/test_live.py --ignore=tests/test_performance.py --cov=youdotcom --cov-report=term-missing
+
+      - name: Run mypy
+        run: mypy src/youdotcom/
+
+      # Errors only, and the tree is clean at 10.00/10 — so this gates rather
+      # than reporting into the void the way a continue-on-error step would.
+      - name: Run pylint
+        run: pylint src/youdotcom/ --disable=all --enable=E --rcfile=/dev/null
+
+  build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tool
+        run: pip install build
+
+      - name: Build package
+        run: python -m build --sdist --wheel
+
+      - name: Verify dist contents
+        run: |
+          ls -la dist/
+          tar -tzf dist/*.tar.gz | head -20
+          echo "Package builds successfully"
+
+  drift-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install SDK
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run drift check (non-blocking)
+        run: python scripts/check_drift.py --verbose
+        continue-on-error: true

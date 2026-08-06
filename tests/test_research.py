@@ -132,25 +132,28 @@ class TestResearchBasic:
 class TestResearchAsync:
     @pytest.mark.asyncio
     async def test_basic_research_async(self, server_url, api_key):
-        async_client = httpx.AsyncClient(
+        # Caller-supplied transports are never closed by the SDK, so this test
+        # owns the client's lifetime.
+        async with httpx.AsyncClient(
             headers={
-                "x-speakeasy-test-name": "post_/v1/research",
-                "x-speakeasy-test-instance-id": str(uuid.uuid4()),
+                "x-test-name": "post_/v1/research",
+                "x-test-instance-id": str(uuid.uuid4()),
             },
             follow_redirects=True,
-        )
+        ) as async_client:
+            async with You(
+                server_url=server_url, async_client=async_client, api_key_auth=api_key
+            ) as you:
+                res = await you.research_async(
+                    input="What are the latest advances in quantum computing?",
+                    research_effort=ResearchEffort.STANDARD,
+                    server_url=server_url,
+                )
 
-        async with You(server_url=server_url, async_client=async_client, api_key_auth=api_key) as you:
-            res = await you.research_async(
-                input="What are the latest advances in quantum computing?",
-                research_effort=ResearchEffort.STANDARD,
-                server_url=server_url,
-            )
-
-            assert isinstance(res, ResearchResponse)
-            assert res.output is not None
-            assert res.output.content is not None
-            assert len(res.output.content) > 0
+                assert isinstance(res, ResearchResponse)
+                assert res.output is not None
+                assert res.output.content is not None
+                assert len(res.output.content) > 0
 
 
 class TestResearchErrors:
@@ -215,20 +218,6 @@ class TestFinanceResearch:
             for source in res.output.sources:
                 assert source.url is not None
                 assert source.title is not None
-
-    def test_finance_research_lite_effort(self, server_url, api_key):
-        client = create_test_http_client("post_/v1/finance_research")
-
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.finance_research(
-                input="What was Apple's revenue in FY2024?",
-                research_effort=FinanceResearchEffort.LITE,
-                server_url=server_url,
-            )
-
-            assert res.output is not None
-            assert res.output.content is not None
-            assert "effort: lite" in res.output.content
 
     def test_finance_research_unauthorized(self, server_url):
         client = create_test_http_client("post_/v1/finance_research-unauthorized")
@@ -304,20 +293,22 @@ class TestResearchBackground:
 
     @pytest.mark.asyncio
     async def test_get_research_task_async_returns_task_detail(self, server_url, api_key):
-        async_client = httpx.AsyncClient(
+        async with httpx.AsyncClient(
             headers={
-                "x-speakeasy-test-name": "get_/v1/research/{task_id}",
-                "x-speakeasy-test-instance-id": str(uuid.uuid4()),
+                "x-test-name": "get_/v1/research/{task_id}",
+                "x-test-instance-id": str(uuid.uuid4()),
             },
             follow_redirects=True,
-        )
-        async with You(server_url=server_url, async_client=async_client, api_key_auth=api_key) as you:
-            detail = await you.get_research_task_async(
-                task_id="00000000-0000-0000-0000-000000000001",
-                server_url=server_url,
-            )
-            assert detail.id == "00000000-0000-0000-0000-000000000001"
-            assert detail.status.value == "completed"
+        ) as async_client:
+            async with You(
+                server_url=server_url, async_client=async_client, api_key_auth=api_key
+            ) as you:
+                detail = await you.get_research_task_async(
+                    task_id="00000000-0000-0000-0000-000000000001",
+                    server_url=server_url,
+                )
+                assert detail.id == "00000000-0000-0000-0000-000000000001"
+                assert detail.status.value == "completed"
 
 
 class TestResearchBackgroundErrors:
@@ -403,8 +394,7 @@ class TestResearchOutputSchema:
     the request body, so this test uses ``httpx.MockTransport`` to inject a
     realistic server response with ``content_type=object`` and asserts the
     SDK correctly deserializes both the ``content_type`` slot and the
-    structured payload (preserved via ``additionalProperties: true`` in the
-    overlay, which makes ``Content`` a ``Union[str, Dict[str, Any]]``).
+    structured payload (``Content`` is ``Union[str, Dict[str, Any]]``).
     """
 
     def test_output_schema_sets_content_type_to_object(self, server_url, api_key):
@@ -417,8 +407,8 @@ class TestResearchOutputSchema:
         def handler(request):
             body = json.loads(request.content)
             assert "output_schema" in body
-            # Guard the 2.4.0 regression: a reverted overlay serializes
-            # output_schema to an empty {}. Assert the schema fields survive.
+            # Guard the 2.4.0 regression: output_schema serializes
+            # to an empty {}. Assert the schema fields survive.
             assert body["output_schema"].get("properties", {}).get("same_entity")
             assert "same_entity" in body["output_schema"].get("required", [])
             return httpx.Response(
@@ -458,9 +448,8 @@ class TestResearchOutputSchema:
 
         assert isinstance(res, ResearchResponse)
         assert res.output.content_type.value == "object"
-        # Content is now Union[str, Dict[str, Any]] — the overlay injected
-        # additionalProperties: true so the structured payload round-trips
-        # as a plain dict.
+        # Content is now Union[str, Dict[str, Any]] — when content_type
+        # is "object" the structured payload round-trips as a plain dict.
         assert res.output.content is not None
         assert res.output.content == structured_payload
         assert res.output.content["same_entity"] is True

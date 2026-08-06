@@ -1,5 +1,12 @@
 # Search
 
+> **DEPRECATED** — The `Search` sub-SDK pattern still works but emits `DeprecationWarning`. The sub-SDK layer was Speakeasy-generated indirection; `you.search()` is now a direct method on `You` with a simpler signature (accepts plain strings for `country`, `safesearch`, `freshness` — no enum imports needed). Use the direct method instead:
+>
+> - `you.search(query=...)` (was `you.search.unified(query=...)` and `you.search_post(query=...)`)
+> - `you.search_async(query=...)` (was `you.search_post_async(query=...)`)
+>
+> See [docs/sdks/you/README.md](../you/README.md#search) for the current API. The content below is kept for reference only.
+
 ## Overview
 
 ### Available Operations
@@ -10,18 +17,16 @@
 
 This endpoint is designed to return LLM-ready web results based on a user's query. Based on a classification mechanism, it can return web results and news associated with your query. If you need to feed an LLM with the results of a query that sounds like `What are the latest geopolitical updates from India`, then this endpoint is the right one for you.
 
-`GET` is a good choice for simple queries where HTTP cacheability matters—GET responses can be cached at CDN and proxy layers, whereas POST responses are not cached by default per the HTTP spec. For requests with complex parameters such as `include_domains` or `exclude_domains`, use POST instead - domain lists are passed as comma-separated strings in GET and are limited by URL length.
-
 ### Example Usage
 
-<!-- UsageSnippet language="python" operationID="search" method="get" path="/v1/search" -->
+<!-- UsageSnippet language="python" operationID="search" method="post" path="/v1/search" -->
 ```python
 import os
 from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.search.unified(query="Your query", count=10, language=models.Language.EN, exclude_domains="spam-site.com,other-site.com", boost_domains="nytimes.com,wired.com", crawl_timeout=10)

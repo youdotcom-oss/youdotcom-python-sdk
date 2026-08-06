@@ -3,12 +3,13 @@ venv/
 src/*.egg-info/
 **/__pycache__/
 .pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
 .python-version
 .DS_Store
 pyrightconfig.json
-**/.speakeasy/temp/
-**/.speakeasy/logs/
-.speakeasy/reports
 .env
 .env.local
 _debug/

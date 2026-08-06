@@ -1,711 +1,431 @@
 <div align="center">
-  <img width="600" height="315" alt="image" src="https://raw.githubusercontent.com/youdotcom-oss/youdotcom-python-sdk/refs/heads/main/images/logo.png" />
+  <img width="600" height="315" alt="You.com" src="https://raw.githubusercontent.com/youdotcom-oss/youdotcom-python-sdk/refs/heads/main/images/logo.png" />
 </div>
+
 <div align="center">
-The official developer-friendly & type-safe Python SDK specifically designed to leverage the You.com API.
+  <strong>The official Python SDK for the You.com API</strong>: web search, citation-backed answers, page contents, and multi-step research.
 </div>
-<br >
+
 <div align="center">
-    <a href="https://www.speakeasy.com/?utm_source=openapi&utm_campaign=python"><img src="https://www.speakeasy.com/assets/badges/built-by-speakeasy.svg" /></a>
-    <a href="https://opensource.org/licenses/MIT">
-        <img src="https://img.shields.io/badge/License-MIT-blue.svg" style="width: 100px; height: 28px;" />
-    </a>
+  <a href="https://pypi.org/project/youdotcom/"><img src="https://img.shields.io/pypi/v/youdotcom.svg" alt="PyPI" /></a>
+  <a href="https://pypi.org/project/youdotcom/"><img src="https://img.shields.io/pypi/pyversions/youdotcom.svg" alt="Python versions" /></a>
+  <a href="https://you.com/docs"><img src="https://img.shields.io/badge/docs-you.com%2Fdocs-blue.svg" alt="Documentation" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT" /></a>
 </div>
 
-<!-- Start Summary [summary] -->
-## Summary
-
-You.com API: Unified API for Express, Advanced, and Custom Agents from You.com
-Get the best search results from web and news sources
-Returns the HTML or Markdown of a target webpage
-Multi-step reasoning with comprehensive research capabilities
-Finance-focused multi-step research with competitive accuracy at same price points and latencies as the Research API
-Comprehensive API for You.com services:
-- **Agents API**: Execute queries using Express, Advanced, and Custom AI agents
-- **Research API**: In-depth, multi-step research with citations and sources
-- **Finance Research API**: Finance-focused multi-step research with citations and sources
-- **Search API**: Get search results from web and news sources
-- **Contents API**: Retrieve and process web page content
-<!-- End Summary [summary] -->
-
-<!-- Start Table of Contents [toc] -->
-## Table of Contents
-<!-- $toc-max-depth=2 -->
-  * [SDK Installation](#sdk-installation)
-  * [IDE Support](#ide-support)
-  * [SDK Example Usage](#sdk-example-usage)
-  * [Authentication](#authentication)
-  * [Available Resources and Operations](#available-resources-and-operations)
-  * [Server-sent event streaming](#server-sent-event-streaming)
-  * [Retries](#retries)
-  * [Error Handling](#error-handling)
-  * [Server Selection](#server-selection)
-  * [Custom HTTP Client](#custom-http-client)
-  * [Resource Management](#resource-management)
-  * [Debugging](#debugging)
-* [Development](#development)
-  * [Maturity](#maturity)
-  * [Testing](#testing)
-  * [Contributions](#contributions)
-
-<!-- End Table of Contents [toc] -->
-
-<!-- Start SDK Installation [installation] -->
-## SDK Installation
-
-> [!NOTE]
-> **Python version upgrade policy**
->
-> Once a Python version reaches its [official end of life date](https://devguide.python.org/versions/), a 3-month grace period is provided for users to upgrade. Following this grace period, the minimum python version supported in the SDK will be updated.
-
-The SDK can be installed with *uv*, *pip*, or *poetry* package managers.
-
-### uv
-
-*uv* is a fast Python package installer and resolver, designed as a drop-in replacement for pip and pip-tools. It's recommended for its speed and modern Python tooling capabilities.
-
-```bash
-uv add youdotcom
-```
-
-### PIP
-
-*PIP* is the default package installer for Python, enabling easy installation and management of packages from PyPI via the command line.
+## Install
 
 ```bash
 pip install youdotcom
 ```
 
-### Poetry
+Requires Python 3.10+. Also available via `uv add youdotcom` or `poetry add youdotcom`.
 
-*Poetry* is a modern tool that simplifies dependency management and package publishing by using a single `pyproject.toml` file to handle project metadata and dependencies.
+## Quickstart
 
-```bash
-poetry add youdotcom
-```
-
-### Shell and script usage with `uv`
-
-You can use this SDK in a Python shell with [uv](https://docs.astral.sh/uv/) and the `uvx` command that comes with it like so:
-
-```shell
-uvx --from youdotcom python
-```
-
-It's also possible to write a standalone Python script without needing to set up a whole project like so:
+Get an API key from [you.com/platform](https://you.com/platform) and set it as `YDC_API_KEY`.
 
 ```python
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.10"
-# dependencies = [
-#     "youdotcom",
-# ]
-# ///
-
+import os
 from youdotcom import You
 
-sdk = You(
-  # SDK arguments
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
+    res = you.answer(query="What caused the 2008 financial crisis?")
+    print(res.answer)
+```
+
+That prints a markdown answer with inline `[[1, 2]]` citations. The sources behind
+them are on the response:
+
+```python
+    for citation in res.citations or []:
+        print(citation.source, citation.excerpts)
+```
+
+Two things about that snippet worth knowing up front:
+
+> **`timeout_ms` is doing real work.** Without it, requests inherit httpx's 5
+> second default, and `answer` takes longer than that. See [Timeouts](#timeouts).
+>
+> **The key is explicit here, but it doesn't have to be.** Pass
+> `api_key_auth=None`, or omit it, to read `YDC_API_KEY` from the environment.
+> See [Authentication](#authentication) for the resolution order.
+
+## The APIs
+
+Every method is a direct call on `You`, and every one has an `_async` twin with
+the same signature.
+
+`search()` and `answer()` normalize their enum-typed parameters, so plain
+strings work in any case. `country="us"` and `safesearch="STRICT"` are both
+accepted. Elsewhere, pass the value as the API spells it (all lowercase) or
+import the enum from `youdotcom.models`.
+
+### Answer
+
+A synthesized answer with citations, grounded in live web results.
+
+```python
+res = you.answer(
+    query="What are the tradeoffs of vector vs. keyword search?",
+    freshness="month",
+    include_domains=["arxiv.org"],
 )
 
-# Rest of script here...
+res.answer                    # markdown, with inline [[n]] citations
+res.citations                 # [AnswerCitation(source, excerpts)]
+res.results.web               # results used during synthesis
 ```
 
-Once that is saved to a file, you can run it with `uv run script.py` where
-`script.py` can be replaced with the actual file name.
-<!-- End SDK Installation [installation] -->
+### Search
 
-<!-- Start IDE Support [idesupport] -->
-## IDE Support
-
-### PyCharm
-
-Generally, the SDK will work well with most IDEs out of the box. However, when using PyCharm, you can enjoy much better integration with Pydantic by installing an additional plugin.
-
-- [PyCharm Pydantic Plugin](https://docs.pydantic.dev/latest/integrations/pycharm/)
-<!-- End IDE Support [idesupport] -->
-
-<!-- Start SDK Example Usage [usage] -->
-## SDK Example Usage
-
-### Example
+Ranked web and news results.
 
 ```python
-# Synchronous Example
-import os
-from youdotcom import You, models
+res = you.search(
+    query="EU AI Act enforcement timeline",
+    count=10,
+    country="us",
+    freshness="week",
+)
 
-
-with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
-) as you:
-
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
-        "spam-site.com",
-        "other-site.com",
-    ], boost_domains=[
-        "nytimes.com",
-        "wired.com",
-    ], crawl_timeout=10)
-
-    # Handle response
-    print(res)
+for hit in res.results.web or []:
+    print(hit.title, hit.url)
 ```
 
-</br>
+`include_domains` restricts results to an allowlist; `exclude_domains` and
+`boost_domains` filter and re-rank. `include_domains` cannot be combined with
+either of the others. The API returns `422` if you try. Search also supports
+[search operators](https://you.com/docs/guides/search-operators).
 
-The same SDK client can also be used to make asynchronous requests by importing asyncio.
+### Contents
+
+Clean HTML or Markdown for a list of URLs.
 
 ```python
-# Asynchronous Example
+pages = you.contents(
+    urls=["https://example.com", "https://you.com"],
+    formats=["markdown", "metadata"],
+)
+
+for page in pages:
+    print(page.url, page.title)
+    print(page.markdown)
+```
+
+`formats` accepts `html`, `markdown`, and `metadata` (JSON-LD and OpenGraph).
+Use `max_age` to reject cached content older than a given number of seconds.
+
+### Research
+
+Multi-step research with reasoning and cited sources. Higher effort levels run
+more searches and take longer.
+
+```python
+res = you.research(
+    input="Compare the unit economics of the major cloud providers",
+    research_effort="deep",     # lite | standard | deep | exhaustive | frontier
+)
+
+print(res.output.content)
+for source in res.output.sources or []:
+    print(source.url)
+```
+
+`you.finance_research()` is the finance-tuned counterpart, taking
+`research_effort` of `deep` or `exhaustive`.
+
+Deep and exhaustive runs can take minutes, and `frontier` runs far longer. For
+anything beyond `standard`, use [background mode](#long-running-research).
+
+## Async
+
+Every method has an `_async` variant. Use `async with` so both transports are
+released on exit.
+
+```python
 import asyncio
 import os
-from youdotcom import You, models
+from youdotcom import You
 
 async def main():
-
-    async with You(
-        api_key_auth=os.getenv("YDC_API_KEY", ""),
-    ) as you:
-
-        res = await you.search_post_async(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
-            "spam-site.com",
-            "other-site.com",
-        ], boost_domains=[
-            "nytimes.com",
-            "wired.com",
-        ], crawl_timeout=10)
-
-        # Handle response
-        print(res)
+    async with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
+        res = await you.answer_async(query="What is retrieval-augmented generation?")
+        print(res.answer)
 
 asyncio.run(main())
 ```
-<!-- End SDK Example Usage [usage] -->
-For more thorough examples of how to use our APIs, including typesafe patterns, see `api-example-calls.py` under the `examples` folder.
 
-<!-- Start Authentication [security] -->
+Concurrent calls share the one client:
+
+```python
+answer, results = await asyncio.gather(
+    you.answer_async(query="What is RAG?"),
+    you.search_async(query="RAG benchmarks", count=5),
+)
+```
+
+## Long-running research
+
+Rather than holding a request open for minutes, background mode submits the task
+and returns immediately. The helpers in `youdotcom.research_helpers` cover the
+common shapes.
+
+**Submit and wait.** Handles submission, streaming, and the final fetch:
+
+```python
+from youdotcom.research_helpers import research_and_wait
+
+detail = research_and_wait(
+    you,
+    input="Survey the state of solid-state battery commercialization",
+    research_effort="exhaustive",
+)
+print(detail.status, detail.result)
+```
+
+The wait is bounded automatically: 10 minutes for standard, deep, and
+exhaustive, 4 hours for `frontier`. Pass `timeout_s` to override. It raises
+`TimeoutError` if no terminal event arrives, and `RuntimeError` if the task ends
+in a non-completed state.
+
+**Submit and poll**, if you'd rather own the loop:
+
+```python
+from youdotcom.research_helpers import research_background, poll_research_task
+
+task = research_background(you, input="...", research_effort="deep")
+detail = poll_research_task(you, task.task_id, interval_s=5.0)
+```
+
+**Stream events** as the task progresses:
+
+```python
+from youdotcom.research_helpers import stream_research
+
+for evt in stream_research(you, task_id=task.task_id):
+    print(evt.event, evt.data)
+    if evt.event in ("response.done", "completed", "error", "failed", "cancelled"):
+        break
+```
+
+`stream_research()` tolerates event names outside the documented set, yielding
+them as raw dicts. Prefer it over `you.stream_research_task()`, which validates
+strictly and will raise on an unrecognized event. Pass `from_id` to resume a
+stream after a disconnect.
+
+Each helper has an `_async` twin: `research_and_wait_async`,
+`research_background_async`, `poll_research_task_async`, `stream_research_async`.
+
 ## Authentication
 
-### Per-Client Security Schemes
+The API key is sent as the `X-API-Key` header. How it's resolved:
 
-This SDK supports the following security scheme globally:
+| `api_key_auth` | Behavior |
+| --- | --- |
+| omitted, or `None` | Reads `YDC_API_KEY`, then the legacy `YOU_API_KEY_AUTH` |
+| a non-empty string, or a callable returning one | That key is used; no environment lookup |
+| `""` or blank, or a callable returning an empty string | Raises `ValueError` |
 
-| Name           | Type   | Scheme  | Environment Variable |
-| -------------- | ------ | ------- | -------------------- |
-| `api_key_auth` | apiKey | API key | `YDC_API_KEY`   |
+Every endpoint requires a key, so an empty string is never valid. It means a key
+was expected and none arrived. The SDK raises rather than reading the
+environment, since falling back would run the request under whatever identity
+the environment happens to hold instead of the one the code asked for.
 
-To authenticate with the API the `api_key_auth` parameter must be set when initializing the SDK client instance. For example:
-```python
-import os
-from youdotcom import You, models
+In practice that shows up as `os.getenv("YDC_API_KEY", "")` with the variable
+unset. Use `os.getenv("YDC_API_KEY")`. `None` is how you ask for the lookup.
 
+A callable is resolved on each request, so it can return a rotating key.
 
-with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
-) as you:
+## Errors
 
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
-        "spam-site.com",
-        "other-site.com",
-    ], boost_domains=[
-        "nytimes.com",
-        "wired.com",
-    ], crawl_timeout=10)
-
-    # Handle response
-    print(res)
-
-```
-<!-- End Authentication [security] -->
-
-<!-- Start Available Resources and Operations [operations] -->
-## Available Resources and Operations
-
-<details open>
-<summary>Available methods</summary>
-
-### [You SDK](docs/sdks/you/README.md)
-
-* [search_post](docs/sdks/you/README.md#search_post) - Returns a list of unified search results from web and news sources
-* [research](docs/sdks/you/README.md#research) - Returns comprehensive research-grade answers with multi-step reasoning
-* [get_research_task](docs/sdks/you/README.md#get_research_task) - Get the status of a background research task
-* [stream_research_task](docs/sdks/you/README.md#stream_research_task) - Stream updates for a background research task
-* [finance_research](docs/sdks/you/README.md#finance_research) - Returns comprehensive finance-grade research answers with multi-step reasoning
-
-### [Agents.Runs](docs/sdks/runs/README.md)
-
-* [create](docs/sdks/runs/README.md#create) - Run an Agent
-
-### [Contents](docs/sdks/contentssdk/README.md)
-
-* [generate](docs/sdks/contentssdk/README.md#generate) - Returns the content of the web pages
-
-### [Search](docs/sdks/search/README.md)
-
-* [unified](docs/sdks/search/README.md#unified) - Returns a list of unified search results from web and news sources
-
-</details>
-<!-- End Available Resources and Operations [operations] -->
-
-<!-- Start Server-sent event streaming [eventstream] -->
-## Server-sent event streaming
-
-[Server-sent events][mdn-sse] are used to stream content from certain
-operations. These operations will expose the stream as [Generator][generator] that
-can be consumed using a simple `for` loop. The loop will
-terminate when the server no longer has any events to send and closes the
-underlying connection.
-
-The stream is also a [Context Manager][context-manager] and can be used with the `with` statement and will close the
-underlying connection when the context is exited.
+Every API error subclasses `YouError`, which carries `.message`,
+`.status_code`, `.body`, `.headers`, and `.raw_response`. The typed subclasses
+below add a parsed `.data`.
 
 ```python
-import os
-from youdotcom import You
-from youdotcom.models import (
-    ExpressAgentRunsRequest,
-    WebSearchTool,
-    ResponseCreated,
-    ResponseStarting,
-    ResponseOutputItemAdded,
-    ResponseOutputContentFull,
-    ResponseOutputTextDelta,
-    ResponseOutputItemDone,
-    ResponseDone,
+from youdotcom.errors import (
+    PaymentRequiredResponseError,
+    UnauthorizedResponseError,
+    YouError,
 )
-from youdotcom.utils import eventstreaming
 
-
-with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
-) as you:
-
-    response = you.agents.runs.create(request=ExpressAgentRunsRequest(
-        input="Restaurants in San Francisco",
-        stream=True,
-        tools=[
-            WebSearchTool()
-        ]
-    ))
-
-    # Type narrow to ensure we have a streaming response
-    assert isinstance(response, eventstreaming.EventStream), "Expected streaming response"
-    with response as stream:
-        # Iterate through the stream and handle each event type
-        # Each chunk is an AgentRunsStreamingResponse with a 'data' field
-        for chunk in stream:
-            # The data field contains the actual event (discriminated by TYPE)
-            event_data = chunk.data
-
-            # Use isinstance() to narrow the type and handle each event
-            if isinstance(event_data, ResponseCreated):
-                print(f"✨ Response created (seq: {event_data.seq_id})")
-
-            elif isinstance(event_data, ResponseStarting):
-                print(f"🚀 Response starting (seq: {event_data.seq_id})")
-
-            elif isinstance(event_data, ResponseOutputItemAdded):
-                print(f"➕ Output item added: {event_data.seq_id}")
-
-            elif isinstance(event_data, ResponseOutputContentFull):
-                print("\n🔍 Web Search Results:")
-                if event_data.response.full:
-                    for idx, result in enumerate(event_data.response.full, 1):
-                        print(f"  {idx}. {result.title} - {result.url}")
-
-            elif isinstance(event_data, ResponseOutputTextDelta):
-                # Print the delta text as it streams in (without newline)
-                print(event_data.response.delta, end='', flush=True)
-
-            elif isinstance(event_data, ResponseOutputItemDone):
-                print(f"\n✅ Output item done (index: {event_data.response.output_index})")
-
-            elif isinstance(event_data, ResponseDone):
-                print("\n🎉 Response completed!")
-                print(f"   Runtime: {event_data.response.run_time_ms} ms")
-                print(f"   Finished: {event_data.response.finished}")
-
-            else:
-                print(f"⚠️  Unknown event type: {type(event_data).__name__}")
+try:
+    res = you.answer(query="...")
+except UnauthorizedResponseError:
+    ...                                  # 401, bad or missing key
+except PaymentRequiredResponseError as e:
+    print(e.data.message, e.data.upgrade_url)   # 402, out of credits
+except YouError as e:
+    print(e.status_code, e.body)         # anything else from the API
 ```
 
-[mdn-sse]: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
-[generator]: https://book.pythontips.com/en/latest/generators.html
-[context-manager]: https://book.pythontips.com/en/latest/context_managers.html
-<!-- No Server-sent event streaming [eventstream] -->
+Answer and search share one set of error classes; research, finance research,
+contents, and the task endpoints each raise their own, so you can catch a `422`
+from research without catching one from search.
 
-<!-- Start Retries [retries] -->
-## Retries
+| Status | Answer / Search | Contents | Research | Finance Research | Task get / stream |
+| --- | --- | --- | --- | --- | --- |
+| 401 | `UnauthorizedResponseError` | `ContentsUnauthorizedError` | `ResearchUnauthorizedError` | `FinanceResearchUnauthorizedError` | `GetResearchTask…` / `StreamResearchTask…UnauthorizedError` |
+| 402 | `PaymentRequiredResponseError` <sup>answer only</sup> | n/a | n/a | n/a | n/a |
+| 403 | `ForbiddenResponseError` | `ContentsForbiddenError` | `ResearchForbiddenError` | `FinanceResearchForbiddenError` | `…ForbiddenError` |
+| 404 | n/a | n/a | n/a | n/a | `…NotFoundError` |
+| 422 | `UnprocessableEntityResponseError` | n/a | `ResearchUnprocessableEntityError` | `FinanceResearchUnprocessableEntityError` | n/a |
+| 500 | `InternalServerErrorResponse` | `ContentsInternalServerError` | `ResearchInternalServerError` | `FinanceResearchInternalServerError` | `…InternalServerError` |
 
-Some of the endpoints in this SDK support retries. If you use the SDK without any configuration, it will fall back to the default retry strategy provided by the API. However, the default retry strategy can be overridden on a per-operation basis, or across the entire SDK.
+Two errors sit outside that table: `ResponseValidationError` when a response
+doesn't match its model, and `httpx.RequestError` (and subclasses) for transport
+failures such as connection resets and timeouts.
 
-To change the default retry strategy for a single API call, simply provide a `RetryConfig` object to the call:
+## Configuration
+
+### Retries
+
+The SDK does **not** retry by default. Opt in per call or for the whole client:
+
 ```python
-import os
-from youdotcom import You, models
 from youdotcom.utils import BackoffStrategy, RetryConfig
 
+retries = RetryConfig(
+    "backoff",
+    BackoffStrategy(initial_interval=500, max_interval=10_000, exponent=1.5, max_elapsed_time=60_000),
+    retry_connection_errors=True,
+)
 
-with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
-) as you:
-
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
-        "spam-site.com",
-        "other-site.com",
-    ], boost_domains=[
-        "nytimes.com",
-        "wired.com",
-    ], crawl_timeout=10,
-        retries=RetryConfig("backoff", BackoffStrategy(1, 50, 1.1, 100), False))
-
-    # Handle response
-    print(res)
-
+with You(api_key_auth=key, retry_config=retries) as you:   # whole client
+    res = you.search(query="...", retries=retries)         # or one call
 ```
 
-If you'd like to override the default retry strategy for all operations that support retries, you can use the `retry_config` optional parameter when initializing the SDK:
+Retries apply to `429`, `500`, `502`, `503`, and `504`.
+
+### Timeouts
+
+**Set one.** With no `timeout_ms`, requests inherit the underlying httpx client's
+default of 5 seconds, which is far too short for `answer`, `research`, and
+`finance_research`. Those endpoints routinely take tens of seconds, so a call
+without a timeout will raise `httpx.ReadTimeout` before the API responds.
+
+`timeout_ms` applies to the whole client or to a single call:
+
 ```python
-import os
-from youdotcom import You, models
-from youdotcom.utils import BackoffStrategy, RetryConfig
-
-
-with You(
-    retry_config=RetryConfig("backoff", BackoffStrategy(1, 50, 1.1, 100), False),
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
-) as you:
-
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
-        "spam-site.com",
-        "other-site.com",
-    ], boost_domains=[
-        "nytimes.com",
-        "wired.com",
-    ], crawl_timeout=10)
-
-    # Handle response
-    print(res)
-
-```
-<!-- End Retries [retries] -->
-
-<!-- Start Error Handling [errors] -->
-## Error Handling
-
-[`YouError`](./src/youdotcom/errors/youerror.py) is the base class for all HTTP error responses. It has the following properties:
-
-| Property           | Type             | Description                                                                             |
-| ------------------ | ---------------- | --------------------------------------------------------------------------------------- |
-| `err.message`      | `str`            | Error message                                                                           |
-| `err.status_code`  | `int`            | HTTP response status code eg `404`                                                      |
-| `err.headers`      | `httpx.Headers`  | HTTP response headers                                                                   |
-| `err.body`         | `str`            | HTTP body. Can be empty string if no body is returned.                                  |
-| `err.raw_response` | `httpx.Response` | Raw HTTP response                                                                       |
-| `err.data`         |                  | Optional. Some errors may contain structured data. [See Error Classes](#error-classes). |
-
-### Example
-```python
-import os
-from youdotcom import You, errors, models
-
-
-with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
-) as you:
-    res = None
-    try:
-
-        res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
-            "spam-site.com",
-            "other-site.com",
-        ], boost_domains=[
-            "nytimes.com",
-            "wired.com",
-        ], crawl_timeout=10)
-
-        # Handle response
-        print(res)
-
-
-    except errors.YouError as e:
-        # The base class for HTTP error responses
-        print(e.message)
-        print(e.status_code)
-        print(e.body)
-        print(e.headers)
-        print(e.raw_response)
-
-        # Depending on the method different errors may be thrown
-        if isinstance(e, errors.UnauthorizedResponseError):
-            print(e.data.detail)  # Optional[str]
+with You(api_key_auth=key, timeout_ms=60_000) as you:
+    answer = you.answer(query="...")                     # inherits 60s
+    results = you.search(query="...", timeout_ms=10_000)  # this call only
 ```
 
-### Error Classes
-**Primary error:**
-* [`YouError`](./src/youdotcom/errors/youerror.py): The base class for HTTP error responses.
+Search and contents are fast enough for the default. Research in background mode
+is the exception: the helpers under
+[Long-running research](#long-running-research) manage their own deadlines, so
+`timeout_s` there bounds the wait rather than `timeout_ms`.
 
-<details><summary>Less common errors (31)</summary>
+### Servers
 
-<br />
+`search` and `contents` go to `https://ydc-index.io`. Everything else goes to
+`https://api.you.com`: `answer`, `research`, `finance_research`, and the research
+task endpoints. The SDK routes each call for you. To point one call
+elsewhere, at a proxy or a test server, pass `server_url` to the method:
 
-**Network errors:**
-* [`httpx.RequestError`](https://www.python-httpx.org/exceptions/#httpx.RequestError): Base class for request errors.
-    * [`httpx.ConnectError`](https://www.python-httpx.org/exceptions/#httpx.ConnectError): HTTP client was unable to make a request to a server.
-    * [`httpx.TimeoutException`](https://www.python-httpx.org/exceptions/#httpx.TimeoutException): HTTP request timed out.
-
-
-**Inherit from [`YouError`](./src/youdotcom/errors/youerror.py)**:
-* [`UnauthorizedResponseError`](./src/youdotcom/errors/unauthorizedresponseerror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 2 of 8 methods.*
-* [`ForbiddenResponseError`](./src/youdotcom/errors/forbiddenresponseerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 2 of 8 methods.*
-* [`UnprocessableEntityResponseError`](./src/youdotcom/errors/unprocessableentityresponseerror.py): Unprocessable Entity. Invalid request parameter combination. Status code `422`. Applicable to 2 of 8 methods.*
-* [`InternalServerErrorResponse`](./src/youdotcom/errors/internalservererrorresponse.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 2 of 8 methods.*
-* [`AgentRuns400ResponseError`](./src/youdotcom/errors/agentruns400responseerror.py): The message returned by the error. Status code `400`. Applicable to 1 of 8 methods.*
-* [`ResearchUnauthorizedError`](./src/youdotcom/errors/researchunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
-* [`FinanceResearchUnauthorizedError`](./src/youdotcom/errors/financeresearchunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
-* [`ContentsUnauthorizedError`](./src/youdotcom/errors/contentsunauthorizederror.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
-* [`AgentRuns401ResponseError`](./src/youdotcom/errors/agentruns401responseerror.py): The message returned by the error. Status code `401`. Applicable to 1 of 8 methods.*
-* [`ResearchForbiddenError`](./src/youdotcom/errors/researchforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
-* [`FinanceResearchForbiddenError`](./src/youdotcom/errors/financeresearchforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
-* [`ContentsForbiddenError`](./src/youdotcom/errors/contentsforbiddenerror.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
-* [`ResearchUnprocessableEntityError`](./src/youdotcom/errors/researchunprocessableentityerror.py): Unprocessable Entity. Request validation failed. Status code `422`. Applicable to 1 of 8 methods.*
-* [`FinanceResearchUnprocessableEntityError`](./src/youdotcom/errors/financeresearchunprocessableentityerror.py): Unprocessable Entity. Request validation failed. Status code `422`. Applicable to 1 of 8 methods.*
-* [`AgentRuns422ResponseError`](./src/youdotcom/errors/agentruns422responseerror.py): Unprocessable Entity - Invalid request data. Status code `422`. Applicable to 1 of 8 methods.*
-* [`ResearchInternalServerError`](./src/youdotcom/errors/researchinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
-* [`FinanceResearchInternalServerError`](./src/youdotcom/errors/financeresearchinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
-* [`ContentsInternalServerError`](./src/youdotcom/errors/contentsinternalservererror.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
-* [`GetResearchTaskUnauthorizedError`](./src/youdotcom/errors/getresearchtaskop.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
-* [`GetResearchTaskForbiddenError`](./src/youdotcom/errors/getresearchtaskop.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
-* [`GetResearchTaskNotFoundError`](./src/youdotcom/errors/getresearchtaskop.py): Not Found. Task does not exist or does not belong to the caller. Status code `404`. Applicable to 1 of 8 methods.*
-* [`GetResearchTaskInternalServerError`](./src/youdotcom/errors/getresearchtaskop.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
-* [`StreamResearchTaskUnauthorizedError`](./src/youdotcom/errors/streamresearchtaskop.py): Unauthorized. Problems with API key. Status code `401`. Applicable to 1 of 8 methods.*
-* [`StreamResearchTaskForbiddenError`](./src/youdotcom/errors/streamresearchtaskop.py): Forbidden. API key lacks scope for this path. Status code `403`. Applicable to 1 of 8 methods.*
-* [`StreamResearchTaskNotFoundError`](./src/youdotcom/errors/streamresearchtaskop.py): Not Found. Task does not exist or does not belong to the caller. Status code `404`. Applicable to 1 of 8 methods.*
-* [`StreamResearchTaskInternalServerError`](./src/youdotcom/errors/streamresearchtaskop.py): Internal Server Error during authentication/authorization middleware. Status code `500`. Applicable to 1 of 8 methods.*
-* [`ResponseValidationError`](./src/youdotcom/errors/responsevalidationerror.py): Type mismatch between the response data and the expected Pydantic model. Provides access to the Pydantic validation error via the `cause` attribute.
-
-</details>
-
-\* Check [the method documentation](#available-resources-and-operations) to see if the error is applicable.
-<!-- End Error Handling [errors] -->
-
-<!-- Start Server Selection [server] -->
-## Server Selection
-
-### Override Server URL Per-Client
-
-The default server can be overridden globally by passing a URL to the `server_url: str` optional parameter when initializing the SDK client instance. For example:
 ```python
-import os
-from youdotcom import You, models
-
-
-with You(
-    server_url="https://api.you.com",
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
-) as you:
-
-    res = you.research(input="Which global cities improved air quality the most over the past 10 years, and what measurable actions contributed?", research_effort=models.ResearchEffort.LITE)
-
-    # Handle response
-    print(res)
-
+res = you.search(query="...", server_url="http://localhost:18080")
 ```
 
-### Override Server URL Per-Operation
+The constructor's `server_url` sets the default host, which affects the
+`api.you.com` endpoints. Because `search` and `contents` have their own
+per-operation default, they are unaffected by it; override those per call.
 
-The server URL can also be overridden on a per-operation basis, provided a server list was specified for the operation. For example:
+### Custom HTTP client
+
+Pass any `httpx.Client` / `httpx.AsyncClient` to control proxies, TLS, custom
+headers, or connection limits:
+
 ```python
-import os
-from youdotcom import You, models
-
-
-with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
-) as you:
-
-    res = you.search_post(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
-        "spam-site.com",
-        "other-site.com",
-    ], boost_domains=[
-        "nytimes.com",
-        "wired.com",
-    ], crawl_timeout=10, server_url="https://ydc-index.io")
-
-    # Handle response
-    print(res)
-
-```
-<!-- End Server Selection [server] -->
-
-<!-- Start Custom HTTP Client [http-client] -->
-## Custom HTTP Client
-
-The Python SDK makes API calls using the [httpx](https://www.python-httpx.org/) HTTP library.  In order to provide a convenient way to configure timeouts, cookies, proxies, custom headers, and other low-level configuration, you can initialize the SDK client with your own HTTP client instance.
-Depending on whether you are using the sync or async version of the SDK, you can pass an instance of `HttpClient` or `AsyncHttpClient` respectively, which are Protocol's ensuring that the client has the necessary methods to make API calls.
-This allows you to wrap the client with your own custom logic, such as adding custom headers, logging, or error handling, or you can just pass an instance of `httpx.Client` or `httpx.AsyncClient` directly.
-
-For example, you could specify a header for every request that this sdk makes as follows:
-```python
-from youdotcom import You
 import httpx
 
-http_client = httpx.Client(headers={"x-custom-header": "someValue"})
-s = You(client=http_client)
+http_client = httpx.Client(proxy="http://localhost:8030", headers={"x-team": "search"})
+
+with You(api_key_auth=key, client=http_client) as you:
+    ...
+
+http_client.close()   # a transport you supply is yours to close
 ```
 
-or you could wrap the client with your own custom logic:
+You can also pass anything satisfying the `HttpClient` / `AsyncHttpClient`
+protocols in `youdotcom.httpclient` to wrap requests with your own logic. Note
+that a transport you supply is yours to close. The SDK only closes the ones it
+creates.
+
+### Resource management
+
+`You` holds open connections and has no public `close()`, so use it as a context
+manager. Both transports are released on exit.
+
 ```python
-from youdotcom import You
-from youdotcom.httpclient import AsyncHttpClient
-import httpx
-
-class CustomClient(AsyncHttpClient):
-    client: AsyncHttpClient
-
-    def __init__(self, client: AsyncHttpClient):
-        self.client = client
-
-    async def send(
-        self,
-        request: httpx.Request,
-        *,
-        stream: bool = False,
-        auth: Union[
-            httpx._types.AuthTypes, httpx._client.UseClientDefault, None
-        ] = httpx.USE_CLIENT_DEFAULT,
-        follow_redirects: Union[
-            bool, httpx._client.UseClientDefault
-        ] = httpx.USE_CLIENT_DEFAULT,
-    ) -> httpx.Response:
-        request.headers["Client-Level-Header"] = "added by client"
-
-        return await self.client.send(
-            request, stream=stream, auth=auth, follow_redirects=follow_redirects
-        )
-
-    def build_request(
-        self,
-        method: str,
-        url: httpx._types.URLTypes,
-        *,
-        content: Optional[httpx._types.RequestContent] = None,
-        data: Optional[httpx._types.RequestData] = None,
-        files: Optional[httpx._types.RequestFiles] = None,
-        json: Optional[Any] = None,
-        params: Optional[httpx._types.QueryParamTypes] = None,
-        headers: Optional[httpx._types.HeaderTypes] = None,
-        cookies: Optional[httpx._types.CookieTypes] = None,
-        timeout: Union[
-            httpx._types.TimeoutTypes, httpx._client.UseClientDefault
-        ] = httpx.USE_CLIENT_DEFAULT,
-        extensions: Optional[httpx._types.RequestExtensions] = None,
-    ) -> httpx.Request:
-        return self.client.build_request(
-            method,
-            url,
-            content=content,
-            data=data,
-            files=files,
-            json=json,
-            params=params,
-            headers=headers,
-            cookies=cookies,
-            timeout=timeout,
-            extensions=extensions,
-        )
-
-s = You(async_client=CustomClient(httpx.AsyncClient()))
+with You(api_key_auth=key) as you:
+    ...
+# or: async with You(api_key_auth=key) as you:
 ```
-<!-- End Custom HTTP Client [http-client] -->
 
-<!-- Start Resource Management [resource-management] -->
-## Resource Management
+An instance is not reusable after the block exits, including for calls of the
+other flavor. Use one instance per sync/async flavor.
 
-The `You` class implements the context manager protocol and registers a finalizer function to close the underlying sync and async HTTPX clients it uses under the hood. This will close HTTP connections, release memory and free up other resources held by the SDK. In short-lived Python programs and notebooks that make a few SDK method calls, resource management may not be a concern. However, in longer-lived programs, it is beneficial to create a single SDK instance via a [context manager][context-manager] and reuse it across the application.
+### Debug logging
 
-[context-manager]: https://docs.python.org/3/reference/datamodel.html#context-managers
+Set `YOU_DEBUG=1` for request and response logging, or pass your own logger:
 
 ```python
-import os
-from youdotcom import You
-def main():
-
-    with You(
-        api_key_auth=os.getenv("YDC_API_KEY", ""),
-    ) as you:
-        # Rest of application here...
-
-
-# Or when using async:
-async def amain():
-
-    async with You(
-        api_key_auth=os.getenv("YDC_API_KEY", ""),
-    ) as you:
-        # Rest of application here...
-```
-<!-- End Resource Management [resource-management] -->
-
-<!-- Start Debugging [debug] -->
-## Debugging
-
-You can setup your SDK to emit debug logs for SDK requests and responses.
-
-You can pass your own logger class directly into your SDK.
-```python
-from youdotcom import You
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
-s = You(debug_logger=logging.getLogger("youdotcom"))
+with You(api_key_auth=key, debug_logger=logging.getLogger("youdotcom")) as you:
+    ...
 ```
 
-You can also enable a default debug logger by setting an environment variable `YOU_DEBUG` to true.
-<!-- End Debugging [debug] -->
+`Authorization`, `X-API-Key`, `Cookie`, and `Set-Cookie` are redacted. Request
+and response bodies are not, and may carry sensitive data. Don't enable debug
+logging in production, and don't commit debug logs to version control.
 
-<!-- Placeholder for Future Speakeasy SDK Sections -->
+## Documentation
 
-# Development
+- [API reference](https://you.com/docs/api-reference): endpoints, parameters, response schemas
+- [Quickstart](https://you.com/docs/quickstart)
+- [Pricing and plans](https://you.com/platform)
+- [`docs/`](docs/): per-method SDK reference generated from this codebase
+- [`examples/`](examples/): runnable, typed examples for every endpoint
+- [MIGRATION.md](MIGRATION.md): upgrading between major versions
 
-## Maturity
+## Development
 
-This SDK is in beta, and there may be breaking changes between versions without a major version update. Therefore, we recommend pinning usage
-to a specific package version. This way, you can install the same version each time without breaking changes unless you are intentionally
-looking for the latest version.
-
-## Testing
-
-The SDK includes a comprehensive test suite that covers all API endpoints with success and error scenarios. Tests are written using pytest and run against a mock server.
-
-To run the test suite:
+### Testing
 
 ```bash
 ./scripts/run_tests.sh
 ```
 
-This script automatically:
-- Starts the mock server (requires Go or Docker)
-- Sets up a Python virtual environment
-- Installs dependencies
-- Runs all tests
-- Cleans up the mock server
+Starts the Go mock server, sets up a virtualenv, runs the suite, and cleans up.
+Pass `--cleanup` to remove the virtualenv afterwards. See
+[tests/README.md](tests/README.md) for running pieces of it directly.
 
-By default, the virtual environment is kept for faster subsequent test runs. To remove it after tests complete:
+### Drift detection
+
+This SDK is hand-maintained rather than generated, so `scripts/check_drift.py`
+enforces what code generation used to guarantee: it diffs the published OpenAPI
+specs against the SDK surface (endpoints, server URLs, enum values, request
+parameters, response fields) and runs on every PR plus weekly.
 
 ```bash
-./scripts/run_tests.sh --cleanup
-# or
-./scripts/run_tests.sh -c
+python scripts/check_drift.py --verbose
 ```
 
-For more details on testing, see the [tests README](tests/README.md).
+### Versioning
 
-## Contributions
+This project follows [Semantic Versioning](https://semver.org/). Breaking
+changes only land in major releases and are documented in
+[MIGRATION.md](MIGRATION.md) and [CHANGELOG.md](CHANGELOG.md).
 
-While we value open-source contributions to this SDK, this library is generated programmatically. Any manual changes added to internal files will be overwritten on the next generation.
-We look forward to hearing your feedback. Feel free to open a PR or an issue with a proof of concept and we'll do our best to include it in a future release.
+### Contributing
 
-### SDK Created by [Speakeasy](https://www.speakeasy.com/?utm_source=youdotcom&utm_campaign=python)
+Pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and
+guidelines. For bugs and feature requests, open an issue.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

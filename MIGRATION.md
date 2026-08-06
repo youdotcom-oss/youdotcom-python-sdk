@@ -1,6 +1,196 @@
 # Migration Guide
 
-## 2.4.0 → 2.5.0 (Latest)
+## 2.5.0 → 3.0.0
+
+> **This release adds the Answer API, removes the Agents API, and makes `search()` a direct method on `You`.** The old sub-SDK patterns still work but emit `DeprecationWarning`. Migrate at your convenience.
+
+### Action required
+
+Most of this release is additive, but four changes can alter the behavior of
+code that upgrades without edits:
+
+| Change | Who is affected | What to do |
+|--------|-----------------|------------|
+| Agents API removed | Anyone calling `you.agents...` | Pin `youdotcom<3`, or call the REST endpoint directly |
+| An empty API key now raises | Anyone using `os.getenv("YDC_API_KEY", "")` | Drop the `""` default. See [API key resolution](#api-key-resolution) |
+| Context managers close both transports | Anyone mixing sync and async calls on one instance | Use one instance per flavor. See [Client lifecycle](#client-lifecycle) |
+| `search(language=None)` no longer defaults to `EN` | Anyone passing `language=None` explicitly | Omit the argument to keep the `EN` default |
+
+### API key resolution
+
+`You(api_key_auth="")` now raises `ValueError` instead of quietly reading the
+environment. Every You.com endpoint requires a key, so an empty string is never
+a valid argument. It means a key was expected and none arrived:
+
+```python
+# Before (2.5.x): fell through to the YDC_API_KEY / YOU_API_KEY_AUTH lookup,
+#                 so the request ran under whatever the environment held.
+# After  (3.0.0): ValueError, naming the likely cause.
+You(api_key_auth=os.getenv("YDC_API_KEY", ""))
+
+# Correct in 3.0.0. None is how you ask for the environment lookup:
+You(api_key_auth=os.getenv("YDC_API_KEY"))
+```
+
+The old fallback was worth removing because it could run a request under a
+*different* identity than the code appeared to request, most visibly when
+`YDC_API_KEY` is unset but the legacy `YOU_API_KEY_AUTH` is still set, or on
+shared CI runners. This is a fail-fast change, not a new unauthenticated mode:
+there is no way to call these endpoints without a key.
+
+| `api_key_auth` value | Behavior |
+| -------------------- | -------- |
+| omitted, or `None` | Reads `YDC_API_KEY`, then the legacy `YOU_API_KEY_AUTH` |
+| a non-empty string, or a callable returning one | That key is used; no environment lookup |
+| `""` (or blank), or a callable returning an empty string | Raises `ValueError` |
+
+A callable is resolved lazily, so a callable that returns an empty key raises
+on first use rather than at construction.
+
+### Client lifecycle
+
+`You` creates both a sync and an async transport. Previously each context
+manager closed only its own, leaking the other. Both now close both:
+
+```python
+with You(api_key_auth=key) as you:
+    you.search(query="...")
+# Both transports are now closed and dropped.
+```
+
+If you were relying on a single instance for both flavors, note that an
+instance is unusable after either block exits, including for calls of the
+other flavor:
+
+```python
+# Broken in 3.0.0:
+with You(api_key_auth=key) as you:
+    you.search(query="...")
+await you.search_async(query="...")   # transports already closed
+
+# Use `async with` for async work, or create a separate instance.
+async with You(api_key_auth=key) as you:
+    await you.search_async(query="...")
+```
+
+Transports you supply yourself (`You(client=...)`, `You(async_client=...)`)
+are still never closed by the SDK. You remain responsible for them.
+
+### Debug logging redacts credentials
+
+If you attach a `debug_logger`, `Authorization`, `X-API-Key`, `Cookie`, and
+`Set-Cookie` are now logged as `[REDACTED]`. Previously the API key appeared
+in plaintext in those logs. No code change is needed; if you were parsing
+debug output for header values, those four are no longer recoverable.
+
+### `search(language=...)`
+
+Omitting `language` still sends the API default (`EN`). Passing `None`
+explicitly now means "send no language at all" instead of falling back to that
+default:
+
+```python
+you.search(query="...")                  # language=EN (unchanged)
+you.search(query="...", language="fr")   # language=FR (unchanged)
+you.search(query="...", language=None)   # 2.5.x: EN  →  3.0.0: field omitted
+```
+
+### Answer API
+
+New direct method `you.answer()` for `POST /v1/answer`:
+
+```python
+import os
+from youdotcom import You
+
+with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
+    res = you.answer(query="What causes the 2008 financial crisis?")
+    print(res.answer)           # markdown with [[1, 2]] citations
+    if res.citations:
+        print(res.citations[0].source)  # source URL
+    if res.results and res.results.web:
+        print(res.results.web[0].title) # web result title
+```
+
+Requires an API key. `country` and `language` accept plain strings (e.g. `"us"`, `"en"`) and are normalized to uppercase.
+
+### Search Moved to Direct Method
+
+`you.search()` / `you.search_async()` target `POST /v1/search` on `ydc-index.io`. Search requires an API key.
+
+The standalone `search_helpers` module has been removed. Its `search()` / `search_async()` functions are now direct methods on `You`:
+
+```python
+# Before (2.5.x): from youdotcom.search_helpers import search
+# search(you, query="...")
+
+# After (3.0.0):
+you.search(query="...")
+```
+
+### Server URLs
+
+`SEARCH_OP_SERVERS` and `CONTENTS_OP_SERVERS` point to `https://ydc-index.io` (used by `you.search()` and `you.contents()`). The default server URL (used by `you.answer()`, `you.research()`, `you.finance_research()`, etc.) is `https://api.you.com`. No code changes required. The SDK resolves the correct server per endpoint automatically. This behavior was already the case in 2.5.0; it is documented here for reference.
+
+### Agents API Removed
+
+The `you.agents()` / `you.agents_async()` direct methods and the `you.agents.runs` sub-SDK shim have been removed. The Agents API model classes (`ExpressAgentRunsRequest`, `AdvancedAgentRunsRequest`, `CustomAgentRunsRequest`, `AgentRunsBatchResponse`, etc.) have also been removed from `youdotcom.models`. If you need the Agents API, use the REST endpoint directly or a previous SDK version.
+
+### PaymentRequiredResponseError
+
+The `PaymentRequiredResponseError` exception (extends `YouError`) is raised by the answer API on HTTP 402. It provides structured data:
+
+```python
+import os
+from youdotcom import You
+from youdotcom.errors import PaymentRequiredResponseError
+
+with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
+    try:
+        res = you.answer(query="test")  # may raise 402 if out of credits
+    except PaymentRequiredResponseError as e:
+        print(e.data.message)       # "Insufficient credits"
+        print(e.data.upgrade_url)   # "https://you.com/platform"
+        print(e.data.limit)         # 100
+        print(e.data.reset_at)      # "2026-08-05T00:00:00Z"
+```
+
+### 422/500 Error Models Expanded
+
+`UnprocessableEntityResponseErrorData` now includes optional `detail` (FastAPI validation array) and `errors` (JSON:API array) fields in addition to the existing `error` field. `InternalServerErrorResponseData` now includes an optional `errors` field. These are additive. Existing code accessing `.error` or `.detail` still works.
+
+### No Longer Generated by Speakeasy
+
+The SDK is now hand-maintained. All "Code generated by Speakeasy, DO NOT EDIT" disclaimers have been removed. The `__gen_version__` / `SPEAKEASY_GENERATOR_VERSION` exports have been removed.
+
+### Sub-SDK Deprecation
+
+The sub-SDK layer was an abstraction that added unnecessary indirection: `you.search.unified()` routed through extra layers before reaching the HTTP client. In 3.0.0 these chains are collapsed into direct methods on `You`. The new methods also have simpler signatures: `country`, `language`, `safesearch`, `livecrawl`, `livecrawl_formats`, and `freshness` accept plain strings in any case and are normalized to the casing the API expects, so callers no longer need to import enum classes:
+
+| Parameter | Normalized to | Example |
+|-----------|---------------|---------|
+| `country`, `language` | uppercase | `"us"` → `"US"`, `"zh-hans"` → `"ZH-HANS"` |
+| `safesearch`, `livecrawl`, `livecrawl_formats`, `freshness` | lowercase | `"STRICT"` → `"strict"`, `"2026-01-01TO2026-02-01"` → `"2026-01-01to2026-02-01"` |
+
+Enum members (`Country.US`, `SafeSearch.STRICT`, …) continue to work unchanged.
+
+The old patterns still work but emit `DeprecationWarning` and delegate to the new methods. Migrate at your convenience:
+
+| Old (deprecated) | New |
+|---------------|-----|
+| `you.search.unified(query=...)` | `you.search(query=...)` |
+| `you.search.unified_async(query=...)` | `you.search_async(query=...)` |
+| `you.contents.generate(urls=...)` | `you.contents(urls=...)` |
+| `you.contents.generate_async(urls=...)` | `you.contents_async(urls=...)` |
+
+The `search_helpers` module has been removed; use `you.search(query=...)` directly. The `you.search_post()` alias has been removed; use `you.search()`.
+
+To see deprecation warnings in your code:
+```bash
+python -W default::DeprecationWarning your_script.py
+```
+
+## 2.4.0 → 2.5.0
 
 ### New `frontier` Research Effort Tier
 
@@ -44,23 +234,6 @@ detail = poll_research_task(you, task_id=task.task_id, timeout_s=14400)
 
 No migration is required for existing code. The `frontier` tier is purely additive; existing `LITE`, `STANDARD`, `DEEP`, and `EXHAUSTIVE` values are unchanged.
 
-### New `lite` Finance Research Effort Tier
-
-A new `FinanceResearchEffort.LITE` enum value has been added for quick, straightforward financial questions. The default remains `deep`.
-
-```python
-from youdotcom import You
-from youdotcom.models import FinanceResearchEffort
-
-you = You()
-res = you.finance_research(
-    input="What was Apple's revenue in FY2024?",
-    research_effort=FinanceResearchEffort.LITE,
-)
-```
-
-No migration is required. Existing `DEEP` and `EXHAUSTIVE` values are unchanged.
-
 ### New Background Mode for Research
 
 The `you.research()` method now accepts `background=True` to queue long-running research tasks asynchronously. The return type changes from `ResearchResponse` to `Union[ResearchResponse, TaskResponse]` (exposed as the `ResearchResult` alias).
@@ -73,7 +246,7 @@ from youdotcom.models import ResearchEffort, ResearchResponse
 
 you = You()
 res = you.research(input="...", research_effort=ResearchEffort.DEEP)
-# res is ResearchResponse — same as 2.4.0
+# res is ResearchResponse, same as 2.4.0
 assert isinstance(res, ResearchResponse)
 ```
 
@@ -202,7 +375,7 @@ from youdotcom.models import FinanceResearchEffort
 you.finance_research(input="...", research_effort=FinanceResearchEffort.DEEP)
 ```
 
-`ResearchEffort` keeps the name `ResearchEffort` and values `LITE`, `STANDARD`, `DEEP`, `EXHAUSTIVE`. No migration is required — the OpenAPI spec was promoted to a named schema so the SDK preserves the clean name.
+`ResearchEffort` keeps the name `ResearchEffort` and values `LITE`, `STANDARD`, `DEEP`, `EXHAUSTIVE`. No migration is required. The OpenAPI spec was promoted to a named schema so the SDK preserves the clean name.
 
 #### `livecrawl_formats` now requires a list
 
@@ -252,9 +425,8 @@ res = you.research(
     },
 )
 assert res.output.content_type.value == "object"
-# Content is now Union[str, Dict[str, Any]] — the overlay injects
-# additionalProperties: true so the structured payload round-trips
-# as a plain dict.
+# Content is now Union[str, Dict[str, Any]]. When content_type is
+# "object" the structured payload round-trips as a plain dict.
 print(res.output.content)
 # {'same_entity': True, 'confidence': 0.95, 'evidence': [...]}
 print(res.output.content["same_entity"])  # True
@@ -270,7 +442,7 @@ The SDK now reads `YDC_API_KEY` (canonical per `you.com/docs`) instead of `YOU_A
 # Before (2.3.x)
 export YOU_API_KEY_AUTH="your-api-key"
 
-# After (2.4.0) — preferred
+# After (2.4.0), preferred
 export YDC_API_KEY="your-api-key"
 # YOU_API_KEY_AUTH still works as a fallback
 ```
@@ -293,7 +465,7 @@ from youdotcom.errors import UnprocessableEntityError
 from youdotcom.errors import (
     ResearchUnprocessableEntityError,  # research-specific
     FinanceResearchUnprocessableEntityError,  # new
-    YouError,  # safety net — catches every SDK-raised error
+    YouError,  # safety net, catches every SDK-raised error
 )
 
 try:
@@ -310,12 +482,12 @@ The bare `UnprocessableEntityError` / `SearchUnauthorizedError` / `SearchForbidd
 
 ### New APIs to Try
 
-- `you.finance_research(input=..., research_effort=FinanceResearchEffort.DEEP)` — finance-optimized index.
+- `you.finance_research(input=..., research_effort=FinanceResearchEffort.DEEP)`: finance-optimized index.
 
-- `you.research(..., source_control={...})` — restrict / boost / exclude domains or filter by recency or country.
-- `you.research(..., output_schema={...})` — structured JSON output.
-- `you.search_post(..., boost_domains=[...])` (POST takes a list) or `you.search.unified(..., boost_domains="nytimes.com,wired.com")` (GET takes a single comma-separated string) — boost (but don't restrict) matching domains in ranking.
-- `you.contents.generate(..., max_age=86400)` — require cached content younger than 24 hours.
+- `you.research(..., source_control={...})`: restrict / boost / exclude domains or filter by recency or country.
+- `you.research(..., output_schema={...})`: structured JSON output.
+- `you.search(..., boost_domains=[...])` (POST takes a list) or `you.search.unified(..., boost_domains="nytimes.com,wired.com")` (deprecated shim, takes a single comma-separated string): boost (but don't restrict) matching domains in ranking.
+- `you.contents.generate(..., max_age=86400)`: require cached content younger than 24 hours.
 
 ---
 
@@ -361,6 +533,8 @@ res = you.contents.generate(urls=["https://example.com"], crawl_timeout=5)
 ---
 
 ## 1.x to 2.0
+
+> **Note:** If you are upgrading to 3.0.0+, the Agents API (`you.agents.runs.create()`) and all agent model classes (`ExpressAgentRunsRequest`, `AdvancedAgentRunsRequest`, `CustomAgentRunsRequest`, `AgentRunsBatchResponse`, `ResponseCreated`, `ResponseStarting`, `ResponseOutputTextDelta`, `ResponseOutputContentFull`, `ResponseDone`, `ReportVerbosity`, `SearchEffort`, `AgentRuns401ResponseError`, etc.) have been removed entirely. The migration steps below that reference agent imports and calls are no longer valid. See the [2.5.0 to 3.0.0](#250--300) section above. The Search and Contents API changes below still apply.
 
 This guide helps you upgrade your code from You.com Python SDK 1.x to 2.0.
 

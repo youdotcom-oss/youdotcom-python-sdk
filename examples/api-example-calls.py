@@ -6,14 +6,14 @@ Run this file to see interactive examples of all available API endpoints.
 Setup Instructions:
 -------------------
 1. Create and activate a virtual environment:
-   python3 -m venv venv
+   python3 -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\\Scripts\\activate
 
 2. Install the package:
    pip install youdotcom
 
-3. Run the script:
-   python api-example-calls.py
+3. Run the script from the repo root:
+   python examples/api-example-calls.py
 
    The script will prompt you to enter your API key at runtime.
 """
@@ -22,185 +22,18 @@ from typing import Optional
 import time
 from youdotcom import You
 from youdotcom.models import (
-    ResearchTool,
-    ExpressAgentRunsRequest,
-    AdvancedAgentRunsRequest,
-    SearchEffort,
-    ReportVerbosity,
-    CustomAgentRunsRequest,
     LiveCrawl,
     LiveCrawlFormats,
-    ResponseCreated,
-    ResponseStarting,
-    ResponseOutputItemAdded,
-    ResponseOutputContentFull,
-    ResponseOutputItemDone,
-    ResponseOutputTextDelta,
-    ResponseDone,
-    AgentRunsBatchResponse,
-    AgentRunsStreamingResponse,
     ContentsFormats,
-    WebSearchTool,
     ResearchEffort,
     FinanceResearchEffort,
     FinanceResearchResponse,
     ResearchResponse,
     TaskResponse,
 )
-from youdotcom.utils import eventstreaming
 
 # Will be initialized with API key in main()
 you: Optional[You] = None
-
-def express_batch_request():
-    """
-    Express agent with batch (non-streaming) response
-    """
-    print("\n🚀 Running Express Batch Request...\n")
-
-    assert you is not None, "SDK client not initialized"
-
-    results = you.agents.runs.create(request=ExpressAgentRunsRequest(
-        input="What is the capital of France?",
-        stream=False,
-        tools=[
-            WebSearchTool()
-        ]
-    ))
-
-    # Access the results - check if it's a batch response
-    if isinstance(results, AgentRunsBatchResponse):
-        if results.output:
-            for output in results.output:
-                if output.text:
-                    print(output.text)
-                    break
-            else:
-                print("No text response found in agent output")
-        else:
-            print("No response from agent")
-    else:
-        print("Unexpected response type")
-
-def express_streaming_request():
-    """
-    Express agent with streaming response
-    """
-    print("\n🚀 Running Express Streaming Request...\n")
-
-    assert you is not None, "SDK client not initialized"
-
-    response = you.agents.runs.create(request=ExpressAgentRunsRequest(
-        input="Restaurants in San Francisco",
-        stream=True,
-        tools=[
-            WebSearchTool()
-        ]
-    ))
-
-    # Type narrow to ensure we have a streaming response
-    assert isinstance(response, eventstreaming.EventStream), "Expected streaming response"
-    with response as stream:
-        # Iterate through the stream and handle each event type
-        # Each chunk is an AgentRunsStreamingResponse with a 'data' field
-        for chunk in stream:
-            # The data field contains the actual event (discriminated by TYPE)
-            event_data = chunk.data
-
-            # Use isinstance() to narrow the type and handle each event
-            # This is the proper way to do a "switch statement" on Union types in Python
-            if isinstance(event_data, ResponseCreated):
-                print(f"✨ Response created (seq: {event_data.seq_id})")
-
-            elif isinstance(event_data, ResponseStarting):
-                print(f"🚀 Response starting (seq: {event_data.seq_id})")
-
-            elif isinstance(event_data, ResponseOutputItemAdded):
-                print(f"➕ Output item added: {event_data.seq_id}")
-
-            elif isinstance(event_data, ResponseOutputContentFull):
-                print("\n🔍 Web Search Results:")
-                if event_data.response.full:
-                    for idx, result in enumerate(event_data.response.full, 1):
-                        print(f"  {idx}. {result.title} - {result.url}")
-
-            elif isinstance(event_data, ResponseOutputTextDelta):
-                # Print the delta text as it streams in (without newline)
-                print(event_data.response.delta, end='', flush=True)
-
-            elif isinstance(event_data, ResponseOutputItemDone):
-                print(f"\n✅ Output item done (index: {event_data.response.output_index})")
-
-            elif isinstance(event_data, ResponseDone):
-                print("\n🎉 Response completed!")
-                print(f"   Runtime: {event_data.response.run_time_ms} seconds")
-                print(f"   Finished: {event_data.response.finished}")
-
-            else:
-                print(f"⚠️  Unknown event type: {type(event_data).__name__}")
-
-
-def advanced_batch_request():
-    """
-    Advanced agent with batch response
-    """
-    print("\n🚀 Running Advanced Batch Request...\n")
-
-    assert you is not None, "SDK client not initialized"
-
-    request = AdvancedAgentRunsRequest(
-        input="What is the capital of France?",
-        stream=False,
-        tools=[
-            ResearchTool(
-                search_effort=SearchEffort.LOW,
-                report_verbosity=ReportVerbosity.MEDIUM
-            )
-        ]
-    )
-
-    results = you.agents.runs.create(request=request)
-
-    # Access the results - check if it's a batch response
-    if isinstance(results, AgentRunsBatchResponse):
-        if results.output:
-            for output in results.output:
-                if output.text:
-                    print(output.text)
-                    break
-            else:
-                print("No text response found in agent output")
-        else:
-            print("No response from agent")
-    else:
-        print("Unexpected response type")
-
-
-def custom_batch_request():
-    """
-    Custom agent with batch response
-    Note: Replace the agent ID with your own custom agent ID
-    """
-    print("\n🚀 Running Custom Batch Request...\n")
-
-    assert you is not None, "SDK client not initialized"
-
-    # Replace this with your actual custom agent ID
-    custom_agent_id = "63773261-b4de-4d8f-9dfd-cff206a5cb51"
-
-    request = CustomAgentRunsRequest(
-        agent=custom_agent_id,
-        input="What is the capital of France?",
-        stream=False
-    )
-
-    try:
-        results = you.agents.runs.create(request=request)
-        print(results)
-    except Exception as e:
-        print(f"Error: {e}")
-        print("Note: Make sure to use a valid custom agent ID")
-
 
 def search_request():
     """
@@ -210,7 +43,7 @@ def search_request():
 
     assert you is not None, "SDK client not initialized"
 
-    results = you.search.unified(
+    results = you.search(
         query="artificial intelligence in farming",
         count=1,
         livecrawl=LiveCrawl.WEB,
@@ -242,7 +75,7 @@ def content_request():
 
     # Example 1: Get markdown content
     print("Example 1: Fetching markdown content...")
-    results = you.contents.generate(
+    results = you.contents(
         urls=["https://you.com"],
         formats=[ContentsFormats.MARKDOWN]
     )
@@ -257,7 +90,7 @@ def content_request():
     
     # Example 2: Get multiple formats including metadata (json+ld, opengraph info)
     print("Example 2: Fetching HTML + metadata...")
-    results = you.contents.generate(
+    results = you.contents(
         urls=["https://you.com"],
         formats=[ContentsFormats.HTML, ContentsFormats.METADATA],
         crawl_timeout=30  # Optional: set custom timeout (1-60 seconds)
@@ -444,9 +277,8 @@ def research_output_schema_request():
 
     assert isinstance(res, ResearchResponse)
     print(f"content_type: {res.output.content_type.value}")
-    # output.content is Union[str, Dict[str, Any]] via the overlay's
-    # additionalProperties: true. When content_type is "object" it is a
-    # plain dict, so index it directly.
+    # output.content is Union[str, Dict[str, Any]]. When content_type is
+    # "object" it is a plain dict, so index it directly.
     structured_content = res.output.content
     print(f"structured payload: {structured_content}")
 
@@ -487,10 +319,10 @@ def search_request_with_boost():
 
     assert you is not None, "SDK client not initialized"
 
-    results = you.search.unified(
+    results = you.search(
         query="latest advances in fusion energy research",
         count=5,
-        boost_domains="nature.com,science.org,arxiv.org",
+        boost_domains=["nature.com", "science.org", "arxiv.org"],
     )
 
     print("Top results:")
@@ -509,7 +341,7 @@ def content_request_with_max_age():
 
     assert you is not None, "SDK client not initialized"
 
-    results = you.contents.generate(
+    results = you.contents(
         urls=["https://example.com/page"],
         formats=[ContentsFormats.MARKDOWN],
         crawl_timeout=20,
@@ -524,10 +356,6 @@ def content_request_with_max_age():
 
 # Available functions menu
 FUNCTIONS = [
-    {"name": "Express Batch Request", "fn": express_batch_request},
-    {"name": "Express Streaming Request", "fn": express_streaming_request},
-    {"name": "Advanced Batch Request", "fn": advanced_batch_request},
-    {"name": "Custom Batch Request", "fn": custom_batch_request},
     {"name": "Search Request", "fn": search_request},
     {"name": "Search Request (boost_domains)", "fn": search_request_with_boost},
     {"name": "Content Request", "fn": content_request},

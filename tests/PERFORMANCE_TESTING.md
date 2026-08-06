@@ -7,8 +7,7 @@ This document describes how to use the comprehensive performance testing suite f
 The performance testing suite measures SDK latency vs API latency across all supported endpoint combinations:
 
 - **Search API**: 20+ test cases covering filters, livecrawl, pagination, etc.
-- **Agents API**: 20+ test cases covering agent types, tool combinations, verbosity levels
-- **Contents API**: 6 test cases covering formats and URL counts
+- **Contents API**: 8 test cases covering formats and URL counts
 
 ## Quick Start
 
@@ -52,12 +51,6 @@ pytest tests/test_performance.py -v
 pytest tests/test_performance.py::TestSearchPerformance -v
 ```
 
-### Agents Tests Only
-
-```bash
-pytest tests/test_performance.py::TestAgentsPerformance -v
-```
-
 ### Contents Tests Only
 
 ```bash
@@ -90,9 +83,9 @@ Search: freshness=DAY                                251ms      318ms      407ms
 --------------------------------------------------------------------------------------------------------------------
 
 Summary:
-  Total test cases: 46
-  Total iterations: 230
-  Success rate: 230/230 (100.0%)
+  Total test cases: 29
+  Total iterations: 145
+  Success rate: 145/145 (100.0%)
 
 SDK Overhead Analysis:
   Average overhead: 9.2ms (3.1%)
@@ -263,6 +256,9 @@ pytest tests/test_performance.py -v
 ### Parallel Execution
 
 ```bash
+# Install pytest-xdist first (not included in dev deps):
+pip install pytest-xdist
+
 # Run tests in parallel (faster, but results may vary)
 pytest tests/test_performance.py -n auto -v
 ```
@@ -334,11 +330,11 @@ Example:
 ```python
 def test_search_with_new_filter(self, server_url, api_key, iterations, show_detailed):
     """Test description."""
-    client = create_test_http_client("get_/v1/search")
+    client = create_test_http_client("post_/v1/search")
     
     with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
         def call():
-            you.search.unified(query="test", new_filter="value")
+            you.search(query="test", new_filter="value")
         
         metrics = measure_sdk_call(call, client, iterations, "Search: new filter")
         ALL_METRICS.append(metrics)

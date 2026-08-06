@@ -1,5 +1,12 @@
 # Contents
 
+> **DEPRECATED** — The `ContentsSDK` sub-SDK pattern still works but emits `DeprecationWarning`. `you.contents()` is now a direct method on `You` with the same parameters. Use the direct method instead:
+>
+> - `you.contents(urls=...)` (was `you.contents.generate(urls=...)`)
+> - `you.contents_async(urls=...)` (was `you.contents.generate_async(urls=...)`)
+>
+> See [docs/sdks/you/README.md](../you/README.md#contents) for the current API. The content below is kept for reference only.
+
 ## Overview
 
 ### Available Operations
@@ -19,7 +26,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -42,7 +49,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -65,7 +72,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -88,7 +95,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -111,7 +118,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -134,7 +141,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -162,7 +169,7 @@ with You(
 
 ### Response
 
-**[List[models.ContentsResponse]](../../models/.md)**
+**[List[models.ContentsResponse]](../../models/contentsresponse.md)**
 
 ### Errors
 
