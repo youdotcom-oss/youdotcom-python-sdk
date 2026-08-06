@@ -7,6 +7,8 @@ Fetches OpenAPI specs from you.com/docs/openapi/ and compares:
   2. Server URLs — spec servers match SDK server constants
   3. Enums — spec enum values match SDK enum classes
   4. New APIs — specs the SDK doesn't cover yet (except known exceptions)
+  5. Request parameters — spec request body properties match SDK method parameters
+  6. Response schemas — spec response schema fields match SDK model fields
 
 Usage:
     python scripts/check_drift.py            # Print warnings, exit 0 (CI, non-blocking)
@@ -15,6 +17,8 @@ Usage:
 """
 
 import argparse
+import inspect
+import re
 import sys
 from typing import Any
 
@@ -66,6 +70,45 @@ ENUM_CHECKS = [
     ("web-search", "Country", "youdotcom.models", "Country"),
     ("answer", "Country", "youdotcom.models", "Country"),
     ("research", "Country", "youdotcom.models", "Country"),
+]
+
+# SDK-internal parameters that aren't API params (excluded from drift comparison).
+INTERNAL_PARAMS = {"retries", "server_url", "timeout_ms", "http_headers"}
+
+# Map (spec_name, method, path) -> SDK method info for schema checks.
+# sdk_method: attribute name on You (or "SearchShim"/"ContentsShim" for shims)
+# sdk_response_models: pydantic model class names in youdotcom.models
+SCHEMA_CHECKS = [
+    {
+        "spec": "web-search",
+        "endpoint": ("POST", "/v1/search"),
+        "sdk_method": "SearchShim.__call__",
+        "sdk_response_models": ["SearchResponse"],
+    },
+    {
+        "spec": "contents",
+        "endpoint": ("POST", "/v1/contents"),
+        "sdk_method": "ContentsShim.__call__",
+        "sdk_response_models": ["ContentsResponse"],
+    },
+    {
+        "spec": "answer",
+        "endpoint": ("POST", "/v1/answer"),
+        "sdk_method": "answer",
+        "sdk_response_models": ["AnswerResponse"],
+    },
+    {
+        "spec": "research",
+        "endpoint": ("POST", "/v1/research"),
+        "sdk_method": "research",
+        "sdk_response_models": ["ResearchResponse", "TaskResponse"],
+    },
+    {
+        "spec": "finance-research",
+        "endpoint": ("POST", "/v1/finance_research"),
+        "sdk_method": "finance_research",
+        "sdk_response_models": ["FinanceResearchResponse"],
+    },
 ]
 
 
@@ -232,6 +275,154 @@ def check_new_apis(specs: dict[str, dict[str, Any]]) -> list[str]:
     return warnings
 
 
+def _resolve_ref(ref: str, spec: dict[str, Any]) -> dict[str, Any]:
+    """Resolve a $ref pointer within an OpenAPI spec."""
+    # Format: "#/components/schemas/SchemaName"
+    parts = ref.lstrip("#/").split("/")
+    obj: Any = spec
+    for part in parts:
+        obj = obj[part]
+    return obj
+
+
+def _get_schema_properties(schema: dict[str, Any], spec: dict[str, Any]) -> set[str]:
+    """Extract top-level property names from a schema, resolving $ref, oneOf, and arrays."""
+    if "$ref" in schema:
+        schema = _resolve_ref(schema["$ref"], spec)
+
+    if "oneOf" in schema:
+        # Union type — collect properties from all branches
+        props: set[str] = set()
+        for branch in schema["oneOf"]:
+            props |= _get_schema_properties(branch, spec)
+        return props
+
+    if schema.get("type") == "array" and "items" in schema:
+        # Array type — look at the items schema
+        return _get_schema_properties(schema["items"], spec)
+
+    if "properties" in schema:
+        return set(schema["properties"].keys())
+
+    return set()
+
+
+def _get_sdk_method_params(method_spec: str) -> set[str]:
+    """Get SDK method parameter names, excluding internal params."""
+    import importlib
+
+    if "." in method_spec and method_spec != "answer" and method_spec != "research" and method_spec != "finance_research":
+        # Shim classes: SearchShim.__call__, ContentsShim.__call__
+        cls_name, method_name = method_spec.split(".")
+        mod = importlib.import_module("youdotcom._shims")
+        cls = getattr(mod, cls_name)
+        func = getattr(cls, method_name)
+    else:
+        mod = importlib.import_module("youdotcom")
+        cls = getattr(mod, "You")
+        func = getattr(cls, method_spec)
+
+    sig = inspect.signature(func)
+    params = {p for p in sig.parameters if p != "self"}
+    return params - INTERNAL_PARAMS
+
+
+def _get_sdk_model_fields(model_names: list[str]) -> set[str]:
+    """Get pydantic model field names for one or more model classes."""
+    import importlib
+    mod = importlib.import_module("youdotcom.models")
+    fields: set[str] = set()
+    for name in model_names:
+        cls = getattr(mod, name)
+        fields |= set(cls.model_fields.keys())
+    return fields
+
+
+def check_request_params(specs: dict[str, dict[str, Any]]) -> list[str]:
+    """Check that spec request body properties match SDK method parameters."""
+    warnings: list[str] = []
+
+    for check in SCHEMA_CHECKS:
+        spec_name = check["spec"]
+        method, path = check["endpoint"]
+        if spec_name not in specs:
+            continue
+
+        spec = specs[spec_name]
+        path_item = spec.get("paths", {}).get(path, {})
+        operation = path_item.get(method.lower(), {})
+        request_body = operation.get("requestBody", {})
+        content = request_body.get("content", {}).get("application/json", {})
+        schema = content.get("schema", {})
+
+        if not schema:
+            continue
+
+        # Resolve $ref if the request body is a reference
+        if "$ref" in schema:
+            schema = _resolve_ref(schema["$ref"], spec)
+
+        spec_params = set(schema.get("properties", {}).keys())
+        sdk_params = _get_sdk_method_params(check["sdk_method"])
+
+        missing_in_sdk = spec_params - sdk_params
+        missing_in_spec = sdk_params - spec_params
+
+        if missing_in_sdk:
+            warnings.append(
+                f"[request] {spec_name} {method} {path}: spec has params {missing_in_sdk} "
+                f"which SDK doesn't accept"
+            )
+        if missing_in_spec:
+            warnings.append(
+                f"[request] {spec_name} {method} {path}: SDK has params {missing_in_spec} "
+                f"which spec doesn't define"
+            )
+
+    return warnings
+
+
+def check_response_schemas(specs: dict[str, dict[str, Any]]) -> list[str]:
+    """Check that spec 200 response schema fields match SDK model fields."""
+    warnings: list[str] = []
+
+    for check in SCHEMA_CHECKS:
+        spec_name = check["spec"]
+        method, path = check["endpoint"]
+        if spec_name not in specs:
+            continue
+
+        spec = specs[spec_name]
+        path_item = spec.get("paths", {}).get(path, {})
+        operation = path_item.get(method.lower(), {})
+        responses = operation.get("responses", {})
+        ok_response = responses.get("200", {})
+        content = ok_response.get("content", {}).get("application/json", {})
+        schema = content.get("schema", {})
+
+        if not schema:
+            continue
+
+        spec_fields = _get_schema_properties(schema, spec)
+        sdk_fields = _get_sdk_model_fields(check["sdk_response_models"])
+
+        missing_in_sdk = spec_fields - sdk_fields
+        missing_in_spec = sdk_fields - spec_fields
+
+        if missing_in_sdk:
+            warnings.append(
+                f"[response] {spec_name} {method} {path}: spec has fields {missing_in_sdk} "
+                f"which SDK model doesn't have"
+            )
+        if missing_in_spec:
+            warnings.append(
+                f"[response] {spec_name} {method} {path}: SDK model has fields {missing_in_spec} "
+                f"which spec doesn't define"
+            )
+
+    return warnings
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -257,6 +448,8 @@ def main() -> int:
     all_warnings += check_endpoints(specs)
     all_warnings += check_server_urls(specs)
     all_warnings += check_enums(specs)
+    all_warnings += check_request_params(specs)
+    all_warnings += check_response_schemas(specs)
 
     if all_warnings:
         print(f"DRIFT DETECTED ({len(all_warnings)} issue(s)):\n")
@@ -269,7 +462,8 @@ def main() -> int:
         print("No drift detected. SDK matches OpenAPI specs.")
         if args.verbose:
             print(f"  Checked {len(specs)} specs, {len(EXPECTED_ENDPOINTS)} endpoints, "
-                  f"{len(ENUM_CHECKS)} enum mappings, {len(EXPECTED_SERVERS)} server URLs.")
+                  f"{len(ENUM_CHECKS)} enum mappings, {len(EXPECTED_SERVERS)} server URLs, "
+                  f"{len(SCHEMA_CHECKS)} schema/param mappings.")
         return 0
 
 

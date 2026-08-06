@@ -86,8 +86,13 @@ class Output(BaseModel):
 class ResearchResponseTypedDict(TypedDict):
     output: OutputTypedDict
     r"""The research output containing the answer and sources."""
+    warnings: NotRequired[List[str]]
+    r"""A list of warnings generated during research, such as source access issues or partial results. Empty when no warnings occurred."""
 
 
 class ResearchResponse(BaseModel):
     output: Output
     r"""The research output containing the answer and sources."""
+
+    warnings: Optional[List[str]] = None
+    r"""A list of warnings generated during research, such as source access issues or partial results. Empty when no warnings occurred."""
