@@ -354,6 +354,8 @@ other flavor. Use one instance per sync/async flavor.
 Set `YOU_DEBUG=1` for request and response logging, or pass your own logger:
 
 ```python
+import logging
+
 you = You(api_key_auth=key, debug_logger=logging.getLogger("youdotcom"))
 ```
 
