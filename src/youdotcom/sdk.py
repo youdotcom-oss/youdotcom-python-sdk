@@ -59,7 +59,7 @@ class You(BaseSDK):
 
         :param api_key_auth: The api_key_auth required for authentication
         :param server_idx: The index of the server to use for all methods
-        :param server_url: The server URL to use for all methods
+        :param server_url: The server URL to use for all methods. Note: ``search()``/``search_async()`` and ``contents()``/``contents_async()`` default to ``ydc-index.io`` (via ``SEARCH_OP_SERVERS``/``CONTENTS_OP_SERVERS``) and are not affected by this parameter unless the per-method ``server_url`` argument is passed.
         :param url_params: Parameters to optionally template the server URL with
         :param client: The HTTP client to use for all synchronous methods
         :param async_client: The Async HTTP client to use for all asynchronous methods
@@ -166,9 +166,13 @@ class You(BaseSDK):
             and not self.sdk_configuration.async_client_supplied
         ):
             try:
-                asyncio.run(self.sdk_configuration.async_client.aclose())
+                loop = asyncio.get_running_loop()
             except RuntimeError:
-                pass
+                asyncio.run(self.sdk_configuration.async_client.aclose())
+            else:
+                asyncio.run_coroutine_threadsafe(
+                    self.sdk_configuration.async_client.aclose(), loop
+                )
         self.sdk_configuration.async_client = None
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
