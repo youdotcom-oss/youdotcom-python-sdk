@@ -36,11 +36,17 @@ jobs:
         run: |
           go build -o mockserver .
           ./mockserver &
-          sleep 2
-          curl -sf http://localhost:18080/ || echo "mock server ready"
+          for i in $(seq 1 10); do
+            if curl -sf http://localhost:18080/_mockserver/health; then
+              echo "mock server ready"
+              break
+            fi
+            echo "waiting for mock server..."
+            sleep 1
+          done
 
       - name: Run tests
-        run: pytest tests/ -v --tb=short -x --ignore=tests/test_live.py --ignore=tests/test_performance.py
+        run: pytest tests/ -v --tb=short --ignore=tests/test_live.py --ignore=tests/test_performance.py
 
       - name: Run mypy
         run: mypy src/youdotcom/
