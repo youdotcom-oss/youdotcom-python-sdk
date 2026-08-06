@@ -15,8 +15,21 @@ import pytest
 from youdotcom import You
 
 
+def _mock_transport() -> httpx.MockTransport:
+    """A transport with no connection pool.
+
+    The `_Boom*` clients below raise on close by design, so they can never be
+    disposed of normally. Backing every client here with a mock transport means
+    there is no pool to leak when that happens.
+    """
+    return httpx.MockTransport(lambda request: httpx.Response(200, json={}))
+
+
 class _RecordingClient(httpx.Client):
     closed = False
+
+    def __init__(self):
+        super().__init__(transport=_mock_transport())
 
     def close(self):
         type(self).closed = True
@@ -26,19 +39,36 @@ class _RecordingClient(httpx.Client):
 class _RecordingAsyncClient(httpx.AsyncClient):
     closed = False
 
+    def __init__(self):
+        super().__init__(transport=_mock_transport())
+
     async def aclose(self):
         type(self).closed = True
         await super().aclose()
 
 
 class _BoomClient(httpx.Client):
+    def __init__(self):
+        super().__init__(transport=_mock_transport())
+
     def close(self):
         raise RuntimeError("sync close boom")
 
 
 class _BoomAsyncClient(httpx.AsyncClient):
+    def __init__(self):
+        super().__init__(transport=_mock_transport())
+
     async def aclose(self):
         raise RuntimeError("async close boom")
+
+
+def _client() -> httpx.Client:
+    return httpx.Client(transport=_mock_transport())
+
+
+def _async_client() -> httpx.AsyncClient:
+    return httpx.AsyncClient(transport=_mock_transport())
 
 
 def _owned(you: You) -> You:
@@ -61,7 +91,7 @@ class TestSyncExit:
         assert _RecordingAsyncClient.closed
 
     def test_drops_references(self):
-        with _owned(You(api_key_auth="k", client=httpx.Client())) as you:
+        with _owned(You(api_key_auth="k", client=_client())) as you:
             pass
         assert you.sdk_configuration.client is None
         assert you.sdk_configuration.async_client is None
@@ -79,7 +109,7 @@ class TestSyncExit:
 
     def test_async_close_failure_does_not_mask_body_exception(self):
         you = _owned(
-            You(api_key_auth="k", client=httpx.Client(), async_client=_BoomAsyncClient())
+            You(api_key_auth="k", client=_client(), async_client=_BoomAsyncClient())
         )
         with pytest.raises(ValueError, match="the real error"):
             with you:
@@ -114,7 +144,7 @@ class TestAsyncExit:
 
     @pytest.mark.asyncio
     async def test_drops_references(self):
-        async with _owned(You(api_key_auth="k", async_client=httpx.AsyncClient())) as you:
+        async with _owned(You(api_key_auth="k", async_client=_async_client())) as you:
             pass
         assert you.sdk_configuration.client is None
         assert you.sdk_configuration.async_client is None
@@ -129,5 +159,5 @@ class TestAsyncExit:
     @pytest.mark.asyncio
     async def test_sync_exit_inside_running_loop_does_not_raise(self):
         """`with You(...)` used from async code must not trip over the live loop."""
-        with _owned(You(api_key_auth="k", async_client=httpx.AsyncClient())):
+        with _owned(You(api_key_auth="k", async_client=_async_client())):
             pass

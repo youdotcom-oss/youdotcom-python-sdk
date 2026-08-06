@@ -46,14 +46,19 @@ def _run_with_debug_log(**client_kwargs) -> str:
             content=_SEARCH_BODY,
         )
 
-    with You(
-        api_key_auth=API_KEY,
-        server_url="http://mock.local",
-        client=httpx.Client(transport=httpx.MockTransport(handler)),
-        debug_logger=logger,
-        **client_kwargs,
-    ) as you:
-        you.search(query="x")
+    # Caller-supplied, so this helper owns closing it.
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    try:
+        with You(
+            api_key_auth=API_KEY,
+            server_url="http://mock.local",
+            client=client,
+            debug_logger=logger,
+            **client_kwargs,
+        ) as you:
+            you.search(query="x")
+    finally:
+        client.close()
 
     return "\n".join(records)
 

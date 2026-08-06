@@ -173,23 +173,24 @@ class TestResearchBackground:
 
     @pytest.mark.asyncio
     async def test_research_background_async_returns_task_response(self, server_url, api_key):
-        async_client = httpx.AsyncClient(
+        # Caller-supplied transports are never closed by the SDK, so this test
+        # owns the client's lifetime.
+        async with httpx.AsyncClient(
             headers={
                 "x-test-name": "post_/v1/research-background",
                 "x-test-instance-id": str(uuid.uuid4()),
             },
             follow_redirects=True,
-        )
-
-        async with You(
-            server_url=server_url, async_client=async_client, api_key_auth=api_key
-        ) as you:
-            res = await research_background_async(
-                you,
-                input="Compare NVIDIA, AMD, and Intel revenue over 5 years",
-                research_effort=ResearchEffort.DEEP,
-                server_url=server_url,
-            )
+        ) as async_client:
+            async with You(
+                server_url=server_url, async_client=async_client, api_key_auth=api_key
+            ) as you:
+                res = await research_background_async(
+                    you,
+                    input="Compare NVIDIA, AMD, and Intel revenue over 5 years",
+                    research_effort=ResearchEffort.DEEP,
+                    server_url=server_url,
+                )
 
         assert isinstance(res, TaskResponse)
         assert res.task_id == "00000000-0000-0000-0000-000000000001"

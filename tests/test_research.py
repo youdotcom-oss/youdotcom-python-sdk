@@ -132,25 +132,28 @@ class TestResearchBasic:
 class TestResearchAsync:
     @pytest.mark.asyncio
     async def test_basic_research_async(self, server_url, api_key):
-        async_client = httpx.AsyncClient(
+        # Caller-supplied transports are never closed by the SDK, so this test
+        # owns the client's lifetime.
+        async with httpx.AsyncClient(
             headers={
                 "x-test-name": "post_/v1/research",
                 "x-test-instance-id": str(uuid.uuid4()),
             },
             follow_redirects=True,
-        )
+        ) as async_client:
+            async with You(
+                server_url=server_url, async_client=async_client, api_key_auth=api_key
+            ) as you:
+                res = await you.research_async(
+                    input="What are the latest advances in quantum computing?",
+                    research_effort=ResearchEffort.STANDARD,
+                    server_url=server_url,
+                )
 
-        async with You(server_url=server_url, async_client=async_client, api_key_auth=api_key) as you:
-            res = await you.research_async(
-                input="What are the latest advances in quantum computing?",
-                research_effort=ResearchEffort.STANDARD,
-                server_url=server_url,
-            )
-
-            assert isinstance(res, ResearchResponse)
-            assert res.output is not None
-            assert res.output.content is not None
-            assert len(res.output.content) > 0
+                assert isinstance(res, ResearchResponse)
+                assert res.output is not None
+                assert res.output.content is not None
+                assert len(res.output.content) > 0
 
 
 class TestResearchErrors:

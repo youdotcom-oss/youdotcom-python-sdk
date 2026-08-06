@@ -13,6 +13,7 @@ Also pins the three-way `language` contract, which is easy to break:
 """
 
 import json
+from contextlib import contextmanager
 
 import httpx
 import pytest
@@ -25,39 +26,41 @@ _SEARCH_BODY = json.dumps({"results": {"web": []}})
 _ANSWER_BODY = json.dumps({"answer": "hi", "citations": [], "results": {"web": []}})
 
 
-def _search_body(**kwargs) -> dict:
-    """Run one search and return the JSON body that went over the wire."""
+@contextmanager
+def _capture(response_body: str):
+    """Yield (You, captured) over a mock transport, closing the client after.
+
+    Caller-supplied transports are never closed by the SDK, so ownership of
+    the client stays here.
+    """
     captured: dict = {}
 
     def handler(request):
         captured["body"] = json.loads(request.content)
         return httpx.Response(
-            200, headers={"content-type": "application/json"}, content=_SEARCH_BODY
+            200, headers={"content-type": "application/json"}, content=response_body
         )
 
-    with You(
-        api_key_auth="k",
-        server_url="http://mock.local",
-        client=httpx.Client(transport=httpx.MockTransport(handler)),
-    ) as you:
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    try:
+        with You(
+            api_key_auth="k", server_url="http://mock.local", client=client
+        ) as you:
+            yield you, captured
+    finally:
+        client.close()
+
+
+def _search_body(**kwargs) -> dict:
+    """Run one search and return the JSON body that went over the wire."""
+    with _capture(_SEARCH_BODY) as (you, captured):
         you.search(query="x", **kwargs)
     return captured["body"]
 
 
 def _answer_body(**kwargs) -> dict:
-    captured: dict = {}
-
-    def handler(request):
-        captured["body"] = json.loads(request.content)
-        return httpx.Response(
-            200, headers={"content-type": "application/json"}, content=_ANSWER_BODY
-        )
-
-    with You(
-        api_key_auth="k",
-        server_url="http://mock.local",
-        client=httpx.Client(transport=httpx.MockTransport(handler)),
-    ) as you:
+    """Run one answer call and return the JSON body that went over the wire."""
+    with _capture(_ANSWER_BODY) as (you, captured):
         you.answer(query="x", **kwargs)
     return captured["body"]
 
@@ -123,12 +126,11 @@ class TestLanguageThreeWayContract:
                 200, headers={"content-type": "application/json"}, content=_SEARCH_BODY
             )
 
-        async with You(
-            api_key_auth="k",
-            server_url="http://mock.local",
-            async_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
-        ) as you:
-            await you.search_async(query="x", language=None)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as ac:
+            async with You(
+                api_key_auth="k", server_url="http://mock.local", async_client=ac
+            ) as you:
+                await you.search_async(query="x", language=None)
         assert "language" not in captured["body"]
 
 
@@ -151,19 +153,7 @@ class TestDeprecatedShimNormalization:
     """The deprecated `unified()` spelling must normalize identically."""
 
     def test_unified_normalizes_and_defaults_language(self):
-        captured: dict = {}
-
-        def handler(request):
-            captured["body"] = json.loads(request.content)
-            return httpx.Response(
-                200, headers={"content-type": "application/json"}, content=_SEARCH_BODY
-            )
-
-        with You(
-            api_key_auth="k",
-            server_url="http://mock.local",
-            client=httpx.Client(transport=httpx.MockTransport(handler)),
-        ) as you:
+        with _capture(_SEARCH_BODY) as (you, captured):
             with pytest.warns(DeprecationWarning):
                 you.search.unified(query="x", country="us", safesearch="STRICT")
 
@@ -172,19 +162,7 @@ class TestDeprecatedShimNormalization:
         assert captured["body"]["language"] == "EN"
 
     def test_unified_language_none_opts_out(self):
-        captured: dict = {}
-
-        def handler(request):
-            captured["body"] = json.loads(request.content)
-            return httpx.Response(
-                200, headers={"content-type": "application/json"}, content=_SEARCH_BODY
-            )
-
-        with You(
-            api_key_auth="k",
-            server_url="http://mock.local",
-            client=httpx.Client(transport=httpx.MockTransport(handler)),
-        ) as you:
+        with _capture(_SEARCH_BODY) as (you, captured):
             with pytest.warns(DeprecationWarning):
                 you.search.unified(query="x", language=None)
 

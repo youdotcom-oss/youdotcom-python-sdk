@@ -76,12 +76,17 @@ def _sent_api_key(**client_kwargs) -> str | None:
             200, headers={"content-type": "application/json"}, content=_SEARCH_BODY
         )
 
-    with You(
-        server_url="http://mock.local",
-        client=httpx.Client(transport=httpx.MockTransport(handler)),
-        **client_kwargs,
-    ) as you:
-        you.search(query="x")
+    # Caller-supplied transports are never closed by the SDK, so close it here.
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    try:
+        with You(
+            server_url="http://mock.local",
+            client=client,
+            **client_kwargs,
+        ) as you:
+            you.search(query="x")
+    finally:
+        client.close()
     return captured["key"]
 
 
@@ -139,9 +144,17 @@ class TestEmptyKeyRejected:
 
     def test_callable_returning_empty_raises_when_called(self):
         """A callable is resolved lazily, so it can only be checked on use."""
-        you = You(api_key_auth=lambda: "")  # construction is fine
-        with pytest.raises(ValueError, match="callable returned an empty API key"):
-            you.search(query="x")
+        # A mock transport guarantees the assertion can't depend on a network
+        # call: the raise has to happen while the request is being built.
+        client = httpx.Client(
+            transport=httpx.MockTransport(lambda req: httpx.Response(200, json={}))
+        )
+        try:
+            with You(api_key_auth=lambda: "", client=client) as you:  # construction is fine
+                with pytest.raises(ValueError, match="callable returned an empty API key"):
+                    you.search(query="x")
+        finally:
+            client.close()
 
     def test_none_is_still_the_way_to_use_the_environment(self, monkeypatch):
         monkeypatch.setenv("YDC_API_KEY", "env-key")
