@@ -91,7 +91,7 @@ def _populate_from_globals(
     found = False
     for name in global_fields:
         field = global_fields[name]
-        if name is not param_name:
+        if name != param_name:
             continue
 
         found = True
