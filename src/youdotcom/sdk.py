@@ -27,6 +27,44 @@ from youdotcom.utils import eventstreaming, get_security_from_env
 from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
 
 
+def _upper(value: Any) -> Any:
+    """Normalize a plain-string enum value to its uppercase spelling.
+
+    Used for ``country`` and ``language``, whose enum members are uppercase
+    (``"us"`` -> ``"US"``). Non-strings (and ``None``) pass through untouched;
+    enum members are ``str`` subclasses, so they normalize to themselves.
+    """
+    return value.upper() if isinstance(value, str) else value
+
+
+def _lower(value: Any) -> Any:
+    """Normalize a plain-string enum value to its lowercase spelling.
+
+    Used for ``safesearch``, ``livecrawl``, and ``freshness``, whose enum
+    members are lowercase (``"STRICT"`` -> ``"strict"``). Date-range freshness
+    values are unaffected apart from the ``to`` separator, which the API
+    expects in lowercase anyway.
+    """
+    return value.lower() if isinstance(value, str) else value
+
+
+def _lower_each(values: Optional[Iterable[Any]]) -> Optional[List[Any]]:
+    """Apply :func:`_lower` to every item of an optional iterable."""
+    if values is None:
+        return None
+    return [_lower(v) for v in values]
+
+
+_EMPTY_API_KEY_MESSAGE = (
+    "api_key_auth was an empty string. Every You.com endpoint requires an API "
+    'key, so this is never valid. If you meant to read the key from the '
+    "environment, pass None or omit the argument -- the SDK then reads "
+    "YDC_API_KEY (falling back to YOU_API_KEY_AUTH). This usually comes from "
+    'os.getenv("YDC_API_KEY", "") with the variable unset; use '
+    'os.getenv("YDC_API_KEY") instead.'
+)
+
+
 class You(BaseSDK):
     r"""You.com API: Unified API for search, answers, research, and content from You.com
     Get the best search results from web and news sources
@@ -88,17 +126,31 @@ class You(BaseSDK):
         ), "The provided async_client must implement the AsyncHttpClient protocol."
 
         security: Any = None
-        # An explicit empty string (e.g. You(api_key_auth=os.getenv("YDC_API_KEY", "")))
-        # is treated as an opt-out: we construct Security with api_key_auth=None so no
-        # X-API-Key header is sent AND we don't fall back to env vars. Only api_key_auth=None
-        # (the default) allows env fallback via get_security_from_env.
+        # Every endpoint requires a key, so an empty string is never a valid
+        # argument -- it means the caller thought they were passing a key and
+        # weren't, almost always `os.getenv("YDC_API_KEY", "")` with the variable
+        # unset. Falling back to the environment there would run the request
+        # under whatever identity the environment happens to hold, which is not
+        # the one the code asked for. Reject it at construction instead, where
+        # the message can name the actual mistake. `None` (the default) is the
+        # supported way to ask for the environment lookup.
+        if isinstance(api_key_auth, str) and not api_key_auth.strip():
+            raise ValueError(_EMPTY_API_KEY_MESSAGE)
+
         if callable(api_key_auth):
-            # pylint: disable=unnecessary-lambda-assignment
-            security = lambda: models.Security(
-                api_key_auth=(api_key_auth() or None)
-            )
+
+            def _resolve_security() -> models.Security:
+                key = api_key_auth()
+                if not key or not key.strip():
+                    raise ValueError(
+                        "The api_key_auth callable returned an empty API key. "
+                        + _EMPTY_API_KEY_MESSAGE
+                    )
+                return models.Security(api_key_auth=key)
+
+            security = _resolve_security
         elif api_key_auth is not None:
-            security = models.Security(api_key_auth=(api_key_auth or None))
+            security = models.Security(api_key_auth=api_key_auth)
         else:
             security = None
 
@@ -153,50 +205,62 @@ class You(BaseSDK):
     async def __aenter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if (
-            self.sdk_configuration.client is not None
-            and not self.sdk_configuration.client_supplied
-        ):
-            self.sdk_configuration.client.close()
+    def _close_sync_client(self) -> None:
+        """Close the SDK-owned sync client, if any, and drop the reference.
+
+        Errors are swallowed (as in ``close_clients``) so that a failure while
+        tearing down the client cannot replace an exception propagating out of
+        the ``with`` block.
+        """
+        client = self.sdk_configuration.client
         self.sdk_configuration.client = None
-        # Also close SDK-owned async client
-        if (
-            self.sdk_configuration.async_client is not None
-            and not self.sdk_configuration.async_client_supplied
-        ):
+        if client is not None and not self.sdk_configuration.client_supplied:
             try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:
-                asyncio.run(self.sdk_configuration.async_client.aclose())
-            else:
-                asyncio.run_coroutine_threadsafe(
-                    self.sdk_configuration.async_client.aclose(), loop
-                )
+                client.close()
+            except Exception:  # pylint: disable=broad-exception-caught
+                pass
+
+    def _close_async_client_from_sync(self) -> None:
+        """Close the SDK-owned async client from a synchronous context.
+
+        Mirrors ``close_clients``: if a loop is already running, the close is
+        scheduled on it; otherwise a throwaway loop drives it to completion.
+        Errors are swallowed for the same reason as ``_close_sync_client``.
+        """
+        client = self.sdk_configuration.async_client
         self.sdk_configuration.async_client = None
+        if client is None or self.sdk_configuration.async_client_supplied:
+            return
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            try:
+                asyncio.run(client.aclose())
+            except Exception:  # pylint: disable=broad-exception-caught
+                pass
+        else:
+            try:
+                asyncio.run_coroutine_threadsafe(client.aclose(), loop)
+            except Exception:  # pylint: disable=broad-exception-caught
+                pass
+
+    async def _close_async_client(self) -> None:
+        """Close the SDK-owned async client, awaiting completion."""
+        client = self.sdk_configuration.async_client
+        self.sdk_configuration.async_client = None
+        if client is not None and not self.sdk_configuration.async_client_supplied:
+            try:
+                await client.aclose()
+            except Exception:  # pylint: disable=broad-exception-caught
+                pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._close_sync_client()
+        self._close_async_client_from_sync()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if (
-            self.sdk_configuration.async_client is not None
-            and not self.sdk_configuration.async_client_supplied
-        ):
-            await self.sdk_configuration.async_client.aclose()
-        self.sdk_configuration.async_client = None
-        # Also close SDK-owned sync client
-        if (
-            self.sdk_configuration.client is not None
-            and not self.sdk_configuration.client_supplied
-        ):
-            self.sdk_configuration.client.close()
-        self.sdk_configuration.client = None
-
-    async def search_async(self, **kwargs: Any) -> models.SearchResponse:
-        """Async variant of :meth:`search`."""
-        return await self._search_async_impl(**kwargs)
-
-    async def contents_async(self, **kwargs: Any) -> List[models.ContentsResponse]:
-        """Async variant of :meth:`contents`."""
-        return await self._contents_async_impl(**kwargs)
+        await self._close_async_client()
+        self._close_sync_client()
 
     def answer(
         self,
@@ -255,9 +319,9 @@ class You(BaseSDK):
 
         body: dict = dict(
             query=query,
-            freshness=freshness,
-            country=country.upper() if isinstance(country, str) else country,
-            language=language.upper() if isinstance(language, str) else language,
+            freshness=_lower(freshness),
+            country=_upper(country),
+            language=_upper(language),
             include_domains=utils.unmarshal(include_domains, Optional[List[str]]),
             exclude_domains=utils.unmarshal(exclude_domains, Optional[List[str]]),
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),
@@ -403,9 +467,9 @@ class You(BaseSDK):
 
         body: dict = dict(
             query=query,
-            freshness=freshness,
-            country=country.upper() if isinstance(country, str) else country,
-            language=language.upper() if isinstance(language, str) else language,
+            freshness=_lower(freshness),
+            country=_upper(country),
+            language=_upper(language),
             include_domains=utils.unmarshal(include_domains, Optional[List[str]]),
             exclude_domains=utils.unmarshal(exclude_domains, Optional[List[str]]),
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),
@@ -608,7 +672,7 @@ class You(BaseSDK):
 
         raise errors.YouDefaultError("Unexpected response received", http_res)
 
-    async def _contents_async_impl(
+    async def contents_async(
         self,
         *,
         urls: Optional[Iterable[str]] = None,
@@ -730,7 +794,7 @@ class You(BaseSDK):
         freshness: Optional[str] = None,
         offset: Optional[int] = None,
         country: Optional[str] = None,
-        language: Optional[str] = None,
+        language: OptionalNullable[str] = UNSET,
         safesearch: Optional[str] = None,
         livecrawl: Optional[str] = None,
         livecrawl_formats: Optional[Iterable[str]] = None,
@@ -745,9 +809,10 @@ class You(BaseSDK):
     ) -> models.SearchResponse:
         r"""Search via POST /v1/search.
 
-        Enum-typed parameters (``country``, ``safesearch``, ``livecrawl``,
-        ``freshness``) accept plain strings -- pydantic coerces them when
-        building the request body, so callers don't need to import enum classes.
+        Enum-typed parameters (``country``, ``language``, ``safesearch``,
+        ``livecrawl``, ``livecrawl_formats``, ``freshness``) accept plain
+        strings in any case -- the SDK normalizes them to the casing the API
+        expects, so callers don't need to import enum classes.
 
         :param query: The search query used to retrieve relevant results from the web.
         :param count: Max results per section (1-100).
@@ -755,7 +820,8 @@ class You(BaseSDK):
             ``"YYYY-MM-DDtoYYYY-MM-DD"``.
         :param offset: Pagination offset (multiples of ``count``).
         :param country: Country code for geographical focus.
-        :param language: BCP 47 language code (default ``"en"``).
+        :param language: BCP 47 language code. Omit the argument to use the API
+            default (``"en"``); pass ``None`` to send no language at all.
         :param safesearch: ``"strict"``, ``"moderate"``, or ``"off"``.
         :param livecrawl: ``"web"``, ``"news"``, or ``"all"``.
         :param livecrawl_formats: ``["html"]``, ``["markdown"]``, or both.
@@ -781,21 +847,24 @@ class You(BaseSDK):
         body: dict[str, Any] = dict(
             query=query,
             count=count,
-            freshness=freshness,
+            freshness=_lower(freshness),
             offset=offset,
-            country=country.upper() if isinstance(country, str) else country,
-            safesearch=safesearch,
-            livecrawl=livecrawl,
+            country=_upper(country),
+            safesearch=_lower(safesearch),
+            livecrawl=_lower(livecrawl),
             livecrawl_formats=utils.unmarshal(
-                livecrawl_formats, Optional[List[models.LiveCrawlFormats]]
+                _lower_each(livecrawl_formats), Optional[List[models.LiveCrawlFormats]]
             ),
             include_domains=utils.unmarshal(include_domains, Optional[List[str]]),
             exclude_domains=utils.unmarshal(exclude_domains, Optional[List[str]]),
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),
             crawl_timeout=crawl_timeout,
         )
-        if language is not None:
-            body["language"] = language.upper() if isinstance(language, str) else language
+        # UNSET (the default) leaves the field off entirely so SearchRequestBody's
+        # own `Language.EN` default applies. An explicit None is passed through and
+        # dropped during serialization, which sends no language at all.
+        if language is not UNSET:
+            body["language"] = _upper(language)
         request = models.SearchRequestBody(**body)
 
         req = self._build_request(
@@ -875,7 +944,7 @@ class You(BaseSDK):
 
         raise errors.YouDefaultError("Unexpected response received", http_res)
 
-    async def _search_async_impl(
+    async def search_async(
         self,
         *,
         query: str,
@@ -883,7 +952,7 @@ class You(BaseSDK):
         freshness: Optional[str] = None,
         offset: Optional[int] = None,
         country: Optional[str] = None,
-        language: Optional[str] = None,
+        language: OptionalNullable[str] = UNSET,
         safesearch: Optional[str] = None,
         livecrawl: Optional[str] = None,
         livecrawl_formats: Optional[Iterable[str]] = None,
@@ -898,7 +967,9 @@ class You(BaseSDK):
     ) -> models.SearchResponse:
         r"""Search via POST /v1/search.
 
-        Async variant of :meth:`search`.
+        Async variant of ``you.search()``. See :meth:`_search_impl` for the
+        full parameter reference; ``language`` defaults to ``UNSET`` (use the
+        API default ``"en"``) and accepts ``None`` to send no language at all.
         """
         base_url = None
         url_variables = None
@@ -913,21 +984,24 @@ class You(BaseSDK):
         body: dict[str, Any] = dict(
             query=query,
             count=count,
-            freshness=freshness,
+            freshness=_lower(freshness),
             offset=offset,
-            country=country.upper() if isinstance(country, str) else country,
-            safesearch=safesearch,
-            livecrawl=livecrawl,
+            country=_upper(country),
+            safesearch=_lower(safesearch),
+            livecrawl=_lower(livecrawl),
             livecrawl_formats=utils.unmarshal(
-                livecrawl_formats, Optional[List[models.LiveCrawlFormats]]
+                _lower_each(livecrawl_formats), Optional[List[models.LiveCrawlFormats]]
             ),
             include_domains=utils.unmarshal(include_domains, Optional[List[str]]),
             exclude_domains=utils.unmarshal(exclude_domains, Optional[List[str]]),
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),
             crawl_timeout=crawl_timeout,
         )
-        if language is not None:
-            body["language"] = language.upper() if isinstance(language, str) else language
+        # UNSET (the default) leaves the field off entirely so SearchRequestBody's
+        # own `Language.EN` default applies. An explicit None is passed through and
+        # dropped during serialization, which sends no language at all.
+        if language is not UNSET:
+            body["language"] = _upper(language)
         request = models.SearchRequestBody(**body)
 
         req = self._build_request_async(

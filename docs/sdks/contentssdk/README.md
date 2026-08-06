@@ -26,7 +26,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -49,7 +49,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -72,7 +72,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -95,7 +95,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -118,7 +118,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.contents.generate(urls=[
@@ -141,7 +141,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.contents.generate(urls=[

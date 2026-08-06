@@ -133,7 +133,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -161,7 +161,7 @@ from youdotcom import You, models
 async def main():
 
     async with You(
-        api_key_auth=os.getenv("YDC_API_KEY", ""),
+        api_key_auth=os.getenv("YDC_API_KEY"),
     ) as you:
 
         res = await you.search_async(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -198,7 +198,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -213,6 +213,24 @@ with You(
     print(res)
 
 ```
+
+### How the key is resolved
+
+| `api_key_auth` value | Behavior |
+| -------------------- | -------- |
+| omitted, or `None` | Reads the `YDC_API_KEY` environment variable, then the legacy `YOU_API_KEY_AUTH` |
+| a non-empty string, or a callable returning one | That key is used; no environment lookup |
+| `""` (or blank), or a callable returning one | Raises `ValueError` |
+
+Every endpoint requires an API key, so an empty string is never a valid
+argument — it means a key was expected and none arrived. The SDK raises rather
+than reading the environment, because falling back there would run the request
+under whatever identity the environment happens to hold instead of the one the
+code asked for.
+
+In practice this shows up as `os.getenv("YDC_API_KEY", "")` with the variable
+unset. Use `os.getenv("YDC_API_KEY")` — passing `None` is how you ask for the
+environment lookup.
 <!-- End Authentication [security] -->
 
 <!-- Start Available Resources and Operations [operations] -->
@@ -253,7 +271,7 @@ from youdotcom.utils import eventstreaming
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     # Stream updates for a background research task via SSE
@@ -286,7 +304,7 @@ from youdotcom.utils import BackoffStrategy, RetryConfig
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -312,7 +330,7 @@ from youdotcom.utils import BackoffStrategy, RetryConfig
 
 with You(
     retry_config=RetryConfig("backoff", BackoffStrategy(1, 50, 1.1, 100), False),
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -350,7 +368,7 @@ from youdotcom import You, errors, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
     res = None
     try:
@@ -442,7 +460,7 @@ from youdotcom import You, models
 
 with You(
     server_url="https://api.you.com",
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.research(input="Which global cities improved air quality the most over the past 10 years, and what measurable actions contributed?", research_effort=models.ResearchEffort.LITE)
@@ -461,7 +479,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -573,7 +591,7 @@ from youdotcom import You
 def main():
 
     with You(
-        api_key_auth=os.getenv("YDC_API_KEY", ""),
+        api_key_auth=os.getenv("YDC_API_KEY"),
     ) as you:
         # Rest of application here...
 
@@ -582,7 +600,7 @@ def main():
 async def amain():
 
     async with You(
-        api_key_auth=os.getenv("YDC_API_KEY", ""),
+        api_key_auth=os.getenv("YDC_API_KEY"),
     ) as you:
         # Rest of application here...
 ```

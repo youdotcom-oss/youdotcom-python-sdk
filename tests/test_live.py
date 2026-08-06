@@ -642,7 +642,7 @@ class TestLiveResearchFrontier:
 
 
 # ---------------------------------------------------------------------------
-# Answer API (new in 2.6.0)
+# Answer API (new in 3.0.0)
 # ---------------------------------------------------------------------------
 @requires_api_key
 class TestLiveAnswer:

@@ -14,12 +14,19 @@ Usage:
     python scripts/check_drift.py            # Print warnings, exit 0 (CI, non-blocking)
     python scripts/check_drift.py --strict   # Exit 1 on drift (scheduled workflow)
     python scripts/check_drift.py --verbose  # Show all checks, even passing ones
+
+Exit codes:
+    0  no drift (or drift without --strict)
+    1  drift detected (--strict only)
+    2  specs could not be fetched — transient, not drift
+    3  the check itself failed to run — a bug, not drift
 """
 
 import argparse
 import inspect
 import re
 import sys
+import traceback
 from typing import Any
 
 import httpx
@@ -277,7 +284,7 @@ def check_new_apis(specs: dict[str, dict[str, Any]]) -> list[str]:
 def _resolve_ref(ref: str, spec: dict[str, Any]) -> dict[str, Any]:
     """Resolve a $ref pointer within an OpenAPI spec."""
     # Format: "#/components/schemas/SchemaName"
-    parts = ref.lstrip("#/").split("/")
+    parts = ref.removeprefix("#/").split("/")
     obj: Any = spec
     for part in parts:
         obj = obj[part]
@@ -307,11 +314,14 @@ def _get_schema_properties(schema: dict[str, Any], spec: dict[str, Any]) -> set[
 
 
 def _get_sdk_method_params(method_spec: str) -> set[str]:
-    """Get SDK method parameter names, excluding internal params."""
+    """Get SDK method parameter names, excluding internal params.
+
+    A dotted ``method_spec`` names a shim class method (``SearchShim.__call__``);
+    a bare one names a method on ``You`` (``answer``).
+    """
     import importlib
 
-    if "." in method_spec and method_spec != "answer" and method_spec != "research" and method_spec != "finance_research":
-        # Shim classes: SearchShim.__call__, ContentsShim.__call__
+    if "." in method_spec:
         cls_name, method_name = method_spec.split(".")
         mod = importlib.import_module("youdotcom._shims")
         cls = getattr(mod, cls_name)
@@ -422,9 +432,39 @@ def check_response_schemas(specs: dict[str, dict[str, Any]]) -> list[str]:
 # Main
 # ---------------------------------------------------------------------------
 
+# Every check, in run order. Named so --verbose can report each one individually.
+CHECKS = [
+    ("coverage", check_new_apis),
+    ("endpoints", check_endpoints),
+    ("servers", check_server_urls),
+    ("enums", check_enums),
+    ("request params", check_request_params),
+    ("response schemas", check_response_schemas),
+]
+
+
+def run_checks(specs: dict[str, dict[str, Any]], verbose: bool) -> list[str]:
+    """Run every check, optionally reporting the outcome of each one."""
+    all_warnings: list[str] = []
+    for name, check in CHECKS:
+        warnings = check(specs)
+        if verbose:
+            status = f"{len(warnings)} warning(s)" if warnings else "ok"
+            print(f"  [{name}] {status}")
+        all_warnings += warnings
+    if verbose:
+        print()
+    return all_warnings
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Check SDK drift against You.com OpenAPI specs")
-    parser.add_argument("--strict", action="store_true", help="Exit 1 on drift, 2 on fetch error (for scheduled workflow)")
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit 1 when drift is found (for the scheduled workflow). "
+             "Without it, drift is reported but the exit status stays 0.",
+    )
     parser.add_argument("--verbose", action="store_true", help="Show all checks, even passing ones")
     args = parser.parse_args()
 
@@ -432,6 +472,7 @@ def main() -> int:
     try:
         specs = fetch_specs()
     except Exception as e:
+        # Transient: the docs site was unreachable or served something unexpected.
         print(f"ERROR: Could not fetch specs: {e}", file=sys.stderr)
         print("RESULT: fetch_error")
         return 2
@@ -439,13 +480,17 @@ def main() -> int:
     print(f"Found {len(specs)} specs: {', '.join(sorted(specs.keys()))}")
     print()
 
-    all_warnings: list[str] = []
-    all_warnings += check_new_apis(specs)
-    all_warnings += check_endpoints(specs)
-    all_warnings += check_server_urls(specs)
-    all_warnings += check_enums(specs)
-    all_warnings += check_request_params(specs)
-    all_warnings += check_response_schemas(specs)
+    try:
+        all_warnings = run_checks(specs, args.verbose)
+    except Exception as e:
+        # A bug in the checker itself, or an SDK import failure. This must not
+        # look like drift: the caller distinguishes it by exit code so the
+        # scheduled workflow can flag a broken check instead of silently
+        # reporting "no drift" (or filing an issue full of traceback).
+        print(f"ERROR: Drift check failed to run: {e!r}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        print("RESULT: internal_error")
+        return 3
 
     if all_warnings:
         print(f"DRIFT DETECTED ({len(all_warnings)} issue(s)):\n")
@@ -454,15 +499,15 @@ def main() -> int:
         print()
         print("Review the above and update the SDK if needed.")
         print("RESULT: drift")
-        return 1
-    else:
-        print("No drift detected. SDK matches OpenAPI specs.")
-        print("RESULT: no_drift")
-        if args.verbose:
-            print(f"  Checked {len(specs)} specs, {len(EXPECTED_ENDPOINTS)} endpoints, "
-                  f"{len(ENUM_CHECKS)} enum mappings, {len(EXPECTED_SERVERS)} server URLs, "
-                  f"{len(SCHEMA_CHECKS)} schema/param mappings.")
-        return 0
+        return 1 if args.strict else 0
+
+    print("No drift detected. SDK matches OpenAPI specs.")
+    print("RESULT: no_drift")
+    if args.verbose:
+        print(f"  Checked {len(specs)} specs, {len(EXPECTED_ENDPOINTS)} endpoints, "
+              f"{len(ENUM_CHECKS)} enum mappings, {len(EXPECTED_SERVERS)} server URLs, "
+              f"{len(SCHEMA_CHECKS)} schema/param mappings.")
+    return 0
 
 
 if __name__ == "__main__":

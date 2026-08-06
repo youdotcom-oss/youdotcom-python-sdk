@@ -6,6 +6,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -27,9 +31,11 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # --group needs pip >= 25.1; the upgrade above guarantees it. Reading
+          # the group from pyproject keeps CI and local dev on one dependency list.
           python -m pip install --upgrade pip
           pip install -e .
-          pip install "mypy>=2.3.0,<3" "pytest>=9.0.0,<10" "pytest-asyncio>=1.0.0,<2" "pytest-cov" "pylint>=4.0.0,<5"
+          pip install --group dev
 
       - name: Build and start mock server
         working-directory: tests/mockserver
@@ -57,9 +63,10 @@ jobs:
       - name: Run mypy
         run: mypy src/youdotcom/
 
-      - name: Run pylint (non-blocking)
+      # Errors only, and the tree is clean at 10.00/10 — so this gates rather
+      # than reporting into the void the way a continue-on-error step would.
+      - name: Run pylint
         run: pylint src/youdotcom/ --disable=all --enable=E --rcfile=/dev/null
-        continue-on-error: true
 
   build-check:
     runs-on: ubuntu-latest

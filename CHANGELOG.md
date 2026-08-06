@@ -5,7 +5,20 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.6.0] - 2026-08-04
+## [3.0.0] - 2026-08-06
+
+This release removes the Agents API and the sub-SDK classes, which is a
+breaking change and therefore a major version bump. Pin `youdotcom<3` if you
+still depend on the Agents API.
+
+### Removed
+
+- **Agents API**: The `you.agents()` / `you.agents_async()` direct methods and the `you.agents.runs` sub-SDK shim have been removed. All Agents API model classes (`ExpressAgentRunsRequest`, `AdvancedAgentRunsRequest`, `CustomAgentRunsRequest`, `AgentRunsBatchResponse`, `AgentRunsResponseOutput`, `AgentRunsStreamingResponse`, `AgentRunsResponseWebSearchResult`, `ComputeTool`, `WebSearchTool`, `ResearchTool`, `ReportVerbosity`, `SearchEffort`, `Verbosity`, and streaming event models) and error classes (`AgentRuns400ResponseError`, `AgentRuns401ResponseError`, `AgentRuns422ResponseError`) have been deleted from `youdotcom.models` and `youdotcom.errors`.
+- **`search_helpers` module**: The standalone `search_helpers.search()` function has been merged into `you.search()`. Import `from youdotcom import You` and call `you.search(query=...)` directly.
+- **`you.search_post()`**: Use `you.search()`.
+- **`__gen_version__` / `SPEAKEASY_GENERATOR_VERSION`**: These exports are gone from `youdotcom` and `youdotcom._version`. `__version__`, `__title__`, `__openapi_doc_version__`, and `__user_agent__` are unaffected.
+- **`YDCUserAgentOverrideHook` and `_hooks/registration.py`**: The hook existed to rewrite Speakeasy's default UA (`speakeasy-sdk/python ...`) to `youdotcom-python-sdk/{version}`. Now that `__user_agent__` is already `youdotcom-python-sdk/{version}`, `BaseSDK._build_request` sets it directly — the hook was a no-op. Integrations that need a custom UA still just set `client.sdk_configuration.user_agent`.
+- **Dead code**: Unused `importlib` and `TYPE_CHECKING` imports from `sdk.py`, all remaining agent model/error classes and their doc files, and `overlays/python_overlay.yaml` (Speakeasy overlay, no longer used).
 
 ### Deprecations
 
@@ -18,25 +31,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | `you.contents.generate(urls=...)` | `you.contents(urls=...)` |
 | `you.contents.generate_async(urls=...)` | `you.contents_async(urls=...)` |
 
-- **`search_helpers` module removed**: The standalone `search_helpers.search()` function has been merged into `you.search()`. Import `from youdotcom import You` and call `you.search(query=...)` directly.
-- **Agents API removed**: The `you.agents()` / `you.agents_async()` direct methods and the `you.agents.runs` sub-SDK shim have been removed. All Agents API model classes (`ExpressAgentRunsRequest`, `AdvancedAgentRunsRequest`, `CustomAgentRunsRequest`, `AgentRunsBatchResponse`, `AgentRunsResponseOutput`, `AgentRunsStreamingResponse`, `AgentRunsResponseWebSearchResult`, `ComputeTool`, `WebSearchTool`, `ResearchTool`, `ReportVerbosity`, `SearchEffort`, `Verbosity`, and streaming event models) and error classes (`AgentRuns400ResponseError`, `AgentRuns401ResponseError`, `AgentRuns422ResponseError`) have been deleted from `youdotcom.models` and `youdotcom.errors`.
-
 ### Added
 
-- **Answer API**: New direct method `you.answer()` / `you.answer_async()` for `POST /v1/answer`. Returns a synthesized markdown answer with inline citations (`[[1, 2]]`), a citations array (source URLs + supporting excerpts), and web results. Accepts `query` (required), `freshness`, `country`, `language`, `include_domains`, `exclude_domains`, `boost_domains`. Requires an API key. Country and language accept plain strings (e.g. `"us"`, `"en"`) and are normalized to uppercase automatically.
+- **Answer API**: New direct method `you.answer()` / `you.answer_async()` for `POST /v1/answer`. Returns a synthesized markdown answer with inline citations (`[[1, 2]]`), a citations array (source URLs + supporting excerpts), and web results. Accepts `query` (required), `freshness`, `country`, `language`, `include_domains`, `exclude_domains`, `boost_domains`. Requires an API key.
 - **`PaymentRequiredResponseError`**: New first-class error class for HTTP 402 responses, with data model `PaymentRequiredResponseErrorData` (`error`, `message`, `upgrade_url`, `limit`, `used`, `period`, `reset_at`). Used by the answer 402 handler.
+- **Case-insensitive enum parameters**: `country`, `language`, `safesearch`, `livecrawl`, `livecrawl_formats`, and `freshness` accept plain strings in any case and are normalized to the casing the API expects (`"us"` → `"US"`, `"STRICT"` → `"strict"`). Callers no longer need to import enum classes. Enum members still work.
+- **SDK drift check** (`scripts/check_drift.py`): Compares the You.com OpenAPI specs against the SDK surface (endpoints, server URLs, enum values, request params, response fields). Runs non-blocking on every PR and weekly on a schedule, opening an issue when drift is found.
+
+### Security
+
+- **Debug-log redaction**: `Authorization`, `X-API-Key`, `Cookie`, and `Set-Cookie` are replaced with `[REDACTED]` before request/response headers are written to the debug logger. Previously a debug logger would capture the API key in plaintext. Applies to both the sync and async paths.
 
 ### Changed
 
+- **An empty API key raises instead of falling back to the environment**: `You(api_key_auth="")` — or a blank string, or a callable returning one — now raises `ValueError`. Every endpoint requires a key, so an empty string is never a valid argument; it means a key was expected and none arrived. Previously the SDK fell through to `YDC_API_KEY` / `YOU_API_KEY_AUTH`, which could run the request under a different identity than the code appeared to request. Passing `None` (or omitting the argument) remains the supported way to read the key from the environment.
+
+  In practice this surfaces as `os.getenv("YDC_API_KEY", "")` with the variable unset; use `os.getenv("YDC_API_KEY")`. All documentation examples have been updated accordingly.
+- **Both context managers now close both transports**: `__exit__` disposes of the SDK-owned async client in addition to the sync one, and `__aexit__` does the reverse — previously whichever transport the block didn't use was leaked. As a consequence, an instance is no longer usable after leaving either block, including for calls of the other flavor: `with You(...) as you: ...` followed by `await you.search_async(...)` will fail. Create a separate client, or use `async with`, if you need both. Caller-supplied transports are still never closed by the SDK.
+- **`search(language=None)` sends no language**: Omitting the argument uses the API default (`"EN"`) as before; passing `None` explicitly now omits the field entirely rather than falling back to the default.
 - **422 error data model**: `UnprocessableEntityResponseErrorData` now includes optional `detail` (FastAPI validation array) and `errors` (JSON:API array) fields in addition to the existing `error` field. All three 422 response shapes deserialize without crashing. Backward compatible — existing code accessing `.error` still works.
 - **500 error data model**: `InternalServerErrorResponseData` now includes an optional `errors` field for JSON:API format 500 responses. Backward compatible.
 - **No longer generated by Speakeasy**: Removed all "Code generated by Speakeasy — DO NOT EDIT" disclaimers and the Speakeasy badge from the README. The SDK is now hand-maintained.
-- **Removed `YDCUserAgentOverrideHook`**: The hook existed to rewrite Speakeasy's default UA (`speakeasy-sdk/python ...`) to `youdotcom-python-sdk/{version}`. Now that `__user_agent__` is already `youdotcom-python-sdk/{version}`, `BaseSDK._build_request` sets it directly — the hook was a no-op. Integrations that need a custom UA still just set `client.sdk_configuration.user_agent`.
 - **`__user_agent__` derived from resolved `__version__`**: The user-agent string is now built from the package's resolved version at runtime rather than a hardcoded value.
-- **Dead code removal**: Deleted `_hooks/registration.py` (no-op `init_hooks`), `models/answerop.py` (unused `ANSWER_OP_SERVERS`), unused `importlib` and `TYPE_CHECKING` imports from `sdk.py`. Deleted all remaining agent model/error classes and their doc files. Deleted `overlays/python_overlay.yaml` (Speakeasy overlay, no longer used).
-- **`search()` server_url handling**: `search()` and `search_async()` now use `self._get_url(models.SEARCH_OP_SERVERS[0], None)` (resolving to `ydc-index.io`) instead of a hardcoded server constant. The per-method `server_url` parameter is respected when passed; the constructor's `server_url` does not affect search/contents (they always default to `ydc-index.io`). This matches the behavior already present in 2.5.0.
-- **`answer()` type annotations**: `country` and `language` parameters changed from `Optional[str]` to `Optional[Union[str, models.Country]]` / `Optional[Union[str, models.Language]]` to match `search()` and reflect the actual enum constraint. String values are still accepted and normalized via `.upper()`.
-- **Dev dependencies updated**: mypy `1.15.0` → `>=2.3.0`, pylint `3.2.3` → `>=4.0.0`, pytest floor `>=8.0.0` → `>=9.0.0`, pytest-asyncio floor `>=0.24.0` → `>=1.0.0`. Runtime dependencies (httpx, httpcore, pydantic) unchanged — already at latest stable.
+- **Dev dependencies updated**: mypy `1.15.0` → `>=2.3.0,<3`, pylint `3.2.3` → `>=4.0.0,<5`, pytest floor `>=8.0.0` → `>=9.0.0,<10`, pytest-asyncio floor `>=0.24.0` → `>=1.0.0,<2`. Runtime dependencies (httpx, httpcore, pydantic) unchanged — already at latest stable.
+
+### Fixed
+
+- **`SDKConfiguration.retry_config` default**: The field used `pydantic.Field(default_factory=...)` on a stdlib `@dataclass`, which does not interpret a `FieldInfo` and left the raw object as the default. Now uses `dataclasses.field`.
+- **`Security` serializer dropped the wrong key**: `serialize_model` listed `"ApiKeyAuth"` in `optional_fields`, but the field is named `api_key_auth`, so the name never matched and a `None` key was serialized instead of omitted.
+- **`_populate_from_globals` name comparison**: Used `is not` to compare strings, which depends on interning and could silently fail to match. Now uses `!=`.
+- **Async methods are fully typed**: `search_async()` and `contents_async()` were thin `**kwargs: Any` wrappers, which erased their signatures for type checkers and IDEs. They are now the real implementations with explicit parameters.
 
 ## [2.5.0] - 2026-07-20
 

@@ -22,7 +22,7 @@ from youdotcom import You
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.answer(query="What are the main causes of the 2008 financial crisis?")

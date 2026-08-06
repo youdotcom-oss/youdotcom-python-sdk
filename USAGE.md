@@ -6,7 +6,7 @@ from youdotcom import You, models
 
 
 with You(
-    api_key_auth=os.getenv("YDC_API_KEY", ""),
+    api_key_auth=os.getenv("YDC_API_KEY"),
 ) as you:
 
     res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -34,7 +34,7 @@ from youdotcom import You, models
 async def main():
 
     async with You(
-        api_key_auth=os.getenv("YDC_API_KEY", ""),
+        api_key_auth=os.getenv("YDC_API_KEY"),
     ) as you:
 
         res = await you.search_async(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[

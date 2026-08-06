@@ -40,6 +40,9 @@ class SearchShim:
 
     ``you.search(query=...)`` → delegates to ``you._search_impl()`` (no warning).
     ``you.search.unified(query=...)`` → delegates with DeprecationWarning.
+
+    The async counterpart is a plain method on ``You`` (``you.search_async()``);
+    only the deprecated ``unified_async()`` spelling lives here.
     """
 
     def __init__(self, you: Any) -> None:
@@ -53,7 +56,7 @@ class SearchShim:
         freshness: Optional[str] = None,
         offset: Optional[int] = None,
         country: Optional[str] = None,
-        language: Optional[str] = None,
+        language: OptionalNullable[str] = UNSET,
         safesearch: Optional[str] = None,
         livecrawl: Optional[str] = None,
         livecrawl_formats: Optional[Iterable[str]] = None,
@@ -94,7 +97,7 @@ class SearchShim:
         freshness: Optional[str] = None,
         offset: Optional[int] = None,
         country: Optional[str] = None,
-        language: Optional[str] = None,
+        language: OptionalNullable[str] = UNSET,
         safesearch: Optional[str] = None,
         livecrawl: Optional[str] = None,
         livecrawl_formats: Optional[Iterable[str]] = None,
@@ -137,7 +140,7 @@ class SearchShim:
         freshness: Optional[str] = None,
         offset: Optional[int] = None,
         country: Optional[str] = None,
-        language: Optional[str] = None,
+        language: OptionalNullable[str] = UNSET,
         safesearch: Optional[str] = None,
         livecrawl: Optional[str] = None,
         livecrawl_formats: Optional[Iterable[str]] = None,
@@ -152,7 +155,7 @@ class SearchShim:
     ) -> models.SearchResponse:
         _warn("you.search.unified_async()", "you.search_async()")
 
-        return await self._you._search_async_impl(
+        return await self._you.search_async(
             query=query,
             count=count,
             freshness=freshness,
@@ -243,7 +246,7 @@ class ContentsShim:
         http_headers: Optional[Mapping[str, str]] = None,
     ) -> List[models.ContentsResponse]:
         _warn("you.contents.generate_async()", "you.contents_async()")
-        return await self._you._contents_async_impl(
+        return await self._you.contents_async(
             urls=urls,
             formats=formats,
             crawl_timeout=crawl_timeout,

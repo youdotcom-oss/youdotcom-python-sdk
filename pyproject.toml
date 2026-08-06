@@ -1,6 +1,6 @@
 [project]
 name = "youdotcom"
-version = "2.6.0"
+version = "3.0.0"
 description = "The official You.com Python SDK."
 authors = [{ name = "You.com" },]
 readme = "README.md"
@@ -13,12 +13,15 @@ dependencies = [
 license = { text = "Apache-2.0" }
 
 [dependency-groups]
+# The single source of truth for dev tooling — CI installs this group with
+# `pip install --group dev` rather than repeating the list.
 dev = [
     "mypy >=2.3.0, <3",
     "pylint >=4.0.0, <5",
     "pyright >=1.1.398, <2",
     "pytest >=9.0.0, <10",
     "pytest-asyncio >=1.0.0, <2",
+    "pytest-cov >=6.0.0, <8",
 ]
 
 [tool.setuptools.packages.find]

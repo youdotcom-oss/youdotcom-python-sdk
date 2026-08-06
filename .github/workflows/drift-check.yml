@@ -10,6 +10,10 @@ permissions:
   contents: read
   issues: write
 
+concurrency:
+  group: drift-check
+  cancel-in-progress: false
+
 jobs:
   drift-check:
     runs-on: ubuntu-latest
@@ -26,6 +30,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
+      # Exit codes (see scripts/check_drift.py): 0 no drift, 1 drift,
+      # 2 specs unreachable, 3 the check itself is broken. Keeping these
+      # distinct is what stops a traceback from being filed as "drift".
       - name: Run drift check
         id: drift
         run: |
@@ -33,46 +40,79 @@ jobs:
           OUTPUT=$(python scripts/check_drift.py --strict --verbose 2>&1)
           EXIT_CODE=$?
           echo "$OUTPUT"
-          # Save output to GITHUB_ENV for downstream steps
+          # Random delimiter: a fixed "EOF" would break if it appeared in the output.
+          DELIM="drift_$(openssl rand -hex 8)"
           {
-            echo "DRIFT_OUTPUT<<EOF"
+            echo "DRIFT_OUTPUT<<${DELIM}"
             echo "$OUTPUT"
-            echo "EOF"
+            echo "${DELIM}"
           } >> "$GITHUB_ENV"
           echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
           exit 0
 
-      - name: Open issue on drift
+      - name: Report or update drift issue
         if: steps.drift.outputs.exit_code == '1'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DRIFT_OUTPUT: ${{ env.DRIFT_OUTPUT }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          # Create drift label if it doesn't exist
-          gh label create drift --color FBCA04 --description "SDK drift from OpenAPI specs" 2>/dev/null || true
-          gh issue create \
-            --title "SDK drift detected: OpenAPI specs vs SDK surface" \
-            --body "The weekly drift check found differences between the You.com OpenAPI specs and the SDK.
+          set -euo pipefail
+          gh label create drift --color FBCA04 \
+            --description "SDK drift from OpenAPI specs" 2>/dev/null || true
 
-          \`\`\`
-          ${DRIFT_OUTPUT}
-          \`\`\`
+          # Build the body in a file so the fenced block isn't indented by the
+          # surrounding YAML block scalar (indented fences don't render).
+          {
+            echo "The drift check found differences between the You.com OpenAPI specs and the SDK."
+            echo
+            echo '```'
+            echo "${DRIFT_OUTPUT}"
+            echo '```'
+            echo
+            echo "Run \`python scripts/check_drift.py --verbose\` locally to reproduce."
+            echo
+            echo "[Workflow run](${RUN_URL})"
+          } > drift-body.md
 
-          Review the warnings above and update the SDK as needed. Run \`python scripts/check_drift.py --verbose\` locally to reproduce." \
-            --label "drift"
+          # Update the existing issue instead of filing a duplicate every week.
+          EXISTING=$(gh issue list --label drift --state open \
+            --json number --jq '.[0].number // empty')
+          if [ -n "${EXISTING}" ]; then
+            echo "Updating existing drift issue #${EXISTING}"
+            gh issue comment "${EXISTING}" --body-file drift-body.md
+          else
+            gh issue create \
+              --title "SDK drift detected: OpenAPI specs vs SDK surface" \
+              --body-file drift-body.md \
+              --label drift
+          fi
 
       - name: Report fetch error
         if: steps.drift.outputs.exit_code == '2'
         run: |
-          echo "Drift check failed (fetch error, not drift):"
-          echo "${{ env.DRIFT_OUTPUT }}"
+          echo "::warning::Drift check could not fetch the OpenAPI specs (transient, not drift)."
+          echo "${DRIFT_OUTPUT}"
+        env:
+          DRIFT_OUTPUT: ${{ env.DRIFT_OUTPUT }}
+
+      # A broken checker is worse than drift: it reports "no drift" forever.
+      # Fail the job so the run goes red and someone looks at it.
+      - name: Fail on broken drift check
+        if: steps.drift.outputs.exit_code != '0' && steps.drift.outputs.exit_code != '1' && steps.drift.outputs.exit_code != '2'
+        run: |
+          echo "::error::Drift check exited ${{ steps.drift.outputs.exit_code }} — the check itself failed."
+          echo "${DRIFT_OUTPUT}"
+          exit 1
+        env:
+          DRIFT_OUTPUT: ${{ env.DRIFT_OUTPUT }}
 
       - name: Close stale drift issues
         if: steps.drift.outputs.exit_code == '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Close any open drift issues since no drift was detected
-          gh issue list --label "drift" --state open --json number --jq '.[].number' | while read -r num; do
+          # No drift this run, so anything still open has been resolved.
+          gh issue list --label drift --state open --json number --jq '.[].number' | while read -r num; do
             gh issue close "$num" --comment "No drift detected in the latest check. Closing."
           done
