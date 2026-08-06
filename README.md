@@ -34,9 +34,6 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     print(res.answer)
 ```
 
-`timeout_ms` is not optional here in practice. The default is httpx's 5 seconds,
-and the answer endpoint takes longer than that. See [Timeouts](#timeouts).
-
 That prints a markdown answer with inline `[[1, 2]]` citations. The sources behind
 them are on the response:
 
@@ -45,8 +42,14 @@ them are on the response:
         print(citation.source, citation.excerpts)
 ```
 
-> Pass `api_key_auth=None` (or omit it) to read the key from the environment.
-> See [Authentication](#authentication) for the full resolution order.
+Two things about that snippet worth knowing up front:
+
+> **`timeout_ms` is doing real work.** Without it, requests inherit httpx's 5
+> second default, and `answer` takes longer than that. See [Timeouts](#timeouts).
+>
+> **The key is explicit here, but it doesn't have to be.** Pass
+> `api_key_auth=None`, or omit it, to read `YDC_API_KEY` from the environment.
+> See [Authentication](#authentication) for the resolution order.
 
 ## The APIs
 
