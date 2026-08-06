@@ -50,3 +50,22 @@ jobs:
 
       - name: Run mypy
         run: mypy src/youdotcom/
+
+  drift-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install SDK
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run drift check (non-blocking)
+        run: python scripts/check_drift.py --verbose
+        continue-on-error: true

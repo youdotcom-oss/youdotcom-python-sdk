@@ -1,0 +1,58 @@
+name: drift-check
+
+on:
+  schedule:
+    # Every Monday at 9:00 UTC
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install SDK
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run drift check
+        id: drift
+        run: python scripts/check_drift.py --strict --verbose
+        continue-on-error: true
+
+      - name: Open issue on drift
+        if: steps.drift.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create drift label if it doesn't exist
+          gh label create drift --color FBCA04 --description "SDK drift from OpenAPI specs" 2>/dev/null || true
+          # Re-run to capture output for the issue body
+          OUTPUT=$(python scripts/check_drift.py --strict --verbose 2>&1 || true)
+          gh issue create \
+            --title "SDK drift detected: OpenAPI specs vs SDK surface" \
+            --body "The weekly drift check found differences between the You.com OpenAPI specs and the SDK.
+
+          \`\`\`
+          ${OUTPUT}
+          \`\`\`
+
+          Review the warnings above and update the SDK as needed. Run \`python scripts/check_drift.py --verbose\` locally to reproduce." \
+            --label "drift"
+
+      - name: Close stale drift issues
+        if: steps.drift.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Close any open drift issues since no drift was detected
+          gh issue list --label "drift" --state open --json number --jq '.[].number' | while read -r num; do
+            gh issue close "$num" --comment "No drift detected in the latest check. Closing."
+          done
