@@ -285,6 +285,24 @@ class TestLiveSearchExtraction:
             )
 
             assert res.results is not None
+            assert res.results.web
+            content_seen = [
+                (result.contents.html, result.contents.markdown)
+                for result in res.results.web
+                if result.contents
+                and (
+                    result.contents.html is not None
+                    or result.contents.markdown is not None
+                )
+            ]
+            assert content_seen, (
+                "Expected at least one result with contents.html and/or contents.markdown"
+            )
+            for html, md in content_seen:
+                if html is not None:
+                    assert isinstance(html, str)
+                if md is not None:
+                    assert isinstance(md, str)
 
 
 @requires_api_key
