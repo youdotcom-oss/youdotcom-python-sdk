@@ -21,7 +21,7 @@ class NewsResultTypedDict(TypedDict):
     url: NotRequired[str]
     r"""The URL of the news result."""
     contents: NotRequired[ContentsTypedDict]
-    r"""Contents of the page if livecrawl was enabled."""
+    r"""Contents of the page if ``extraction`` was enabled (formerly ``livecrawl``)."""
 
 
 class NewsResult(BaseModel):
@@ -41,7 +41,7 @@ class NewsResult(BaseModel):
     r"""The URL of the news result."""
 
     contents: Optional[Contents] = None
-    r"""Contents of the page if livecrawl was enabled."""
+    r"""Contents of the page if ``extraction`` was enabled (formerly ``livecrawl``)."""
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):

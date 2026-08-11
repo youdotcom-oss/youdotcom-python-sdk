@@ -8,7 +8,7 @@ from youdotcom.types import BaseModel, UNSET_SENTINEL
 
 
 class ContentsTypedDict(TypedDict):
-    r"""Contents of the page if livecrawl was enabled."""
+    r"""Contents of the page if ``extraction`` was enabled (formerly ``livecrawl``)."""
 
     html: NotRequired[str]
     r"""The HTML content of the page."""
@@ -19,7 +19,7 @@ class ContentsTypedDict(TypedDict):
 
 
 class Contents(BaseModel):
-    r"""Contents of the page if livecrawl was enabled."""
+    r"""Contents of the page if ``extraction`` was enabled (formerly ``livecrawl``)."""
 
     html: Optional[str] = None
     r"""The HTML content of the page."""
