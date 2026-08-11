@@ -234,10 +234,15 @@ class TestLiveSearchExtraction:
             )
 
             assert res.results is not None
-            if res.results.web:
-                for result in res.results.web:
-                    if result.contents:
-                        assert result.contents.highlights is not None
+            assert res.results.web
+            highlights_seen = [
+                result.contents.highlights
+                for result in res.results.web
+                if result.contents and result.contents.highlights is not None
+            ]
+            assert highlights_seen, (
+                "Expected at least one result with contents.highlights"
+            )
 
     def test_full_page_markdown(self, you_client):
         """Test extraction_mode=full_page with markdown format."""
@@ -252,10 +257,15 @@ class TestLiveSearchExtraction:
             )
 
             assert res.results is not None
-            if res.results.web:
-                for result in res.results.web:
-                    if result.contents:
-                        assert result.contents.markdown is not None
+            assert res.results.web
+            markdown_seen = [
+                result.contents.markdown
+                for result in res.results.web
+                if result.contents and result.contents.markdown is not None
+            ]
+            assert markdown_seen, (
+                "Expected at least one result with contents.markdown"
+            )
 
     def test_full_page_html(self, you_client):
         """Test extraction_mode=full_page with html format."""
@@ -270,10 +280,15 @@ class TestLiveSearchExtraction:
             )
 
             assert res.results is not None
-            if res.results.web:
-                for result in res.results.web:
-                    if result.contents:
-                        assert result.contents.html is not None
+            assert res.results.web
+            html_seen = [
+                result.contents.html
+                for result in res.results.web
+                if result.contents and result.contents.html is not None
+            ]
+            assert html_seen, (
+                "Expected at least one result with contents.html"
+            )
 
     def test_full_page_both_formats(self, you_client):
         """Test extraction_mode=full_page with both html and markdown."""

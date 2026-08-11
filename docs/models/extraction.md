@@ -14,7 +14,7 @@ import os
 from youdotcom import You
 from youdotcom.models import Extraction, ExtractionMode
 
-with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     # Query-relevant excerpts in contents.highlights
     res = you.search(
         query="latest quantum computing breakthroughs",
