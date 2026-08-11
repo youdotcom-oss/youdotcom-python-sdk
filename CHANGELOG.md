@@ -44,11 +44,10 @@ changes.
 - **Conflict check**: passing `extraction` together with `livecrawl` or
   `livecrawl_formats` raises `ValueError` locally, mirroring the server's
   `_fold_extraction` conflict check.
-- **Plus-value rule**: top-level `crawl_timeout` is silently stripped from
-  the request body when `extraction.extraction_mode == "highlights"`. The
-  server rejects the combination as invalid; the SDK strips default callers
-  out of the 422 path. Explicit non-default `crawl_timeout` values are
-  also stripped to match the API contract.
+- **Plus-value rule**: top-level `crawl_timeout` is stripped from the request body when
+  `extraction.extraction_mode == "highlights"` (the server rejects the combination).
+  Default callers are silent; setting a non-default `crawl_timeout` there emits
+  `UserWarning` so the strip is not surprising.
 
 ### Deprecated
 
