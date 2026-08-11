@@ -5,6 +5,69 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-08-10
+
+Adds `extraction` on `POST /v1/search` and deprecates `livecrawl` /
+`livecrawl_formats`. Sister track to the MCP-server change (DX-716) and the
+matching `extraction`-on-search work in the index server. No breaking
+changes.
+
+### Added
+
+- **`extraction` parameter** on `you.search()` / `you.search_async()` and the
+  `SearchShim` forwarders. Accepts an `Extraction` model instance or a dict
+  matching `ExtractionTypedDict`. Mirrors the locked schema from the docs
+  preview at `youdotcom-docs` (`origin/add-extraction-parameter-to-search-api`):
+
+  - `extraction_mode` (required): `"highlights"` (excerpts in
+    `results.web[].contents.highlights`) or `"full_page"` (full HTML /
+    Markdown in `results.web[].contents.html` / `.markdown`).
+  - `extraction.highlights.max_tokens` (optional, 512-8192; default is the
+    API's 4096 — omit for provider default).
+  - `extraction.full_page.extraction_formats` (optional; default
+    `["markdown"]`).
+  - Top-level `crawl_timeout` (1-60, default 10) remains on the request body,
+    sibling to `extraction`.
+
+- **`Extraction`, `ExtractionMode`, `ExtractionFormat`, `ExtractionHighlights`,
+  `ExtractionFullPage`, `ExtractionTypedDict`, `ExtractionHighlightsTypedDict`,
+  `ExtractionFullPageTypedDict`** exported from `youdotcom.models` for typed
+  construction and IDE completion.
+
+### Changed
+
+- **`Extraction` model is strict** (`extra="forbid"`). Unknown keys anywhere
+  inside `extraction` raise pydantic `ValidationError` locally, matching
+  the server's 422 contract so callers fail-fast. The top-level
+  `SearchRequestBody` keeps its existing `extra="ignore"` semantics
+  (verified against the upstream `youdotcom-index` server code).
+- **Conflict check**: passing `extraction` together with `livecrawl` or
+  `livecrawl_formats` raises `ValueError` locally, mirroring the server's
+  `_fold_extraction` conflict check.
+- **Plus-value rule**: top-level `crawl_timeout` is silently stripped from
+  the request body when `extraction.extraction_mode == "highlights"`. The
+  server rejects the combination as invalid; the SDK strips default callers
+  out of the 422 path. Explicit non-default `crawl_timeout` values are
+  also stripped to match the API contract.
+
+### Deprecated
+
+- **`livecrawl` and `livecrawl_formats`** on `you.search()` /
+  `you.search_async()` and the `SearchShim` forwarders. Use `extraction`
+  instead. They continue to work (the server still accepts them as
+  undocumented internal params — verified from `youdotcom-index` server
+  code) but emit `DeprecationWarning`. Removal is targeted for 4.0.0,
+  coordinated with the API+docs release that sunsets the internal params.
+
+### Internal
+
+- `SearchRequestBody.serialize_model` allowlist now includes `extraction`
+  alongside `livecrawl`, `livecrawl_formats`, and `crawl_timeout` so the
+  strict-extraction stream of changes flow through the existing serializer
+  unchanged. The new `Extraction` model has its own `model_serializer`
+  (`mode="wrap"`) drops `None` sub-objects so absent fields stay off the
+  wire (`extraction_mode="full_page"` without `full_page=None`, etc.).
+
 ## [3.0.0] - 2026-08-06
 
 This release removes the Agents API and the sub-SDK classes, which is a

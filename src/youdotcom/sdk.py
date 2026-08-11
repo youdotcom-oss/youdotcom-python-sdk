@@ -7,6 +7,8 @@ from .utils.logger import Logger, get_default_logger
 from .utils.retries import RetryConfig
 import asyncio
 import httpx
+import warnings
+import weakref
 from typing import (
     Any,
     Callable,
@@ -18,7 +20,6 @@ from typing import (
     Union,
     cast,
 )
-import weakref
 from youdotcom import errors, models, utils
 from youdotcom._hooks import HookContext, SDKHooks
 from youdotcom._shims import ContentsShim, SearchShim
@@ -798,6 +799,7 @@ class You(BaseSDK):
         safesearch: Optional[str] = None,
         livecrawl: Optional[str] = None,
         livecrawl_formats: Optional[Iterable[str]] = None,
+        extraction: Optional[Union[models.Extraction, Mapping[str, Any]]] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -814,6 +816,14 @@ class You(BaseSDK):
         strings in any case -- the SDK normalizes them to the casing the API
         expects, so callers don't need to import enum classes.
 
+        ``livecrawl`` and ``livecrawl_formats`` are deprecated; prefer
+        ``extraction``. The two are mutually exclusive -- passing both
+        raises :class:`ValueError`. Top-level ``crawl_timeout`` cannot
+        combine with ``extraction.extraction_mode == "highlights"`` (the
+        plus-value rule, verified against the upstream ``youdotcom-index``
+        server code); the SDK strips ``crawl_timeout`` from the request
+        body in that case so default callers do not 422.
+
         :param query: The search query used to retrieve relevant results from the web.
         :param count: Max results per section (1-100).
         :param freshness: ``"day"``, ``"week"``, ``"month"``, ``"year"``, or
@@ -823,12 +833,24 @@ class You(BaseSDK):
         :param language: BCP 47 language code. Omit the argument to use the API
             default (``"en"``); pass ``None`` to send no language at all.
         :param safesearch: ``"strict"``, ``"moderate"``, or ``"off"``.
-        :param livecrawl: ``"web"``, ``"news"``, or ``"all"``.
-        :param livecrawl_formats: ``["html"]``, ``["markdown"]``, or both.
+        :param livecrawl: deprecated. ``"web"``, ``"news"``, or ``"all"``.
+            Use ``extraction`` instead. Mutually exclusive with ``extraction``.
+        :param livecrawl_formats: deprecated. ``["html"]``, ``["markdown"]``,
+            or both. Use ``extraction`` instead. Mutually exclusive with
+            ``extraction``.
+        :param extraction: Controls how page content is attached to each
+            result. ``None`` keeps snippets-only. Pass an ``Extraction``
+            instance or a dict matching :class:`ExtractionTypedDict`.
+            ``extraction_mode`` is required (``"highlights"`` returns
+            ``results.web[].contents.highlights``; ``"full_page"`` returns
+            ``results.web[].contents.html`` / ``contents.markdown``).
+            Mutually exclusive with ``livecrawl`` / ``livecrawl_formats``.
         :param include_domains: Restrict results to these domains (<= 500).
         :param exclude_domains: Exclude these domains (<= 500).
         :param boost_domains: Boost these domains in ranking (<= 500).
-        :param crawl_timeout: Max seconds to wait for livecrawl (1-60, default 10).
+        :param crawl_timeout: Max seconds to wait for livecrawl (1-60, default
+            10). Stripped from the request body when ``extraction`` mode is
+            ``"highlights"`` (plus-value rule).
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -844,6 +866,47 @@ class You(BaseSDK):
         else:
             base_url = self._get_url(models.SEARCH_OP_SERVERS[0], None)
 
+        # Coerce `extraction` to an Extraction instance so we can read
+        # `.extraction_mode` for the plus-value rule below. Pydantic
+        # raises ValidationError on strict-validation failures (unknown
+        # keys, wrong-mode couplings, out-of-range max_tokens), matching
+        # the server's 422 contract so callers fail-fast.
+        extraction_model: Optional[models.Extraction] = None
+        if extraction is not None:
+            extraction_model = models.Extraction.model_validate(extraction)
+
+        # `livecrawl` and `livecrawl_formats` are deprecated; warn
+        # matching the existing sub-SDK shim style (`stacklevel=3` so the
+        # warning reports the user frame, not this method).
+        if livecrawl is not None or livecrawl_formats is not None:
+            warnings.warn(
+                "livecrawl is deprecated; use extraction instead",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+
+        # Conflict: extraction and livecrawl/livecrawl_formats cannot
+        # coexist (server-side `_fold_extraction` rejects both). Mirror
+        # locally so the caller learns immediately rather than after a
+        # round-trip + 422.
+        if extraction_model is not None and (
+            livecrawl is not None or livecrawl_formats is not None
+        ):
+            raise ValueError(
+                "extraction cannot be combined with livecrawl or livecrawl_formats"
+            )
+
+        # Plus-value rule: extraction_mode == 'highlights' forbids
+        # crawl_timeout on the wire. We strip crawl_timeout from the body
+        # in that case so default callers (SDK default 10) reach the
+        # server without violating the rule. Callers that explicitly set
+        # crawl_timeout get the same silent strip; that mirrors the API
+        # as much as possible without expanding the function signature.
+        strip_crawl_timeout = (
+            extraction_model is not None
+            and extraction_model.extraction_mode is models.ExtractionMode.HIGHLIGHTS
+        )
+
         body: dict[str, Any] = dict(
             query=query,
             count=count,
@@ -858,8 +921,16 @@ class You(BaseSDK):
             include_domains=utils.unmarshal(include_domains, Optional[List[str]]),
             exclude_domains=utils.unmarshal(exclude_domains, Optional[List[str]]),
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),
-            crawl_timeout=crawl_timeout,
+            extraction=extraction,
         )
+        # Plus-value rule: extraction_mode == 'highlights' forbids
+        # crawl_timeout on the wire. Send None so SearchRequestBody's
+        # serializer drops the field (None is in optional_fields and
+        # serializer skips optional Fields when None). Default callers
+        # (SDK default 10) thus reach the server without violating the
+        # rule. Callers that explicitly set crawl_timeout get the same
+        # silent strip in highlights mode.
+        body["crawl_timeout"] = None if strip_crawl_timeout else crawl_timeout
         # UNSET (the default) leaves the field off entirely so SearchRequestBody's
         # own `Language.EN` default applies. An explicit None is passed through and
         # dropped during serialization, which sends no language at all.
@@ -956,6 +1027,7 @@ class You(BaseSDK):
         safesearch: Optional[str] = None,
         livecrawl: Optional[str] = None,
         livecrawl_formats: Optional[Iterable[str]] = None,
+        extraction: Optional[Union[models.Extraction, Mapping[str, Any]]] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -981,6 +1053,34 @@ class You(BaseSDK):
         else:
             base_url = self._get_url(models.SEARCH_OP_SERVERS[0], None)
 
+        # Coerce `extraction` to an Extraction instance so we can read
+        # `.extraction_mode` for the plus-value rule below. See
+        # `_search_impl` for the full rationale.
+        extraction_model: Optional[models.Extraction] = None
+        if extraction is not None:
+            extraction_model = models.Extraction.model_validate(extraction)
+
+        # `livecrawl` and `livecrawl_formats` are deprecated; warn like
+        # _search_impl so tests detect both sync and async paths.
+        if livecrawl is not None or livecrawl_formats is not None:
+            warnings.warn(
+                "livecrawl is deprecated; use extraction instead",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+
+        if extraction_model is not None and (
+            livecrawl is not None or livecrawl_formats is not None
+        ):
+            raise ValueError(
+                "extraction cannot be combined with livecrawl or livecrawl_formats"
+            )
+
+        strip_crawl_timeout = (
+            extraction_model is not None
+            and extraction_model.extraction_mode is models.ExtractionMode.HIGHLIGHTS
+        )
+
         body: dict[str, Any] = dict(
             query=query,
             count=count,
@@ -995,8 +1095,12 @@ class You(BaseSDK):
             include_domains=utils.unmarshal(include_domains, Optional[List[str]]),
             exclude_domains=utils.unmarshal(exclude_domains, Optional[List[str]]),
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),
-            crawl_timeout=crawl_timeout,
+            extraction=extraction,
         )
+        # Plus-value rule: extraction_mode == 'highlights' forbids
+        # crawl_timeout on the wire. Send None so SearchRequestBody's
+        # serializer drops the field. See _search_impl for rationale.
+        body["crawl_timeout"] = None if strip_crawl_timeout else crawl_timeout
         # UNSET (the default) leaves the field off entirely so SearchRequestBody's
         # own `Language.EN` default applies. An explicit None is passed through and
         # dropped during serialization, which sends no language at all.
