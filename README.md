@@ -98,6 +98,39 @@ for hit in res.results.web or []:
 either of the others. The API returns `422` if you try. Search also supports
 [search operators](https://you.com/docs/guides/search-operators).
 
+#### Page content extraction
+
+Pass `extraction` to attach page content to each result. Two modes:
+
+```python
+from youdotcom.models import Extraction, ExtractionMode
+
+# Query-relevant excerpts in `contents.highlights` (snippets are omitted).
+res = you.search(
+    query="latest quantum computing breakthroughs",
+    extraction=Extraction(
+        extraction_mode=ExtractionMode.HIGHLIGHTS,
+    ),
+)
+for hit in res.results.web or []:
+    print(hit.title, hit.url, hit.contents.highlights if hit.contents else None)
+
+# Full HTML and/or Markdown in `contents.html` / `contents.markdown`.
+res = you.search(
+    query="latest quantum computing breakthroughs",
+    extraction={
+        "extraction_mode": "full_page",
+        "full_page": {"extraction_formats": ["markdown"]},
+    },
+)
+```
+
+`extraction` replaces the deprecated `livecrawl` / `livecrawl_formats`
+parameters. Passing both raises `ValueError`, and top-level `crawl_timeout`
+is ignored (stripped from the request body) when `extraction_mode == "highlights"`.
+Unknown keys inside
+`extraction` raise `ValidationError` locally, matching the server's 422.
+
 ### Contents
 
 Clean HTML or Markdown for a list of URLs.

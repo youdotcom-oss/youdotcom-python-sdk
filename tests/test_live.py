@@ -22,6 +22,9 @@ from youdotcom import You
 from youdotcom.models import (
     Country,
     ContentsFormats,
+    Extraction,
+    ExtractionFormat,
+    ExtractionMode,
     Freshness,
     LiveCrawl,
     LiveCrawlFormats,
@@ -113,8 +116,13 @@ class TestLiveSearch:
             if res.results.web:
                 assert len(res.results.web) <= 5
     
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_search_with_livecrawl_web(self, you_client):
-        """Test search with livecrawl for web results."""
+        """Test search with livecrawl for web results.
+
+        Deprecated: use ``extraction`` instead. Livecrawl continues to work
+        (the server accepts it) but emits ``DeprecationWarning``.
+        """
         with you_client as you:
             res = you.search(
                 query="machine learning tutorials",
@@ -134,8 +142,12 @@ class TestLiveSearch:
                         # (API may return empty string for some URLs)
                         assert result.contents.markdown is not None or result.contents.html is not None
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_search_with_livecrawl_news(self, you_client):
-        """Test search with livecrawl for news results (new in 2.2.0)."""
+        """Test search with livecrawl for news results (new in 2.2.0).
+
+        Deprecated: use ``extraction`` instead.
+        """
         with you_client as you:
             res = you.search(
                 query="technology news today",
@@ -154,8 +166,12 @@ class TestLiveSearch:
                         # At least one of html or markdown should be present
                         assert news_item.contents.markdown or news_item.contents.html
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_search_with_livecrawl_all(self, you_client):
-        """Test search with livecrawl=ALL for both web and news."""
+        """Test search with livecrawl=ALL for both web and news.
+
+        Deprecated: use ``extraction`` instead.
+        """
         with you_client as you:
             res = you.search(
                 query="breaking tech news",
@@ -164,6 +180,107 @@ class TestLiveSearch:
                 livecrawl_formats=[LiveCrawlFormats.HTML],
             )
             
+            assert res.results is not None
+
+
+@requires_api_key
+class TestLiveSearchExtraction:
+    """Live tests for the ``extraction`` parameter (new in 3.1.0).
+
+    ``extraction`` replaces ``livecrawl`` / ``livecrawl_formats`` on
+    ``POST /v1/search``. Two modes:
+
+    - ``extraction_mode="highlights"`` — query-relevant excerpts land in
+      ``results.web[].contents.highlights``; snippets are omitted.
+    - ``extraction_mode="full_page"`` — full HTML and/or Markdown in
+      ``results.web[].contents.html`` / ``.markdown``.
+    """
+
+    def test_highlights_mode(self, you_client):
+        """Test extraction_mode=highlights returns excerpts in contents.highlights."""
+        with you_client as you:
+            res = you.search(
+                query="Python type hints guide",
+                count=3,
+                extraction=Extraction(
+                    extraction_mode=ExtractionMode.HIGHLIGHTS,
+                ),
+            )
+
+            assert res.results is not None
+            # Highlights mode omits snippets; contents.highlights should be a list
+            if res.results.web:
+                for result in res.results.web:
+                    if result.contents:
+                        assert result.contents.highlights is not None
+                        assert isinstance(result.contents.highlights, list)
+
+    def test_highlights_with_max_tokens(self, you_client):
+        """Test highlights with explicit max_tokens."""
+        with you_client as you:
+            res = you.search(
+                query="machine learning basics",
+                count=3,
+                extraction={
+                    "extraction_mode": "highlights",
+                    "highlights": {"max_tokens": 1000},
+                },
+            )
+
+            assert res.results is not None
+            if res.results.web:
+                for result in res.results.web:
+                    if result.contents:
+                        assert result.contents.highlights is not None
+
+    def test_full_page_markdown(self, you_client):
+        """Test extraction_mode=full_page with markdown format."""
+        with you_client as you:
+            res = you.search(
+                query="how does python work",
+                count=3,
+                extraction={
+                    "extraction_mode": "full_page",
+                    "full_page": {"extraction_formats": ["markdown"]},
+                },
+            )
+
+            assert res.results is not None
+            if res.results.web:
+                for result in res.results.web:
+                    if result.contents:
+                        assert result.contents.markdown is not None
+
+    def test_full_page_html(self, you_client):
+        """Test extraction_mode=full_page with html format."""
+        with you_client as you:
+            res = you.search(
+                query="what is a web browser",
+                count=3,
+                extraction={
+                    "extraction_mode": "full_page",
+                    "full_page": {"extraction_formats": ["html"]},
+                },
+            )
+
+            assert res.results is not None
+            if res.results.web:
+                for result in res.results.web:
+                    if result.contents:
+                        assert result.contents.html is not None
+
+    def test_full_page_both_formats(self, you_client):
+        """Test extraction_mode=full_page with both html and markdown."""
+        with you_client as you:
+            res = you.search(
+                query="how does the internet work",
+                count=3,
+                extraction={
+                    "extraction_mode": "full_page",
+                    "full_page": {"extraction_formats": ["html", "markdown"]},
+                },
+            )
+
             assert res.results is not None
 
 

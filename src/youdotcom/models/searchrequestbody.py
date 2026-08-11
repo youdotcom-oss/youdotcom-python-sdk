@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from .country import Country
+from .extraction import Extraction, ExtractionTypedDict
 from .freshnessvalue import FreshnessValue, FreshnessValueTypedDict
 from .language import Language
 from .livecrawl import LiveCrawl
@@ -49,6 +50,17 @@ class SearchRequestBodyTypedDict(TypedDict):
     r"""A list of domains to boost in search ranking. Matching results from these domains receive a relative ranking boost, but results are not limited to these domains. Supports up to 500 domains. Can be combined with `exclude_domains`, but cannot be combined with `include_domains` (returns `422`)."""
     crawl_timeout: NotRequired[int]
     r"""Maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Default is 10 seconds."""
+    extraction: NotRequired[ExtractionTypedDict]
+    r"""Controls how page content is attached to each result.
+
+    Preferred over `livecrawl`/`livecrawl_formats`. The two are mutually
+    exclusive; ``you.search`` / ``you.search_async`` raise :class:`ValueError`
+    when both are passed (this model does not enforce the conflict). Top-level
+    `crawl_timeout` is invalid alongside `extraction.extraction_mode ==
+    "highlights"` (server-side verification); the SDK method strips
+    `crawl_timeout` from the body in that case so callers fail-fast instead
+    of round-tripping a 422.
+    """
 
 
 class SearchRequestBody(BaseModel):
@@ -100,6 +112,18 @@ class SearchRequestBody(BaseModel):
     crawl_timeout: Optional[int] = 10
     r"""Maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Default is 10 seconds."""
 
+    extraction: Optional[Extraction] = None
+    r"""Controls how page content is attached to each result.
+
+    Preferred over `livecrawl`/`livecrawl_formats`. The two are mutually
+    exclusive; ``you.search`` / ``you.search_async`` raise :class:`ValueError`
+    when both are passed (this model does not enforce the conflict). Top-level
+    `crawl_timeout` is invalid alongside `extraction.extraction_mode ==
+    "highlights"` (server-side verification); the SDK method strips
+    `crawl_timeout` from the body in that case so callers fail-fast instead
+    of round-tripping a 422.
+    """
+
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
         optional_fields = set(
@@ -116,6 +140,7 @@ class SearchRequestBody(BaseModel):
                 "exclude_domains",
                 "boost_domains",
                 "crawl_timeout",
+                "extraction",
             ]
         )
         serialized = handler(self)
