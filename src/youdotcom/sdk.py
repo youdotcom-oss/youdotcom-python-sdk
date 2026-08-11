@@ -89,13 +89,13 @@ def _build_search_request(
         extraction_model = models.Extraction.model_validate(extraction)
 
     # `livecrawl` and `livecrawl_formats` are deprecated; warn
-    # matching the existing sub-SDK shim style (`stacklevel=3` so the
-    # warning reports the user frame, not this method).
+    # with stacklevel=4 so the warning reports the user frame (the
+    # helper adds one extra frame compared to the old inline warn).
     if livecrawl is not None or livecrawl_formats is not None:
         warnings.warn(
             "livecrawl is deprecated; use extraction instead",
             DeprecationWarning,
-            stacklevel=3,
+            stacklevel=4,
         )
 
     # Conflict: extraction and livecrawl/livecrawl_formats cannot
@@ -127,7 +127,7 @@ def _build_search_request(
         warnings.warn(
             "crawl_timeout is ignored when extraction_mode == 'highlights'",
             UserWarning,
-            stacklevel=3,
+            stacklevel=4,
         )
 
     body: dict[str, Any] = dict(
