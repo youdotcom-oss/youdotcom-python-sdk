@@ -10,22 +10,25 @@ The `extraction` parameter on `POST /v1/search` controls how page content is att
 ## Example Usage
 
 ```python
+import os
+from youdotcom import You
 from youdotcom.models import Extraction, ExtractionMode
 
-# Query-relevant excerpts in contents.highlights
-res = you.search(
-    query="latest quantum computing breakthroughs",
-    extraction=Extraction(extraction_mode=ExtractionMode.HIGHLIGHTS),
-)
+with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
+    # Query-relevant excerpts in contents.highlights
+    res = you.search(
+        query="latest quantum computing breakthroughs",
+        extraction=Extraction(extraction_mode=ExtractionMode.HIGHLIGHTS),
+    )
 
-# Full Markdown in contents.markdown
-res = you.search(
-    query="latest quantum computing breakthroughs",
-    extraction={
-        "extraction_mode": "full_page",
-        "full_page": {"extraction_formats": ["markdown"]},
-    },
-)
+    # Full Markdown in contents.markdown
+    res = you.search(
+        query="latest quantum computing breakthroughs",
+        extraction={
+            "extraction_mode": "full_page",
+            "full_page": {"extraction_formats": ["markdown"]},
+        },
+    )
 ```
 
 ## Fields

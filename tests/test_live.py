@@ -164,7 +164,10 @@ class TestLiveSearch:
                     # Check that we can access the contents field
                     if news_item.contents:
                         # At least one of html or markdown should be present
-                        assert news_item.contents.markdown or news_item.contents.html
+                        assert (
+                            news_item.contents.markdown is not None
+                            or news_item.contents.html is not None
+                        )
 
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_search_with_livecrawl_all(self, you_client):
