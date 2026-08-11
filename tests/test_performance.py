@@ -34,6 +34,9 @@ from youdotcom import You
 from youdotcom.models import (
     Country,
     ContentsFormats,
+    Extraction,
+    ExtractionFormat,
+    ExtractionMode,
     Freshness,
     Language,
     LiveCrawl,
@@ -478,7 +481,7 @@ class TestSearchPerformance:
     def test_search_with_livecrawl_all_news_contents(self, server_url, api_key, iterations, show_detailed):
         """Search with livecrawl=ALL for both web and news contents."""
         client = create_timing_client("post_/v1/search")
-        
+
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
             def call():
                 you.search(
@@ -488,8 +491,83 @@ class TestSearchPerformance:
                     livecrawl_formats=[LiveCrawlFormats.HTML],
                     server_url=server_url,
                 )
-            
+
             metrics = measure_sdk_call(call, client, iterations, "Search: livecrawl=ALL (web+news contents)")
+            ALL_METRICS.append(metrics)
+            if show_detailed:
+                print_detailed_metrics(metrics)
+
+    # ----------------------------------------------------------------
+    # Extraction-mode performance cases parallel the livecrawl cases.
+    # DX-719 added these alongside the legacy livecrawl cases (the
+    # legacy cases remain because `livecrawl` is supported until 4.0.0).
+    # ----------------------------------------------------------------
+
+    def test_search_with_extraction_highlights(self, server_url, api_key, iterations, show_detailed):
+        """Search with extraction_mode="highlights" (a dict form the SDK normalizes)."""
+        client = create_timing_client("post_/v1/search")
+
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            def call():
+                you.search(
+                    query="machine learning tutorials",
+                    count=3,
+                    extraction={
+                        "extraction_mode": "highlights",
+                        "highlights": {"max_tokens": 1000},
+                    },
+                    server_url=server_url,
+                )
+
+            metrics = measure_sdk_call(
+                call, client, iterations, "Search: extraction=highlights (dict, max_tokens=1000)"
+            )
+            ALL_METRICS.append(metrics)
+            if show_detailed:
+                print_detailed_metrics(metrics)
+
+    def test_search_with_extraction_full_page_model(self, server_url, api_key, iterations, show_detailed):
+        """Search with extraction_mode="full_page" using the typed Extraction model instance."""
+        client = create_timing_client("post_/v1/search")
+
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            def call():
+                you.search(
+                    query="quantum computing",
+                    count=3,
+                    extraction=Extraction(
+                        extraction_mode=ExtractionMode.FULL_PAGE,
+                        full_page={"extraction_formats": [ExtractionFormat.MARKDOWN]},
+                    ),
+                    server_url=server_url,
+                )
+
+            metrics = measure_sdk_call(
+                call, client, iterations, "Search: extraction=full_page (model, markdown only)"
+            )
+            ALL_METRICS.append(metrics)
+            if show_detailed:
+                print_detailed_metrics(metrics)
+
+    def test_search_with_extraction_full_page_both_formats(self, server_url, api_key, iterations, show_detailed):
+        """Search with extraction_mode="full_page" returning both html and markdown."""
+        client = create_timing_client("post_/v1/search")
+
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            def call():
+                you.search(
+                    query="how does the internet work",
+                    count=3,
+                    extraction={
+                        "extraction_mode": "full_page",
+                        "full_page": {"extraction_formats": ["html", "markdown"]},
+                    },
+                    server_url=server_url,
+                )
+
+            metrics = measure_sdk_call(
+                call, client, iterations, "Search: extraction=full_page (dict, html+markdown)"
+            )
             ALL_METRICS.append(metrics)
             if show_detailed:
                 print_detailed_metrics(metrics)

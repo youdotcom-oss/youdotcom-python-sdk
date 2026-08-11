@@ -25,6 +25,9 @@ from youdotcom.models import (
     LiveCrawl,
     LiveCrawlFormats,
     ContentsFormats,
+    Extraction,
+    ExtractionFormat,
+    ExtractionMode,
     ResearchEffort,
     FinanceResearchEffort,
     FinanceResearchResponse,
@@ -37,9 +40,53 @@ you: Optional[You] = None
 
 def search_request():
     """
-    Search API endpoint with livecrawl
+    Search API endpoint with the new ``extraction`` parameter (3.1.0+).
+
+    ``extraction`` replaces the deprecated ``livecrawl`` / ``livecrawl_formats``
+    pair. Two modes:
+
+    * ``ExtractionMode.HIGHLIGHTS`` — query-relevant excerpts land in
+      ``result.contents.highlights`` (lists excerpts, snippets are omitted).
+    * ``ExtractionMode.FULL_PAGE`` — full content in
+      ``result.contents.html`` / ``result.contents.markdown``.
     """
-    print("\n🚀 Running Search Request...\n")
+    print("\n🚀 Running Search Request (extraction)...\n")
+
+    assert you is not None, "SDK client not initialized"
+
+    results = you.search(
+        query="artificial intelligence in farming",
+        count=1,
+        extraction=Extraction(
+            extraction_mode=ExtractionMode.FULL_PAGE,
+            full_page={"extraction_formats": [ExtractionFormat.MARKDOWN]},
+        ),
+    )
+
+    print("Metadata:")
+    print(results.metadata)
+
+    print("\nWeb Results:")
+    if results.results and results.results.web:
+        for result in results.results.web:
+            print(f"  - {result.title}")
+            print(f"    URL: {result.url}")
+            if result.contents and result.contents.markdown:
+                preview = result.contents.markdown[:120].replace("\n", " ")
+                print(f"    Markdown preview: {preview}...")
+    else:
+        print("No web results found")
+
+
+def search_request_livecrawl_legacy():
+    """
+    Search API endpoint with the deprecated ``livecrawl`` form.
+
+    Kept as a backward-compat demo. ``livecrawl`` / ``livecrawl_formats``
+    continue to work on ``POST /v1/search`` but emit a ``DeprecationWarning``.
+    Migrate to ``extraction`` (see ``search_request`` above).
+    """
+    print("\n🚀 Running Search Request (deprecated livecrawl)...\n")
 
     assert you is not None, "SDK client not initialized"
 
@@ -47,13 +94,10 @@ def search_request():
         query="artificial intelligence in farming",
         count=1,
         livecrawl=LiveCrawl.WEB,
-        livecrawl_formats=[LiveCrawlFormats.MARKDOWN]
+        livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
     )
 
-    print("Metadata:")
-    print(results.metadata)
-
-    print("\nWeb Results:")
+    print("Web Results:")
     if results.results and results.results.web:
         web_urls = [result.url for result in results.results.web]
         print(web_urls)
@@ -356,7 +400,8 @@ def content_request_with_max_age():
 
 # Available functions menu
 FUNCTIONS = [
-    {"name": "Search Request", "fn": search_request},
+    {"name": "Search Request (extraction)", "fn": search_request},
+    {"name": "Search Request (deprecated livecrawl)", "fn": search_request_livecrawl_legacy},
     {"name": "Search Request (boost_domains)", "fn": search_request_with_boost},
     {"name": "Content Request", "fn": content_request},
     {"name": "Content Request (max_age)", "fn": content_request_with_max_age},

@@ -190,6 +190,97 @@ To see deprecation warnings in your code:
 python -W default::DeprecationWarning your_script.py
 ```
 
+## 3.0.0 → 3.1.0
+
+> **Recommended migration only — no code change required.** `livecrawl` and `livecrawl_formats` still work on `POST /v1/search` and now emit `DeprecationWarning`. Adopt `extraction` when convenient; removal is targeted for 4.0.0.
+
+### Why migrate
+
+`extraction` is a typed object with strict validation (`extra="forbid"`), so the SDK fails fast on unknown keys and wrong-mode couplings. `livecrawl` is stringly typed and only validates on the server. The new `extraction_mode="highlights"` also returns query-relevant excerpts in `contents.highlights` — closer to what most callers actually want — at a fraction of the tokens of `full_page`.
+
+### Migration mapping
+
+| Old | New |
+|-----|-----|
+| `livecrawl="web"` + `livecrawl_formats=["markdown"]` | `extraction={"extraction_mode": "full_page", "full_page": {"extraction_formats": ["markdown"]}}` |
+| `livecrawl="all"` + `livecrawl_formats=["html", "markdown"]` | `extraction={"extraction_mode": "full_page", "full_page": {"extraction_formats": ["html", "markdown"]}}` |
+| `livecrawl="news"` + `livecrawl_formats=["markdown"]` | `extraction={"extraction_mode": "full_page", "full_page": {"extraction_formats": ["markdown"]}}` (now covers both web and news) |
+| Omitting `livecrawl` (snippets only) | Omit `extraction` (default behavior unchanged), or `extraction={"extraction_mode": "highlights"}` to swap snippets for query-relevant excerpts at the same latency |
+
+Notes:
+
+- `livecrawl` supported `"web"`, `"news"`, `"all"` modes. `extraction_mode` does not have a per-section switch — `"highlights"` and `"full_page"` apply to all sections in the response.
+- `extraction_mode="highlights"` accepts an optional `highlights.max_tokens` bound `[512, 8192]`. Omit it to use the provider default (4096).
+
+### Before / after
+
+```python
+# Before (3.0.x): livecrawl + formats
+from youdotcom.models import LiveCrawl, LiveCrawlFormats
+
+you.search(
+    query="quantum computing tutorials",
+    count=5,
+    livecrawl=LiveCrawl.WEB,
+    livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
+)
+
+# After (3.1.0): extraction
+from youdotcom.models import Extraction, ExtractionFormat, ExtractionMode
+
+you.search(
+    query="quantum computing tutorials",
+    count=5,
+    extraction=Extraction(
+        extraction_mode=ExtractionMode.FULL_PAGE,
+        full_page={"extraction_formats": [ExtractionFormat.MARKDOWN]},
+    ),
+)
+
+# Or as a plain dict (the SDK normalizes at the method layer)
+you.search(
+    query="quantum computing tutorials",
+    count=5,
+    extraction={
+        "extraction_mode": "full_page",
+        "full_page": {"extraction_formats": ["markdown"]},
+    },
+)
+```
+
+### Highlights mode (new option that didn't exist with livecrawl)
+
+```python
+you.search(
+    query="how does X relate to Y",
+    extraction={"extraction_mode": "highlights", "highlights": {"max_tokens": 1000}},
+)
+# Returns res.results.web[i].contents.highlights (List[str]) -- excerpts
+# that match the query, not whole pages. Snippets are omitted in this mode.
+```
+
+### Conflict and plus-value rule
+
+`extraction` cannot be combined with `livecrawl` or `livecrawl_formats` (raises `ValueError` locally before round-tripping). And top-level `crawl_timeout` is invalid alongside `extraction_mode="highlights"` — the SDK strips `crawl_timeout` from the request body in that case (default silently, with `UserWarning` if you set a non-default value).
+
+### No upgrade-time action required
+
+Calls using `livecrawl` / `livecrawl_formats` continue to work, just with a `DeprecationWarning`:
+
+```python
+import warnings
+
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    you.search(
+        query="...",
+        livecrawl="web",
+        livecrawl_formats=["markdown"],
+    )
+    deprecations = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+    # deprecations[0].message == "livecrawl is deprecated; use extraction instead"
+```
+
 ## 2.4.0 → 2.5.0
 
 ### New `frontier` Research Effort Tier
