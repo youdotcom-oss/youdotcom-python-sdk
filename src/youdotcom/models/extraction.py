@@ -10,8 +10,8 @@
 
 Top-level ``crawl_timeout`` (1-60, default 10) is sibling to ``extraction``
 and is invalid alongside ``extraction_mode == "highlights"`` (the same
-constraint is replicated at the SDK layer so callers fail-fast rather than
-round-tripping a 422).
+constraint is handled at the SDK layer by stripping ``crawl_timeout`` from
+the request body, avoiding a round-trip 422).
 
 Mirrors the locked ``extraction`` schema in the docs preview at
 ``youdotcom-docs/fern/apis/search/openapi_search_v1_overrides.yaml``.

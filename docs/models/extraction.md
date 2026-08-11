@@ -5,7 +5,7 @@ The `extraction` parameter on `POST /v1/search` controls how page content is att
 - `"highlights"` — query-relevant excerpts land in `results.web[].contents.highlights`.
 - `"full_page"` — full HTML and/or Markdown land in `results.web[].contents.html` / `.markdown`.
 
-`extraction` and `livecrawl` cannot be combined.
+`extraction` cannot be combined with `livecrawl` or `livecrawl_formats`.
 
 ## Example Usage
 
