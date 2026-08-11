@@ -225,6 +225,31 @@ class TestExtractionWireContract:
         # Enums serialize to their string values, not the enum members.
         assert sorted(formats) == ["html", "markdown"]
 
+    def test_extraction_model_instance_full_page(self):
+        """An ``Extraction`` model instance is accepted on the wire, matching
+        the dict form (documented README usage)."""
+        body = _search_body(
+            extraction=Extraction(
+                extraction_mode=ExtractionMode.FULL_PAGE,
+                full_page=ExtractionFullPage(
+                    extraction_formats=[ExtractionFormat.MARKDOWN]
+                ),
+            )
+        )
+        assert body["extraction"] == {
+            "extraction_mode": "full_page",
+            "full_page": {"extraction_formats": ["markdown"]},
+        }
+
+    def test_extraction_model_instance_highlights_strips_crawl_timeout(self):
+        """A model instance with ``highlights`` mode also triggers the
+        plus-value rule (``crawl_timeout`` stripped from the wire)."""
+        body = _search_body(
+            extraction=Extraction(extraction_mode=ExtractionMode.HIGHLIGHTS)
+        )
+        assert body["extraction"] == {"extraction_mode": "highlights"}
+        assert "crawl_timeout" not in body
+
     def test_extraction_unknown_keys_raise_locally(self):
         with pytest.raises(ValidationError):
             with _capture() as (you, _):

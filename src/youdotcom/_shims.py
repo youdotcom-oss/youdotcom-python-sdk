@@ -15,7 +15,7 @@ and emits no warning.
 from __future__ import annotations
 
 import warnings
-from typing import Any, Iterable, List, Mapping, Optional
+from typing import Any, Iterable, List, Mapping, Optional, Union
 
 from youdotcom import models, utils
 from youdotcom.types import OptionalNullable, UNSET
@@ -60,7 +60,7 @@ class SearchShim:
         safesearch: Optional[str] = None,
         livecrawl: Optional[str] = None,
         livecrawl_formats: Optional[Iterable[str]] = None,
-        extraction: Optional[Any] = None,
+        extraction: Optional[Union[models.Extraction, Mapping[str, Any]]] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -103,7 +103,7 @@ class SearchShim:
         safesearch: Optional[str] = None,
         livecrawl: Optional[str] = None,
         livecrawl_formats: Optional[Iterable[str]] = None,
-        extraction: Optional[Any] = None,
+        extraction: Optional[Union[models.Extraction, Mapping[str, Any]]] = None,
         include_domains: Optional[str] = None,
         exclude_domains: Optional[str] = None,
         boost_domains: Optional[str] = None,
@@ -148,7 +148,7 @@ class SearchShim:
         safesearch: Optional[str] = None,
         livecrawl: Optional[str] = None,
         livecrawl_formats: Optional[Iterable[str]] = None,
-        extraction: Optional[Any] = None,
+        extraction: Optional[Union[models.Extraction, Mapping[str, Any]]] = None,
         include_domains: Optional[str] = None,
         exclude_domains: Optional[str] = None,
         boost_domains: Optional[str] = None,
