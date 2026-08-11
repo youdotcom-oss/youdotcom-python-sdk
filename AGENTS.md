@@ -157,6 +157,75 @@ stray doc referencing the old name reads as evidence of a half-finished migratio
 Skip a step only when that surface legitimately does not apply (no MIGRATION section on
 a non-deprecating change). Document any skip in the PR body.
 
+## Surface sweep: pitfalls that survive the first pass
+
+The 8-step surface sweep above catches most rename/deprecation oversights, but the
+categories below still slipped through on PR #40. Codify them so they don't reopen
+the same review threads on the next migration.
+
+### Docstring sync between TypedDict and Pydantic
+
+The same field has **two docstrings** in `SearchRequestBody`: one on the `TypedDict`
+field and one on the Pydantic field. Editing only the Pydantic string leaves the IDE
+surface (via the TypedDict) stale, and vice versa. Always edit both in lockstep after
+any behavior or wording change.
+
+### Module-level docstrings on model files
+
+A model's module docstring at the top of `src/youdotcom/models/<x>.py` often describes
+the SDK-layer behavior of a parameter (`models/extraction.py`'s `crawl_timeout`
+stanza is an example). When that parameter's behavior changes, the module docstring
+is also stale even if the field-level docstrings are not. Re-read the full module
+docstring from top to bottom after any behavior edit.
+
+### Result-class pages
+
+`docs/models/webresult.md`, `docs/models/newsresult.md`, and similar `*result.md`
+pages have `contents` rows that describe the **gating parameter** for livecrawl-family
+behavior — phrased in terms of the deprecated name (e.g. "Contents of the page if
+`livecrawl` was enabled"). When the gating parameter is renamed or deprecated, those
+rows must read "if `extraction` was enabled (formerly `livecrawl`)" instead. Step 5
+above lists "existing model pages" but does not call out `*result.md` files; grep
+`docs/models/*result.md` for the deprecated name on every rename sweep.
+
+### Cross-table identity
+
+The same parameter appears in `docs/sdks/you/README.md`, `docs/sdks/search/README.md`,
+`docs/models/searchrequestbody.md`, **and** the TypedDict + Pydantic field docstrings
+in `src/youdotcom/models/`. The `Description` cells in those four locations must read
+identically (the Search sub-SDK table may add a no-op note when the underlying
+endpoint genuinely strips the field, but otherwise the wording is fixed). After
+updating one, the others must also be updated; divergent wording is a near-guaranteed
+review comment.
+
+### Type cells in field tables come from the annotation
+
+The `Type` column of `docs/models/<model>.md` is the caller-facing paraphrase of the
+model's actual annotation. `Optional[List[str]]` becomes `Optional[List[*str*]]`, not
+`List[*str*]`. Eyeball every row in the touched model page for the same
+cell-vs-annotation drift; one botched cell sits there forever otherwise.
+
+### Examples must be copy-paste runnable
+
+A `## Example Usage` block in `docs/**/*.md` (or `README.md` / `USAGE.md`) is a
+contract with the reader that copy-pasting the snippet will work on a fresh checkout.
+Any snippet that calls `you.search(...)` without constructing a `You` instance — or
+without showing the `import` lines that back the snippet — fails that contract with
+`NameError: name 'you' is not defined`. Always include: (1) the `import` statements,
+(2) client construction via `You(api_key_auth=os.getenv("YDC_API_KEY"))`, and (3) a
+`with ... as you:` context for any method calls. Match the pattern used elsewhere in
+`docs/sdks/*` before committing the snippet.
+
+## Warn-then-raise vs raise-then-warn (Python gotcha)
+
+When the helper that detects a conflict also has reason to warn (e.g. an `extraction`
+vs. deprecated `livecrawl` conflict, plus a `DeprecationWarning` on `livecrawl`),
+order the two reactions as **raise first, warn second**. Pytest and many lint runners
+promote `DeprecationWarning` to an error via `-W error::DeprecationWarning`; a
+warning-first ordering converts the warning into an exception that fires before the
+conflict raise can run, masking the underlying 422 the caller is hitting. The
+canonical ordering lives in `_build_search_request`; preserve it on future edits.
+
 ## The plus-value rule pattern
 
 When a parameter combination is invalid on the wire but you want default callers to work
@@ -182,3 +251,44 @@ without 422 errors:
   It's used by `run_tests.sh` but is not required for unit tests (which use MockTransport).
 - Tests that depend on the mock server (port 18080) will fail with `Connection refused` if
   Go is not installed. State which checks were skipped and why.
+
+## Live tests are part of the contract
+
+Live tests (`@requires_api_key`) are not homage. They are the only runtime check that
+the SDK + API pair still match. Write them so a contract break fails loudly:
+
+### Build the contract list, then assert non-empty
+
+A live test whose body is `if result.contents: <loop with no failing assertion>`
+silently passes when every result returns no contents. Instead accumulate the
+observed matches into a list and assert the list is non-empty:
+
+```python
+content_seen = [
+    (r.contents.html, r.contents.markdown)
+    for r in res.results.web
+    if r.contents and (r.contents.html is not None or r.contents.markdown is not None)
+]
+assert content_seen, "Expected at least one result with contents.html and/or contents.markdown"
+```
+
+The same `<x>_seen = [...filtered list...]; assert <x>_seen` pattern applies to
+`contents.highlights`, `results.news[].contents`, and any "should be present"
+assertion over a collection.
+
+### `is not None`, not truthiness
+
+The server returns empty strings for absent content, so
+`assert item.contents.markdown or item.contents.html` fails even when both fields
+are present but empty. Use `... is not None or ... is not None` when checking
+API-returned string fields. Truthiness is not a presence check for server-returned
+strings.
+
+### Test names match assertion bodies
+
+The function name should describe what the body asserts. A test named
+`test_extraction_highlights_default_no_subkeys` that constructs
+`Extraction(extraction_mode="full_page")` is a bug — rename it to
+`test_extraction_full_page_default_no_subkeys`. Test-name vs body divergence is
+the smoking-gun reviewer signal that the suite was written against an earlier
+version of the code.
