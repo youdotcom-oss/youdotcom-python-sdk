@@ -49,7 +49,7 @@ class SearchRequestBodyTypedDict(TypedDict):
     boost_domains: NotRequired[List[str]]
     r"""A list of domains to boost in search ranking. Matching results from these domains receive a relative ranking boost, but results are not limited to these domains. Supports up to 500 domains. Can be combined with `exclude_domains`, but cannot be combined with `include_domains` (returns `422`)."""
     crawl_timeout: NotRequired[int]
-    r"""Maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Default is 10 seconds."""
+    r"""Maximum time in seconds to wait for page content when `extraction.extraction_mode == "full_page"` (or the deprecated `livecrawl`) is enabled. Must be between 1 and 60 seconds. Default is 10 seconds. Stripped from the body when `extraction_mode == "highlights"`."""
     extraction: NotRequired[ExtractionTypedDict]
     r"""Controls how page content is attached to each result.
 
@@ -109,7 +109,7 @@ class SearchRequestBody(BaseModel):
     r"""A list of domains to boost in search ranking. Matching results from these domains receive a relative ranking boost, but results are not limited to these domains. Supports up to 500 domains. Can be combined with `exclude_domains`, but cannot be combined with `include_domains` (returns `422`)."""
 
     crawl_timeout: Optional[int] = 10
-    r"""Maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Default is 10 seconds."""
+    r"""Maximum time in seconds to wait for page content when `extraction.extraction_mode == "full_page"` (or the deprecated `livecrawl`) is enabled. Must be between 1 and 60 seconds. Default is 10 seconds. Stripped from the body when `extraction_mode == "highlights"`."""
 
     extraction: Optional[Extraction] = None
     r"""Controls how page content is attached to each result.
