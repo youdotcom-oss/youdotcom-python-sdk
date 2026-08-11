@@ -54,10 +54,12 @@ class SearchRequestBodyTypedDict(TypedDict):
     r"""Controls how page content is attached to each result.
 
     Preferred over `livecrawl`/`livecrawl_formats`. The two are mutually
-    exclusive; passing both raises :class:`ValueError` locally. Top-level
+    exclusive; ``you.search`` / ``you.search_async`` raise :class:`ValueError`
+    when both are passed (this model does not enforce the conflict). Top-level
     `crawl_timeout` is invalid alongside `extraction.extraction_mode ==
-    "highlights"` (server-side verification: same constraint replicated at
-    the SDK layer so callers fail-fast instead of round-tripping a 422).
+    "highlights"` (server-side verification); the SDK method strips
+    `crawl_timeout` from the body in that case so callers fail-fast instead
+    of round-tripping a 422.
     """
 
 
@@ -114,10 +116,12 @@ class SearchRequestBody(BaseModel):
     r"""Controls how page content is attached to each result.
 
     Preferred over `livecrawl`/`livecrawl_formats`. The two are mutually
-    exclusive; passing both raises :class:`ValueError` locally. Top-level
+    exclusive; ``you.search`` / ``you.search_async`` raise :class:`ValueError`
+    when both are passed (this model does not enforce the conflict). Top-level
     `crawl_timeout` is invalid alongside `extraction.extraction_mode ==
-    "highlights"` (server-side verification: same constraint replicated at
-    the SDK layer so callers fail-fast instead of round-tripping a 422).
+    "highlights"` (server-side verification); the SDK method strips
+    `crawl_timeout` from the body in that case so callers fail-fast instead
+    of round-tripping a 422.
     """
 
     @model_serializer(mode="wrap")

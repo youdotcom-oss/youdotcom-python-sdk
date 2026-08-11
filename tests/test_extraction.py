@@ -8,7 +8,8 @@ Locks the contract from DX-719:
   ``ValidationError`` locally (mirrors the server's 422 on unknown keys
   inside ``extraction``).
 - ``extraction_mode == "highlights"`` strips top-level ``crawl_timeout``
-  on the wire (plus-value rule, server-side verified).
+  on the wire (plus-value rule, server-side verified); an explicit
+  non-default ``crawl_timeout`` additionally emits ``UserWarning``.
 - ``extraction`` + (``livecrawl`` | ``livecrawl_formats``) is invalid;
   raises ``ValueError`` locally.
 - ``livecrawl`` / ``livecrawl_formats`` continue to work but emit
@@ -309,14 +310,20 @@ class TestExtractionPlusValueRule:
         assert "crawl_timeout" not in body
 
     def test_highlights_strips_explicit_crawl_timeout(self):
-        """Even an explicit crawl_timeout is silently stripped in highlights
-        mode to match the server contract (the server rejects the
-        combination as invalid)."""
-        body = _search_body(
-            extraction={"extraction_mode": "highlights"},
-            crawl_timeout=30,
-        )
+        """An explicit non-default crawl_timeout is stripped in highlights mode
+        (the server rejects the combination) and that strip is surfaced as a
+        UserWarning rather than being silent."""
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            body = _search_body(
+                extraction={"extraction_mode": "highlights"},
+                crawl_timeout=30,
+            )
+
         assert "crawl_timeout" not in body
+        user = [w for w in caught if issubclass(w.category, UserWarning)]
+        assert len(user) == 1
+        assert "crawl_timeout is ignored" in str(user[0].message)
 
     def test_full_page_keeps_crawl_timeout(self):
         body = _search_body(
@@ -360,6 +367,35 @@ class TestExtractionAsync:
 
         assert "crawl_timeout" not in captured["body"]
         assert captured["body"]["extraction"] == {"extraction_mode": "highlights"}
+
+    @pytest.mark.asyncio
+    async def test_async_highlights_warns_on_explicit_crawl_timeout(self):
+        captured: dict = {}
+
+        def handler(request):
+            captured["body"] = json.loads(request.content)
+            return httpx.Response(
+                200,
+                headers={"content-type": "application/json"},
+                content=_SEARCH_BODY,
+            )
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as ac:
+                async with You(
+                    api_key_auth="k", server_url="http://mock.local", async_client=ac
+                ) as you:
+                    await you.search_async(
+                        query="q",
+                        extraction={"extraction_mode": "highlights"},
+                        crawl_timeout=30,
+                    )
+
+        assert "crawl_timeout" not in captured["body"]
+        user = [w for w in caught if issubclass(w.category, UserWarning)]
+        assert len(user) == 1
+        assert "crawl_timeout is ignored" in str(user[0].message)
 
     @pytest.mark.asyncio
     async def test_async_conflict_raises(self):

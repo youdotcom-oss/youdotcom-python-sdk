@@ -21,7 +21,7 @@ Mirrors the locked ``extraction`` schema in the docs preview at
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Optional
+from typing import List, Literal, Optional, Union
 
 from pydantic import ConfigDict, Field, model_serializer, model_validator
 from typing_extensions import NotRequired, TypedDict
@@ -52,6 +52,15 @@ class ExtractionFormat(str, Enum):
 # TypedDicts (user-facing API surface)
 # ---------------------------------------------------------------------------
 
+# The SDK accepts plain strings anywhere enum-typed values are expected
+# (normalized at the SDK layer), so the TypedDicts type the enums OR their
+# string spellings rather than the enum alone.
+ExtractionModeValue = Union[ExtractionMode, Literal["highlights", "full_page"]]
+r"""``extraction_mode`` as typed for callers: the enum or its plain string."""
+
+ExtractionFormatValue = Union[ExtractionFormat, Literal["html", "markdown"]]
+r"""``extraction_format`` as typed for callers: the enum or its plain string."""
+
 
 class ExtractionHighlightsTypedDict(TypedDict):
     r"""Type hint for the optional ``highlights`` sub-object."""
@@ -63,14 +72,14 @@ class ExtractionHighlightsTypedDict(TypedDict):
 class ExtractionFullPageTypedDict(TypedDict):
     r"""Type hint for the optional ``full_page`` sub-object."""
 
-    extraction_formats: NotRequired[List[ExtractionFormat]]
+    extraction_formats: NotRequired[List[ExtractionFormatValue]]
     r"""Format(s) returned for each result. ``["markdown"]`` by default."""
 
 
 class ExtractionTypedDict(TypedDict):
     r"""Type hint for the ``extraction`` object on ``POST /v1/search``."""
 
-    extraction_mode: ExtractionMode
+    extraction_mode: ExtractionModeValue
     r"""Required. ``"highlights"`` or ``"full_page"``."""
 
     highlights: NotRequired[ExtractionHighlightsTypedDict]
