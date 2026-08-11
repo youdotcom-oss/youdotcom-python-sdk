@@ -53,7 +53,14 @@ CI gate (`test.yml`): `pytest tests/` (excluding live/perf) + `mypy` + pylint er
    API expects).
 4. **Add tests** — unit tests in `tests/test_search.py` (MockTransport), plus a live test
    in `tests/test_live.py` if the parameter affects actual API behavior.
-5. **Update docs** — README.md examples, USAGE.md if it's a user-facing feature.
+5. **Update docs** — README.md examples, USAGE.md if it's a user-facing feature. The
+   parameter table rows in `docs/sdks/{search,you}/README.md` and
+   `docs/models/searchrequestbody.md` need a new row that matches the surrounding
+   `Type` cell notation exactly.
+6. **Run a surface sweep** — when the new parameter supersedes, renames, or deprecates
+   anything already exposed, every surface that mentioned the previous name must also
+   teach the new one. See "When the new parameter deprecates or replaces an existing one"
+   below for the full checklist.
 
 ## Serialization pattern
 
@@ -110,6 +117,45 @@ New model exports go in three places in `__init__.py`:
 2. **`__all__` list** — add the name so `from youdotcom.models import X` works.
 3. **`_module_map` dict** — map the name to the source module path (e.g. `".extraction"`)
    so runtime imports are lazy and don't cause circular imports.
+
+## When the new parameter deprecates or replaces an existing one
+
+When introducing a parameter that supersedes, renames, or removes anything already
+shipped in `SearchRequestBody`, every surface that mentioned the previous name must be
+swept. Missing a surface is the most common agent bug on this codebase — even one
+stray doc referencing the old name reads as evidence of a half-finished migration.
+
+1. **`MIGRATION.md`** — on every minor bump that ships a deprecation, add a
+   `## <old-version> → <new-version>` section even if the old form still works. The
+   section needs: a mapping table (old → new), before/after Python code blocks for both
+   dict and model forms, a "no code change required" snippet when both still work, and
+   a removal-in note (e.g. "removal targeted for 4.0.0").
+2. **`examples/api-example-calls.py`** — add or replace a runnable demo for the affected
+   method matching the existing print/output pattern. Keep a paired "legacy" demo only
+   when the deprecated form still works. Update the `FUNCTIONS` menu in lockstep.
+3. **`tests/test_performance.py`** — if the parameter affects latency (network I/O,
+   payload size, outgoing bytes per request), add a perf case mirroring the pattern of
+   the analogous deprecated case. Use the same `create_timing_client("post_/v1/search")`
+   + `measure_sdk_call(...)` + `ALL_METRICS.append(...)` recipe.
+4. **New model pages** — if a new Pydantic model was added, create
+   `docs/models/<modelname>.md` with a description, a runnable example (both dict and
+   model forms), and a fields table. Match `docs/models/extraction.md`'s format
+   exactly.
+5. **Existing model pages** — fields added to existing models (`Contents.highlights`,
+   etc.) get a row in `docs/models/<thatmodel>.md`'s field table; the model's prose
+   description is rewritten so it reads "if `extraction` was enabled (formerly
+   `livecrawl`)" rather than the old phrasing.
+6. **Docstring carry-over** — narration on `Contents` / `WebResult.contents` /
+   `NewsResult.contents` and similar fields is rewritten with `(formerly X)` when the
+   behavior is identical between old and new parameters.
+7. **CHANGELOG.md and README.md** — read together: every feature on the README usage
+   section should match a CHANGELOG entry, and the CHANGELOG should mention the
+   deprecation/removal note if any.
+8. **`USAGE.md`** — if usage prose mentions the deprecated parameter, update the prose
+   to teach the new parameter and demote the old one with a `(formerly X)` note.
+
+Skip a step only when that surface legitimately does not apply (no MIGRATION section on
+a non-deprecating change). Document any skip in the PR body.
 
 ## The plus-value rule pattern
 
