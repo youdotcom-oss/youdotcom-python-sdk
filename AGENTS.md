@@ -216,6 +216,27 @@ without showing the `import` lines that back the snippet — fails that contract
 `with ... as you:` context for any method calls. Match the pattern used elsewhere in
 `docs/sdks/*` before committing the snippet.
 
+### Examples with network calls pass `timeout_ms`
+
+Any snippet that triggers a network round-trip (`you.search`, `you.contents`,
+`you.research`, anything with `crawl_timeout` or `extraction_mode="full_page"`)
+must pass an explicit `timeout_ms` to `You(...)`. httpx's 5-second default raises
+`ReadTimeout` on most real calls (the "must-know" line at the top of this file
+already calls this out). A round-trip ready-to-run snippet without `timeout_ms`
+is a copy-paste footgun. Use 60_000 ms (60 s) as the default for snippet
+examples; live tests can vary by call shape.
+
+### Deprecating an existing field on a model class
+
+When renaming or deprecating a parameter that already lives on
+`SearchRequestBody`, update **both** the TypedDict field docstring and the
+Pydantic field docstring. They are not auto-synced — IDE/type-helper parity fails
+otherwise. The opening of each docstring should start with *"Deprecated; use
+`<new-name>` instead."* so callers browsing the IDE surface see it explicitly.
+The same wording is used in the docs tables (`docs/sdks/you/README.md`,
+`docs/sdks/search/README.md`, `docs/models/searchrequestbody.md`) — keep all
+four surfaces in lockstep.
+
 ## Warn-then-raise vs raise-then-warn (Python gotcha)
 
 When the helper that detects a conflict also has reason to warn (e.g. an `extraction`
