@@ -88,16 +88,6 @@ def _build_search_request(
     if extraction is not None:
         extraction_model = models.Extraction.model_validate(extraction)
 
-    # `livecrawl` and `livecrawl_formats` are deprecated; warn
-    # with stacklevel=4 so the warning reports the user frame (the
-    # helper adds one extra frame compared to the old inline warn).
-    if livecrawl is not None or livecrawl_formats is not None:
-        warnings.warn(
-            "livecrawl is deprecated; use extraction instead",
-            DeprecationWarning,
-            stacklevel=4,
-        )
-
     # Conflict: extraction and livecrawl/livecrawl_formats cannot
     # coexist (the server rejects both). Mirror locally so the caller
     # learns immediately rather than after a round-trip + 422.
@@ -106,6 +96,16 @@ def _build_search_request(
     ):
         raise ValueError(
             "extraction cannot be combined with livecrawl or livecrawl_formats"
+        )
+
+    # `livecrawl` and `livecrawl_formats` are deprecated; warn
+    # with stacklevel=4 so the warning reports the user frame (the
+    # helper adds one extra frame compared to the old inline warn).
+    if livecrawl is not None or livecrawl_formats is not None:
+        warnings.warn(
+            "livecrawl is deprecated; use extraction instead",
+            DeprecationWarning,
+            stacklevel=4,
         )
 
     # Plus-value rule: extraction_mode == 'highlights' forbids

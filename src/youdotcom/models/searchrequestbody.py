@@ -58,8 +58,7 @@ class SearchRequestBodyTypedDict(TypedDict):
     when both are passed (this model does not enforce the conflict). Top-level
     `crawl_timeout` is invalid alongside `extraction.extraction_mode ==
     "highlights"` (server-side verification); the SDK method strips
-    `crawl_timeout` from the body in that case so callers fail-fast instead
-    of round-tripping a 422.
+    `crawl_timeout` from the body in that case to avoid round-tripping a 422.
     """
 
 
@@ -120,8 +119,7 @@ class SearchRequestBody(BaseModel):
     when both are passed (this model does not enforce the conflict). Top-level
     `crawl_timeout` is invalid alongside `extraction.extraction_mode ==
     "highlights"` (server-side verification); the SDK method strips
-    `crawl_timeout` from the body in that case so callers fail-fast instead
-    of round-tripping a 422.
+    `crawl_timeout` from the body in that case to avoid round-tripping a 422.
     """
 
     @model_serializer(mode="wrap")

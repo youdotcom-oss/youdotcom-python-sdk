@@ -89,7 +89,7 @@ class TestExtractionModelContract:
             "extraction_mode": ExtractionMode.HIGHLIGHTS
         }
 
-    def test_extraction_highlights_default_no_subkeys(self):
+    def test_extraction_full_page_default_no_subkeys(self):
         e = Extraction(extraction_mode="full_page")
         assert e.model_dump(exclude_none=True) == {
             "extraction_mode": ExtractionMode.FULL_PAGE
