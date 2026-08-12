@@ -185,7 +185,7 @@ import os
 from youdotcom import You
 
 async def main():
-    async with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
+    async with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
         res = await you.answer_async(query="What is retrieval-augmented generation?")
         print(res.answer)
 
