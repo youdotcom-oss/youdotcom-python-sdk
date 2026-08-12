@@ -432,39 +432,40 @@ def main():
         print("❌ API key is required to use the You.com API.")
         return
 
-    # Initialize the SDK
+    # Initialize the SDK inside a context manager so transports close
+    # deterministically when the menu exits.
     try:
-        you = You(api_key_auth=api_key, timeout_ms=60_000)
-        print("\n✅ API key set!\n")
+        with You(api_key_auth=api_key, timeout_ms=60_000) as you:
+            print("\n✅ API key set!\n")
+
+            # Show menu options
+            for index, item in enumerate(FUNCTIONS, start=1):
+                print(f"  [{index}] {item['name']}")
+            print("  [0] Exit\n")
+
+            # Get user choice
+            try:
+                choice = int(input("Select an option: "))
+            except ValueError:
+                print("❌ Invalid input. Please enter a number.")
+                return
+
+            if choice == 0:
+                print("Goodbye!")
+                return
+
+            if 1 <= choice <= len(FUNCTIONS):
+                selected = FUNCTIONS[choice - 1]
+                print(f"\nRunning: {selected['name']}...\n")
+                try:
+                    selected['fn']()
+                except Exception as e:
+                    print(f"\n❌ Error running {selected['name']}: {e}")
+            else:
+                print("❌ Invalid selection. Please try again.")
     except Exception as e:
         print(f"❌ Error initializing SDK: {e}")
         return
-
-    # Show menu options
-    for index, item in enumerate(FUNCTIONS, start=1):
-        print(f"  [{index}] {item['name']}")
-    print("  [0] Exit\n")
-
-    # Get user choice
-    try:
-        choice = int(input("Select an option: "))
-    except ValueError:
-        print("❌ Invalid input. Please enter a number.")
-        return
-
-    if choice == 0:
-        print("Goodbye!")
-        return
-
-    if 1 <= choice <= len(FUNCTIONS):
-        selected = FUNCTIONS[choice - 1]
-        print(f"\nRunning: {selected['name']}...\n")
-        try:
-            selected['fn']()
-        except Exception as e:
-            print(f"\n❌ Error running {selected['name']}: {e}")
-    else:
-        print("❌ Invalid selection. Please try again.")
 
 
 if __name__ == "__main__":
