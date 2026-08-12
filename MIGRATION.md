@@ -215,46 +215,59 @@ Notes:
 ### Before / after
 
 ```python
-# Before (3.0.x): livecrawl + formats
-from youdotcom.models import LiveCrawl, LiveCrawlFormats
+import os
 
-you.search(
-    query="quantum computing tutorials",
-    count=5,
-    livecrawl=LiveCrawl.WEB,
-    livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
+from youdotcom import You
+from youdotcom.models import (
+    Extraction,
+    ExtractionFormat,
+    ExtractionMode,
+    LiveCrawl,
+    LiveCrawlFormats,
 )
 
-# After (3.1.0): extraction
-from youdotcom.models import Extraction, ExtractionFormat, ExtractionMode
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
+    # Before (3.0.x): livecrawl + formats
+    you.search(
+        query="quantum computing tutorials",
+        count=5,
+        livecrawl=LiveCrawl.WEB,
+        livecrawl_formats=[LiveCrawlFormats.MARKDOWN],
+    )
 
-you.search(
-    query="quantum computing tutorials",
-    count=5,
-    extraction=Extraction(
-        extraction_mode=ExtractionMode.FULL_PAGE,
-        full_page={"extraction_formats": [ExtractionFormat.MARKDOWN]},
-    ),
-)
+    # After (3.1.0): extraction
+    you.search(
+        query="quantum computing tutorials",
+        count=5,
+        extraction=Extraction(
+            extraction_mode=ExtractionMode.FULL_PAGE,
+            full_page={"extraction_formats": [ExtractionFormat.MARKDOWN]},
+        ),
+    )
 
-# Or as a plain dict (the SDK normalizes at the method layer)
-you.search(
-    query="quantum computing tutorials",
-    count=5,
-    extraction={
-        "extraction_mode": "full_page",
-        "full_page": {"extraction_formats": ["markdown"]},
-    },
-)
+    # Or as a plain dict (the SDK normalizes at the method layer)
+    you.search(
+        query="quantum computing tutorials",
+        count=5,
+        extraction={
+            "extraction_mode": "full_page",
+            "full_page": {"extraction_formats": ["markdown"]},
+        },
+    )
 ```
 
 ### Highlights mode (new option that didn't exist with livecrawl)
 
 ```python
-you.search(
-    query="how does X relate to Y",
-    extraction={"extraction_mode": "highlights", "highlights": {"max_tokens": 1000}},
-)
+import os
+
+from youdotcom import You
+
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
+    res = you.search(
+        query="how does X relate to Y",
+        extraction={"extraction_mode": "highlights", "highlights": {"max_tokens": 1000}},
+    )
 # Returns res.results.web[i].contents.highlights (List[str]) -- excerpts
 # that match the query, not whole pages. Snippets are omitted in this mode.
 ```
@@ -268,17 +281,21 @@ you.search(
 Calls using `livecrawl` / `livecrawl_formats` continue to work, just with a `DeprecationWarning`:
 
 ```python
+import os
 import warnings
 
-with warnings.catch_warnings(record=True) as caught:
-    warnings.simplefilter("always")
-    you.search(
-        query="...",
-        livecrawl="web",
-        livecrawl_formats=["markdown"],
-    )
-    deprecations = [w for w in caught if issubclass(w.category, DeprecationWarning)]
-    # deprecations[0].message == "livecrawl is deprecated; use extraction instead"
+from youdotcom import You
+
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        you.search(
+            query="...",
+            livecrawl="web",
+            livecrawl_formats=["markdown"],
+        )
+        deprecations = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+        # deprecations[0].message == "livecrawl is deprecated; use extraction instead"
 ```
 
 ## 2.4.0 → 2.5.0

@@ -103,26 +103,29 @@ either of the others. The API returns `422` if you try. Search also supports
 Pass `extraction` to attach page content to each result. Two modes:
 
 ```python
+import os
+from youdotcom import You
 from youdotcom.models import Extraction, ExtractionMode
 
-# Query-relevant excerpts in `contents.highlights` (snippets are omitted).
-res = you.search(
-    query="latest quantum computing breakthroughs",
-    extraction=Extraction(
-        extraction_mode=ExtractionMode.HIGHLIGHTS,
-    ),
-)
-for hit in res.results.web or []:
-    print(hit.title, hit.url, hit.contents.highlights if hit.contents else None)
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
+    # Query-relevant excerpts in `contents.highlights` (snippets are omitted).
+    res = you.search(
+        query="latest quantum computing breakthroughs",
+        extraction=Extraction(
+            extraction_mode=ExtractionMode.HIGHLIGHTS,
+        ),
+    )
+    for hit in res.results.web or []:
+        print(hit.title, hit.url, hit.contents.highlights if hit.contents else None)
 
-# Full HTML and/or Markdown in `contents.html` / `contents.markdown`.
-res = you.search(
-    query="latest quantum computing breakthroughs",
-    extraction={
-        "extraction_mode": "full_page",
-        "full_page": {"extraction_formats": ["markdown"]},
-    },
-)
+    # Full HTML and/or Markdown in `contents.html` / `contents.markdown`.
+    res = you.search(
+        query="latest quantum computing breakthroughs",
+        extraction={
+            "extraction_mode": "full_page",
+            "full_page": {"extraction_formats": ["markdown"]},
+        },
+    )
 ```
 
 `extraction` replaces the deprecated `livecrawl` / `livecrawl_formats`
