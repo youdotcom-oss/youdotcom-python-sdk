@@ -434,7 +434,7 @@ def main():
 
     # Initialize the SDK
     try:
-        you = You(api_key_auth=api_key)
+        you = You(api_key_auth=api_key, timeout_ms=60_000)
         print("\n✅ API key set!\n")
     except Exception as e:
         print(f"❌ Error initializing SDK: {e}")

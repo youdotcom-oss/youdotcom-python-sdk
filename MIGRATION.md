@@ -295,7 +295,7 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
             livecrawl_formats=["markdown"],
         )
         deprecations = [w for w in caught if issubclass(w.category, DeprecationWarning)]
-        # deprecations[0].message == "livecrawl is deprecated; use extraction instead"
+        # str(deprecations[0].message) == "livecrawl is deprecated; use extraction instead"
 ```
 
 ## 2.4.0 → 2.5.0
