@@ -19,6 +19,7 @@ Setup Instructions:
 """
 
 from typing import Optional
+import getpass
 import time
 from youdotcom import You
 from youdotcom.models import (
@@ -425,7 +426,7 @@ def main():
     print("╚════════════════════════════════════════╝\n")
 
     # Get API key from user
-    api_key = input("🔑 Enter your You.com API key: ").strip()
+    api_key = getpass.getpass("🔑 Enter your You.com API key: ").strip()
 
     if not api_key:
         print("❌ API key is required to use the You.com API.")
