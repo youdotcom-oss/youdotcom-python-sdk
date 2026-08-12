@@ -172,7 +172,7 @@ class TestSearchPerformance:
         """Basic search with query only."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(query="latest AI developments", server_url=server_url)
             
@@ -185,7 +185,7 @@ class TestSearchPerformance:
         """Search with result count limit."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(query="python programming", count=10, server_url=server_url)
             
@@ -198,7 +198,7 @@ class TestSearchPerformance:
         """Search with freshness filter (day)."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(query="breaking news", freshness=Freshness.DAY, server_url=server_url)
             
@@ -211,7 +211,7 @@ class TestSearchPerformance:
         """Search with freshness filter (week)."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(query="renewable energy", freshness=Freshness.WEEK, server_url=server_url)
             
@@ -224,7 +224,7 @@ class TestSearchPerformance:
         """Search with country filter (US)."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(query="local restaurants", country=Country.US, server_url=server_url)
             
@@ -237,7 +237,7 @@ class TestSearchPerformance:
         """Search with country filter (GB)."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(query="football news", country=Country.GB, server_url=server_url)
             
@@ -250,7 +250,7 @@ class TestSearchPerformance:
         """Search with language filter (English)."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(query="machine learning", language=Language.EN, server_url=server_url)
             
@@ -263,7 +263,7 @@ class TestSearchPerformance:
         """Search with language filter (Spanish)."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(query="tecnología", language=Language.ES, server_url=server_url)
             
@@ -276,7 +276,7 @@ class TestSearchPerformance:
         """Search with safesearch off."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(query="research", safesearch=SafeSearch.OFF, server_url=server_url)
             
@@ -289,7 +289,7 @@ class TestSearchPerformance:
         """Search with safesearch moderate."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(query="family content", safesearch=SafeSearch.MODERATE, server_url=server_url)
             
@@ -302,7 +302,7 @@ class TestSearchPerformance:
         """Search with safesearch strict."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(query="kids learning", safesearch=SafeSearch.STRICT, server_url=server_url)
             
@@ -315,7 +315,7 @@ class TestSearchPerformance:
         """Search with pagination (offset)."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(query="python tutorials", count=5, offset=2, server_url=server_url)
             
@@ -328,7 +328,7 @@ class TestSearchPerformance:
         """Search with livecrawl enabled for web results."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(
                     query="machine learning tutorials",
@@ -346,7 +346,7 @@ class TestSearchPerformance:
         """Search with livecrawl enabled for news results."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(
                     query="tech news",
@@ -364,7 +364,7 @@ class TestSearchPerformance:
         """Search with livecrawl enabled for all results."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(
                     query="quantum computing",
@@ -382,7 +382,7 @@ class TestSearchPerformance:
         """Search with livecrawl returning HTML format."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(
                     query="AI research",
@@ -401,7 +401,7 @@ class TestSearchPerformance:
         """Search with livecrawl returning Markdown format."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(
                     query="documentation guides",
@@ -420,7 +420,7 @@ class TestSearchPerformance:
         """Search with multiple filters combined."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(
                     query="quantum computing research",
@@ -442,7 +442,7 @@ class TestSearchPerformance:
         """Search with filters and livecrawl combined."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(
                     query="AI developments",
@@ -463,7 +463,7 @@ class TestSearchPerformance:
         """Search with livecrawl for news results (news now supports contents)."""
         client = create_timing_client("post_/v1/search")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(
                     query="technology news",
@@ -482,7 +482,7 @@ class TestSearchPerformance:
         """Search with livecrawl=ALL for both web and news contents."""
         client = create_timing_client("post_/v1/search")
 
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(
                     query="breaking tech news",
@@ -507,7 +507,7 @@ class TestSearchPerformance:
         """Search with extraction_mode="highlights" (a dict form the SDK normalizes)."""
         client = create_timing_client("post_/v1/search")
 
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(
                     query="machine learning tutorials",
@@ -530,7 +530,7 @@ class TestSearchPerformance:
         """Search with extraction_mode="full_page" using the typed Extraction model instance."""
         client = create_timing_client("post_/v1/search")
 
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(
                     query="quantum computing",
@@ -553,7 +553,7 @@ class TestSearchPerformance:
         """Search with extraction_mode="full_page" returning both html and markdown."""
         client = create_timing_client("post_/v1/search")
 
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.search(
                     query="how does the internet work",
@@ -584,7 +584,7 @@ class TestContentsPerformance:
         """Fetch single URL in HTML format."""
         client = create_timing_client("post_/v1/contents")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.contents(
                     urls=["https://www.python.org"],
@@ -601,7 +601,7 @@ class TestContentsPerformance:
         """Fetch single URL in Markdown format."""
         client = create_timing_client("post_/v1/contents")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.contents(
                     urls=["https://www.python.org"],
@@ -618,7 +618,7 @@ class TestContentsPerformance:
         """Fetch single URL with metadata format (json+ld, OpenGraph)."""
         client = create_timing_client("post_/v1/contents")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.contents(
                     urls=["https://www.python.org"],
@@ -635,7 +635,7 @@ class TestContentsPerformance:
         """Fetch single URL with multiple formats (HTML, Markdown, Metadata)."""
         client = create_timing_client("post_/v1/contents")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.contents(
                     urls=["https://www.python.org"],
@@ -652,7 +652,7 @@ class TestContentsPerformance:
         """Fetch URL with custom crawl timeout."""
         client = create_timing_client("post_/v1/contents")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.contents(
                     urls=["https://www.python.org"],
@@ -670,7 +670,7 @@ class TestContentsPerformance:
         """Fetch multiple URLs in HTML format."""
         client = create_timing_client("post_/v1/contents")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.contents(
                     urls=[
@@ -691,7 +691,7 @@ class TestContentsPerformance:
         """Fetch multiple URLs in Markdown format."""
         client = create_timing_client("post_/v1/contents")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.contents(
                     urls=[
@@ -712,7 +712,7 @@ class TestContentsPerformance:
         """Fetch many URLs in HTML format."""
         client = create_timing_client("post_/v1/contents")
         
-        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
             def call():
                 you.contents(
                     urls=[
