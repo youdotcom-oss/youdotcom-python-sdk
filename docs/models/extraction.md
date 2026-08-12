@@ -12,7 +12,7 @@ The `extraction` parameter on `POST /v1/search` controls how page content is att
 ```python
 import os
 from youdotcom import You
-from youdotcom.models import Extraction, ExtractionMode
+from youdotcom.models import Extraction, ExtractionFormat, ExtractionMode
 
 with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     # Query-relevant excerpts in contents.highlights
@@ -24,12 +24,15 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     # Full Markdown in contents.markdown
     res = you.search(
         query="latest quantum computing breakthroughs",
-        extraction={
-            "extraction_mode": "full_page",
-            "full_page": {"extraction_formats": ["markdown"]},
-        },
+        extraction=Extraction(
+            extraction_mode=ExtractionMode.FULL_PAGE,
+            full_page={"extraction_formats": [ExtractionFormat.MARKDOWN]},
+        ),
     )
 ```
+
+You can also pass a dict matching `ExtractionTypedDict`; the SDK
+normalizes at the method layer.
 
 ## Fields
 

@@ -58,7 +58,8 @@ asyncio.run(main())
 ```python
 # Attach full Markdown content to each result via the new `extraction` parameter.
 import os
-from youdotcom import You, models
+from youdotcom import You
+from youdotcom.models import Extraction, ExtractionFormat, ExtractionMode
 
 
 with You(
@@ -68,10 +69,10 @@ with You(
 
     res = you.search(
         query="latest quantum computing breakthroughs",
-        extraction={
-            "extraction_mode": "full_page",
-            "full_page": {"extraction_formats": ["markdown"]},
-        },
+        extraction=Extraction(
+            extraction_mode=ExtractionMode.FULL_PAGE,
+            full_page={"extraction_formats": [ExtractionFormat.MARKDOWN]},
+        ),
     )
 
     for hit in res.results.web or []:

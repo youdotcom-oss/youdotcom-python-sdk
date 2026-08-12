@@ -105,7 +105,7 @@ Pass `extraction` to attach page content to each result. Two modes:
 ```python
 import os
 from youdotcom import You
-from youdotcom.models import Extraction, ExtractionMode
+from youdotcom.models import Extraction, ExtractionFormat, ExtractionMode
 
 with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     # Query-relevant excerpts in `contents.highlights` (snippets are omitted).
@@ -121,18 +121,20 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     # Full HTML and/or Markdown in `contents.html` / `contents.markdown`.
     res = you.search(
         query="latest quantum computing breakthroughs",
-        extraction={
-            "extraction_mode": "full_page",
-            "full_page": {"extraction_formats": ["markdown"]},
-        },
+        extraction=Extraction(
+            extraction_mode=ExtractionMode.FULL_PAGE,
+            full_page={"extraction_formats": [ExtractionFormat.MARKDOWN]},
+        ),
     )
 ```
 
-`extraction` replaces the deprecated `livecrawl` / `livecrawl_formats`
-parameters. Passing both raises `ValueError`, and top-level `crawl_timeout`
-is ignored (stripped from the request body) when `extraction_mode == "highlights"`.
-Unknown keys inside
-`extraction` raise `ValidationError` locally, matching the server's 422.
+You can also pass a dict matching `ExtractionTypedDict` — the SDK
+normalizes at the method layer. `extraction` replaces the deprecated
+`livecrawl` / `livecrawl_formats` parameters. Passing both raises
+`ValueError`, and top-level `crawl_timeout` is ignored (stripped from
+the request body) when `extraction_mode == "highlights"`. Unknown keys
+inside `extraction` raise `ValidationError` locally, matching the
+server's 422.
 
 ### Contents
 
