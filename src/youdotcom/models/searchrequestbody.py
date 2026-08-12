@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from .country import Country
+from .extraction import Extraction, ExtractionTypedDict
 from .freshnessvalue import FreshnessValue, FreshnessValueTypedDict
 from .language import Language
 from .livecrawl import LiveCrawl
@@ -32,9 +33,9 @@ class SearchRequestBodyTypedDict(TypedDict):
     safesearch: NotRequired[SafeSearch]
     r"""Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."""
     livecrawl: NotRequired[LiveCrawl]
-    r"""Indicates which section(s) of search results to livecrawl and return full page content."""
+    r"""Deprecated; use `extraction` instead. Indicates which section(s) of search results to livecrawl and return full page content."""
     livecrawl_formats: NotRequired[List[LiveCrawlFormats]]
-    r"""Indicates the format(s) of the livecrawled content. Pass one or both values (`html`, `markdown`). In a GET request, repeat the parameter: `?livecrawl_formats=html&livecrawl_formats=markdown`. In a POST body, provide a JSON array: `[\"html\", \"markdown\"]`."""
+    r"""Deprecated; use `extraction.full_page.extraction_formats` instead. Indicates the format(s) of the livecrawled content. Pass one or both values (`html`, `markdown`). In a GET request, repeat the parameter: `?livecrawl_formats=html&livecrawl_formats=markdown`. In a POST body, provide a JSON array: `[\"html\", \"markdown\"]`."""
     include_domains: NotRequired[List[str]]
     r"""A list of domains to restrict search results to. Only results from these domains will be returned. Supports up to 500 domains. This is a strict allowlist, not a boost — results are limited exclusively to the specified domains.
 
@@ -48,7 +49,17 @@ class SearchRequestBodyTypedDict(TypedDict):
     boost_domains: NotRequired[List[str]]
     r"""A list of domains to boost in search ranking. Matching results from these domains receive a relative ranking boost, but results are not limited to these domains. Supports up to 500 domains. Can be combined with `exclude_domains`, but cannot be combined with `include_domains` (returns `422`)."""
     crawl_timeout: NotRequired[int]
-    r"""Maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Default is 10 seconds."""
+    r"""Maximum time in seconds to wait for page content when `extraction.extraction_mode == "full_page"` (or the deprecated `livecrawl`) is enabled. Must be between 1 and 60 seconds. Default is 10 seconds. Stripped from the body when `extraction_mode == "highlights"`."""
+    extraction: NotRequired[ExtractionTypedDict]
+    r"""Controls how page content is attached to each result.
+
+    Preferred over `livecrawl`/`livecrawl_formats`. The two are mutually
+    exclusive; ``you.search`` / ``you.search_async`` raise :class:`ValueError`
+    when both are passed (this model does not enforce the conflict). Top-level
+    `crawl_timeout` is invalid alongside `extraction.extraction_mode ==
+    "highlights"` (server-side verification); the SDK method strips
+    `crawl_timeout` from the body in that case to avoid round-tripping a 422.
+    """
 
 
 class SearchRequestBody(BaseModel):
@@ -77,10 +88,10 @@ class SearchRequestBody(BaseModel):
     r"""Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."""
 
     livecrawl: Optional[LiveCrawl] = None
-    r"""Indicates which section(s) of search results to livecrawl and return full page content."""
+    r"""Deprecated; use `extraction` instead. Indicates which section(s) of search results to livecrawl and return full page content."""
 
     livecrawl_formats: Optional[List[LiveCrawlFormats]] = None
-    r"""Indicates the format(s) of the livecrawled content. Pass one or both values (`html`, `markdown`). In a GET request, repeat the parameter: `?livecrawl_formats=html&livecrawl_formats=markdown`. In a POST body, provide a JSON array: `[\"html\", \"markdown\"]`."""
+    r"""Deprecated; use `extraction.full_page.extraction_formats` instead. Indicates the format(s) of the livecrawled content. Pass one or both values (`html`, `markdown`). In a GET request, repeat the parameter: `?livecrawl_formats=html&livecrawl_formats=markdown`. In a POST body, provide a JSON array: `[\"html\", \"markdown\"]`."""
 
     include_domains: Optional[List[str]] = None
     r"""A list of domains to restrict search results to. Only results from these domains will be returned. Supports up to 500 domains. This is a strict allowlist, not a boost — results are limited exclusively to the specified domains.
@@ -98,7 +109,18 @@ class SearchRequestBody(BaseModel):
     r"""A list of domains to boost in search ranking. Matching results from these domains receive a relative ranking boost, but results are not limited to these domains. Supports up to 500 domains. Can be combined with `exclude_domains`, but cannot be combined with `include_domains` (returns `422`)."""
 
     crawl_timeout: Optional[int] = 10
-    r"""Maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Default is 10 seconds."""
+    r"""Maximum time in seconds to wait for page content when `extraction.extraction_mode == "full_page"` (or the deprecated `livecrawl`) is enabled. Must be between 1 and 60 seconds. Default is 10 seconds. Stripped from the body when `extraction_mode == "highlights"`."""
+
+    extraction: Optional[Extraction] = None
+    r"""Controls how page content is attached to each result.
+
+    Preferred over `livecrawl`/`livecrawl_formats`. The two are mutually
+    exclusive; ``you.search`` / ``you.search_async`` raise :class:`ValueError`
+    when both are passed (this model does not enforce the conflict). Top-level
+    `crawl_timeout` is invalid alongside `extraction.extraction_mode ==
+    "highlights"` (server-side verification); the SDK method strips
+    `crawl_timeout` from the body in that case to avoid round-tripping a 422.
+    """
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
@@ -116,6 +138,7 @@ class SearchRequestBody(BaseModel):
                 "exclude_domains",
                 "boost_domains",
                 "crawl_timeout",
+                "extraction",
             ]
         )
         serialized = handler(self)

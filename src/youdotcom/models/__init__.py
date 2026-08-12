@@ -5,6 +5,16 @@ from typing import Any, TYPE_CHECKING
 from youdotcom.utils.dynamic_imports import lazy_getattr, lazy_dir
 
 if TYPE_CHECKING:
+    from .extraction import (
+        Extraction,
+        ExtractionFormat,
+        ExtractionFullPage,
+        ExtractionFullPageTypedDict,
+        ExtractionHighlights,
+        ExtractionHighlightsTypedDict,
+        ExtractionMode,
+        ExtractionTypedDict,
+    )
     from .answercitation import AnswerCitation
     from .answerrequestbody import AnswerRequestBody
     from .answerresponse import AnswerResponse, AnswerResults
@@ -133,6 +143,14 @@ __all__ = [
     "ContentsTypedDict",
     "Country",
     "Event",
+    "Extraction",
+    "ExtractionFormat",
+    "ExtractionFullPage",
+    "ExtractionFullPageTypedDict",
+    "ExtractionHighlights",
+    "ExtractionHighlightsTypedDict",
+    "ExtractionMode",
+    "ExtractionTypedDict",
     "FinanceResearchContentType",
     "FinanceResearchDetail",
     "FinanceResearchDetailTypedDict",
@@ -286,6 +304,14 @@ _dynamic_imports: dict[str, str] = {
     "Source": ".researchresponse",
     "SourceTypedDict": ".researchresponse",
     "Event": ".researchtaskstreamevent",
+    "Extraction": ".extraction",
+    "ExtractionFormat": ".extraction",
+    "ExtractionFullPage": ".extraction",
+    "ExtractionFullPageTypedDict": ".extraction",
+    "ExtractionHighlights": ".extraction",
+    "ExtractionHighlightsTypedDict": ".extraction",
+    "ExtractionMode": ".extraction",
+    "ExtractionTypedDict": ".extraction",
     "ResearchTaskStreamEvent": ".researchtaskstreamevent",
     "ResearchTaskStreamEventData": ".researchtaskstreamevent",
     "ResearchTaskStreamEventDataTypedDict": ".researchtaskstreamevent",

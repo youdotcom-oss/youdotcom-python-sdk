@@ -22,6 +22,9 @@ from youdotcom import You
 from youdotcom.models import (
     Country,
     ContentsFormats,
+    Extraction,
+    ExtractionFormat,
+    ExtractionMode,
     Freshness,
     LiveCrawl,
     LiveCrawlFormats,
@@ -113,8 +116,13 @@ class TestLiveSearch:
             if res.results.web:
                 assert len(res.results.web) <= 5
     
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_search_with_livecrawl_web(self, you_client):
-        """Test search with livecrawl for web results."""
+        """Test search with livecrawl for web results.
+
+        Deprecated: use ``extraction`` instead. Livecrawl continues to work
+        (the server accepts it) but emits ``DeprecationWarning``.
+        """
         with you_client as you:
             res = you.search(
                 query="machine learning tutorials",
@@ -126,16 +134,25 @@ class TestLiveSearch:
             assert res.results is not None
 
             # Web results may have contents
-            if res.results.web:
-                for result in res.results.web:
-                    # Check that we can access the contents field
-                    if result.contents:
-                        # At least one of html or markdown should be present
-                        # (API may return empty string for some URLs)
-                        assert result.contents.markdown is not None or result.contents.html is not None
+            content_seen = [
+                (result.contents.html, result.contents.markdown)
+                for result in res.results.web or []
+                if result.contents
+                and (
+                    result.contents.html is not None
+                    or result.contents.markdown is not None
+                )
+            ]
+            assert content_seen, (
+                "Expected at least one result with contents.html and/or contents.markdown"
+            )
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_search_with_livecrawl_news(self, you_client):
-        """Test search with livecrawl for news results (new in 2.2.0)."""
+        """Test search with livecrawl for news results (new in 2.2.0).
+
+        Deprecated: use ``extraction`` instead.
+        """
         with you_client as you:
             res = you.search(
                 query="technology news today",
@@ -147,15 +164,22 @@ class TestLiveSearch:
             assert res.results is not None
 
             # News results can now have contents field (new in 2.2.0)
-            if res.results.news:
-                for news_item in res.results.news:
-                    # Check that we can access the contents field
-                    if news_item.contents:
-                        # At least one of html or markdown should be present
-                        assert news_item.contents.markdown or news_item.contents.html
+            content_seen = [
+                (item.contents.html, item.contents.markdown)
+                for item in res.results.news or []
+                if item.contents
+                and (item.contents.html is not None or item.contents.markdown is not None)
+            ]
+            assert content_seen, (
+                "Expected at least one news result with contents.html and/or contents.markdown"
+            )
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_search_with_livecrawl_all(self, you_client):
-        """Test search with livecrawl=ALL for both web and news."""
+        """Test search with livecrawl=ALL for both web and news.
+
+        Deprecated: use ``extraction`` instead.
+        """
         with you_client as you:
             res = you.search(
                 query="breaking tech news",
@@ -163,8 +187,166 @@ class TestLiveSearch:
                 livecrawl=LiveCrawl.ALL,
                 livecrawl_formats=[LiveCrawlFormats.HTML],
             )
-            
+
             assert res.results is not None
+
+            # livecrawl=ALL covers both web and news; assert at least one
+            # of each has contents.html / contents.markdown populated.
+            web_content_seen = [
+                (r.contents.html, r.contents.markdown)
+                for r in res.results.web or []
+                if r.contents
+                and (r.contents.html is not None or r.contents.markdown is not None)
+            ]
+            news_content_seen = [
+                (n.contents.html, n.contents.markdown)
+                for n in res.results.news or []
+                if n.contents
+                and (n.contents.html is not None or n.contents.markdown is not None)
+            ]
+            assert web_content_seen, (
+                "Expected at least one web result with contents.html and/or contents.markdown"
+            )
+            assert news_content_seen, (
+                "Expected at least one news result with contents.html and/or contents.markdown"
+            )
+
+
+@requires_api_key
+class TestLiveSearchExtraction:
+    """Live tests for the ``extraction`` parameter (new in 3.1.0).
+
+    ``extraction`` replaces ``livecrawl`` / ``livecrawl_formats`` on
+    ``POST /v1/search``. Two modes:
+
+    - ``extraction_mode="highlights"`` — query-relevant excerpts land in
+      ``results.web[].contents.highlights``; snippets are omitted.
+    - ``extraction_mode="full_page"`` — full HTML and/or Markdown in
+      ``results.web[].contents.html`` / ``.markdown``.
+    """
+
+    def test_highlights_mode(self, you_client):
+        """Test extraction_mode=highlights returns excerpts in contents.highlights."""
+        with you_client as you:
+            res = you.search(
+                query="Python type hints guide",
+                count=3,
+                extraction=Extraction(
+                    extraction_mode=ExtractionMode.HIGHLIGHTS,
+                ),
+            )
+
+            assert res.results is not None
+            # Highlights mode omits snippets; contents.highlights should be a list
+            assert res.results.web
+            highlights_seen = [
+                result.contents.highlights
+                for result in res.results.web
+                if result.contents and result.contents.highlights is not None
+            ]
+            assert highlights_seen, "Expected at least one result with contents.highlights"
+            assert all(isinstance(h, list) for h in highlights_seen)
+
+    def test_highlights_with_max_tokens(self, you_client):
+        """Test highlights with explicit max_tokens."""
+        with you_client as you:
+            res = you.search(
+                query="machine learning basics",
+                count=3,
+                extraction={
+                    "extraction_mode": "highlights",
+                    "highlights": {"max_tokens": 1000},
+                },
+            )
+
+            assert res.results is not None
+            assert res.results.web
+            highlights_seen = [
+                result.contents.highlights
+                for result in res.results.web
+                if result.contents and result.contents.highlights is not None
+            ]
+            assert highlights_seen, (
+                "Expected at least one result with contents.highlights"
+            )
+
+    def test_full_page_markdown(self, you_client):
+        """Test extraction_mode=full_page with markdown format."""
+        with you_client as you:
+            res = you.search(
+                query="how does python work",
+                count=3,
+                extraction={
+                    "extraction_mode": "full_page",
+                    "full_page": {"extraction_formats": ["markdown"]},
+                },
+            )
+
+            assert res.results is not None
+            assert res.results.web
+            markdown_seen = [
+                result.contents.markdown
+                for result in res.results.web
+                if result.contents and result.contents.markdown is not None
+            ]
+            assert markdown_seen, (
+                "Expected at least one result with contents.markdown"
+            )
+
+    def test_full_page_html(self, you_client):
+        """Test extraction_mode=full_page with html format."""
+        with you_client as you:
+            res = you.search(
+                query="what is a web browser",
+                count=3,
+                extraction={
+                    "extraction_mode": "full_page",
+                    "full_page": {"extraction_formats": ["html"]},
+                },
+            )
+
+            assert res.results is not None
+            assert res.results.web
+            html_seen = [
+                result.contents.html
+                for result in res.results.web
+                if result.contents and result.contents.html is not None
+            ]
+            assert html_seen, (
+                "Expected at least one result with contents.html"
+            )
+
+    def test_full_page_both_formats(self, you_client):
+        """Test extraction_mode=full_page with both html and markdown."""
+        with you_client as you:
+            res = you.search(
+                query="how does the internet work",
+                count=3,
+                extraction={
+                    "extraction_mode": "full_page",
+                    "full_page": {"extraction_formats": ["html", "markdown"]},
+                },
+            )
+
+            assert res.results is not None
+            assert res.results.web
+            content_seen = [
+                (result.contents.html, result.contents.markdown)
+                for result in res.results.web
+                if result.contents
+                and (
+                    result.contents.html is not None
+                    or result.contents.markdown is not None
+                )
+            ]
+            assert content_seen, (
+                "Expected at least one result with contents.html and/or contents.markdown"
+            )
+            for html, md in content_seen:
+                if html is not None:
+                    assert isinstance(html, str)
+                if md is not None:
+                    assert isinstance(md, str)
 
 
 @requires_api_key

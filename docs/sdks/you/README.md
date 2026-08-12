@@ -36,6 +36,7 @@ from youdotcom import You
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
     res = you.answer(query="What is the capital of France?")
     print(res)
@@ -55,6 +56,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -79,6 +81,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -103,6 +106,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -127,6 +131,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -151,6 +156,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -175,6 +181,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -199,6 +206,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.search(query="What are the latest geopolitical updates from India", count=10, language=models.Language.EN, exclude_domains=[
@@ -225,12 +233,13 @@ with You(
 | `country`                                                                                                                                                                                                                                                                                                                                                                                                                                                     | [Optional[models.Country]](../../models/country.md)                                                                                                                                                                                                                                                                                                                                                                                                           | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | The country code that determines the geographical focus of the web results.                                                                                                                                                                                                                                                                                                                                                                                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `language`                                                                                                                                                                                                                                                                                                                                                                                                                                                    | [Optional[models.Language]](../../models/language.md)                                                                                                                                                                                                                                                                                                                                                                                                         | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | The language of the web results that will be returned (BCP 47 format).                                                                                                                                                                                                                                                                                                                                                                                        |                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `safesearch`                                                                                                                                                                                                                                                                                                                                                                                                                                                  | [Optional[models.SafeSearch]](../../models/safesearch.md)                                                                                                                                                                                                                                                                                                                                                                                                     | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not.                                                                                                                                                                                                                                                                                                                                     |                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `livecrawl`                                                                                                                                                                                                                                                                                                                                                                                                                                                   | [Optional[models.LiveCrawl]](../../models/livecrawl.md)                                                                                                                                                                                                                                                                                                                                                                                                       | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | Indicates which section(s) of search results to livecrawl and return full page content.                                                                                                                                                                                                                                                                                                                                                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `livecrawl_formats`                                                                                                                                                                                                                                                                                                                                                                                                                                           | List[[models.LiveCrawlFormats](../../models/livecrawlformats.md)]                                                                                                                                                                                                                                                                                                                                                                                             | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | Indicates the format(s) of the livecrawled content. Pass one or both values (`html`, `markdown`). In a GET request, repeat the parameter: `?livecrawl_formats=html&livecrawl_formats=markdown`. In a POST body, provide a JSON array: `["html", "markdown"]`.                                                                                                                                                                                                 |                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `include_domains`                                                                                                                                                                                                                                                                                                                                                                                                                                             | List[*str*]                                                                                                                                                                                                                                                                                                                                                                                                                                                   | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | A list of domains to restrict search results to. Only results from these domains will be returned. Supports up to 500 domains. This is a strict allowlist, not a boost — results are limited exclusively to the specified domains.<br/><br/>Cannot be combined with `exclude_domains`; passing both will return a `422` error.                                                                                                                                | [<br/>"nytimes.com",<br/>"bbc.com"<br/>]                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `exclude_domains`                                                                                                                                                                                                                                                                                                                                                                                                                                             | List[*str*]                                                                                                                                                                                                                                                                                                                                                                                                                                                   | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | A list of domains to exclude from search results. Results from these domains will be filtered out. Supports up to 500 domains.<br/><br/>Cannot be combined with `include_domains`; passing both will return a `422` error.                                                                                                                                                                                                                                    | [<br/>"spam-site.com",<br/>"other-site.com"<br/>]                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `boost_domains`                                                                                                                                                                                                                                                                                                                                                                                                                                               | List[*str*]                                                                                                                                                                                                                                                                                                                                                                                                                                                   | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | A list of domains to boost in search ranking. Matching results from these domains receive a relative ranking boost, but results are not limited to these domains. Supports up to 500 domains. Can be combined with `exclude_domains`, but cannot be combined with `include_domains` (returns `422`).                                                                                                                                                          | [<br/>"nytimes.com",<br/>"wired.com"<br/>]                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `crawl_timeout`                                                                                                                                                                                                                                                                                                                                                                                                                                               | *Optional[int]*                                                                                                                                                                                                                                                                                                                                                                                                                                               | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | Maximum time in seconds to wait for page content when `livecrawl` is enabled. Must be between 1 and 60 seconds. Default is 10 seconds.                                                                                                                                                                                                                                                                                                                        | 10                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `livecrawl`                                                                                                                                                                                                                                                                                                                                                                                                                                                   | [Optional[models.LiveCrawl]](../../models/livecrawl.md)                                                                                                                                                                                                                                                                                                                                                                                                       | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | **Deprecated; use `extraction` instead.** Indicates which section(s) of search results to livecrawl and return full page content.                                                                                                                                                                                                                                                                                                  |                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `livecrawl_formats`                                                                                                                                                                                                                                                                                                                                                                                                                                           | Optional[List[[models.LiveCrawlFormats](../../models/livecrawlformats.md)]]                                                                                                                                                                                                                                                                                                                                                                                  | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | **Deprecated; use `extraction.full_page.extraction_formats` instead.** Indicates the format(s) of the livecrawled content. Pass one or both values (`html`, `markdown`). In a GET request, repeat the parameter: `?livecrawl_formats=html&livecrawl_formats=markdown`. In a POST body, provide a JSON array: `["html", "markdown"]`.                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `extraction`                                                                                                                                                                                                                                                                                                                                                                                                                                                   | [Optional[models.Extraction]](../../models/extraction.md)                                                                                                                                                                                                                                                                                                                                                                                                       | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | Controls how page content is attached to each result. Preferred over `livecrawl`/`livecrawl_formats`. The two are mutually exclusive; `you.search` raises `ValueError` if both are passed. Top-level `crawl_timeout` is invalid alongside `extraction_mode="highlights"` and is stripped from the body.                                                                                                                                                          |                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `include_domains`                                                                                                                                                                                                                                                                                                                                                                                                                                             | Optional[List[*str*]]                                                                                                                                                                                                                                                                                                                                                                                                                                         | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | A list of domains to restrict search results to. Only results from these domains will be returned. Supports up to 500 domains. This is a strict allowlist, not a boost — results are limited exclusively to the specified domains.<br/><br/>Cannot be combined with `exclude_domains`; passing both will return a `422` error.                                                                                                                                | [<br/>"nytimes.com",<br/>"bbc.com"<br/>]                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `exclude_domains`                                                                                                                                                                                                                                                                                                                                                                                                                                             | Optional[List[*str*]]                                                                                                                                                                                                                                                                                                                                                                                                                                         | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | A list of domains to exclude from search results. Results from these domains will be filtered out. Supports up to 500 domains.<br/><br/>Cannot be combined with `include_domains`; passing both will return a `422` error.                                                                                                                                                                                                                                    | [<br/>"spam-site.com",<br/>"other-site.com"<br/>]                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `boost_domains`                                                                                                                                                                                                                                                                                                                                                                                                                                               | Optional[List[*str*]]                                                                                                                                                                                                                                                                                                                                                                                                                                         | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | A list of domains to boost in search ranking. Matching results from these domains receive a relative ranking boost, but results are not limited to these domains. Supports up to 500 domains. Can be combined with `exclude_domains`, but cannot be combined with `include_domains` (returns `422`).                                                                                                                                                          | [<br/>"nytimes.com",<br/>"wired.com"<br/>]                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `crawl_timeout`                                                                                                                                                                                                                                                                                                                                                                                                                                               | *Optional[int]*                                                                                                                                                                                                                                                                                                                                                                                                                                               | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | Maximum time in seconds to wait for page content when `extraction.extraction_mode == "full_page"` (or the deprecated `livecrawl`) is enabled. Must be between 1 and 60 seconds. Default is 10 seconds. Stripped from the body when `extraction_mode == "highlights"`.                                | 10                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `retries`                                                                                                                                                                                                                                                                                                                                                                                                                                                     | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                                                                                                                                                                                                                                                                                                                                                                                              | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | Configuration to override the default retry behavior of the client.                                                                                                                                                                                                                                                                                                                                                                                           |                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `server_url`                                                                                                                                                                                                                                                                                                                                                                                                                                                  | *Optional[str]*                                                                                                                                                                                                                                                                                                                                                                                                                                               | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                                                            | An optional server URL to use.                                                                                                                                                                                                                                                                                                                                                                                                                                | http://localhost:8080                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
@@ -260,6 +269,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
     res = you.contents(urls=["https://example.com"], formats=[models.ContentsFormats.MARKDOWN])
     print(res)
@@ -279,6 +289,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -297,6 +308,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -315,6 +327,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -333,6 +346,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -351,6 +365,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -369,6 +384,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -387,6 +403,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -405,6 +422,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -423,6 +441,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -441,6 +460,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.research(input="<value>", research_effort=models.ResearchEffort.STANDARD)
@@ -488,6 +508,7 @@ from youdotcom import You
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.get_research_task(task_id="586a9bc3-2c52-499c-a61d-be3cc9170c51")
@@ -532,6 +553,7 @@ from youdotcom import You
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.stream_research_task(task_id="b431835b-e51d-453e-a623-25615ac31489", from_id=0)
@@ -580,6 +602,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -598,6 +621,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -616,6 +640,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -634,6 +659,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -652,6 +678,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -670,6 +697,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -688,6 +716,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -706,6 +735,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -724,6 +754,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)
@@ -742,6 +773,7 @@ from youdotcom import You, models
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     res = you.finance_research(input="What were the key drivers of NVIDIA's revenue growth in fiscal year 2025?", research_effort=models.FinanceResearchEffort.DEEP)

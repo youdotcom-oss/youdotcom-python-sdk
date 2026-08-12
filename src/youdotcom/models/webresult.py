@@ -23,7 +23,7 @@ class WebResultTypedDict(TypedDict):
     page_age: NotRequired[datetime]
     r"""The age of the search result."""
     contents: NotRequired[ContentsTypedDict]
-    r"""Contents of the page if livecrawl was enabled."""
+    r"""Contents of the page if ``extraction`` was enabled (formerly ``livecrawl``)."""
     favicon_url: NotRequired[str]
     r"""The URL of the favicon of the search result's domain."""
 
@@ -48,7 +48,7 @@ class WebResult(BaseModel):
     r"""The age of the search result."""
 
     contents: Optional[Contents] = None
-    r"""Contents of the page if livecrawl was enabled."""
+    r"""Contents of the page if ``extraction`` was enabled (formerly ``livecrawl``)."""
 
     favicon_url: Optional[str] = None
     r"""The URL of the favicon of the search result's domain."""

@@ -1,6 +1,6 @@
 # Contents
 
-Contents of the page if livecrawl was enabled.
+Contents of the page if `extraction` was enabled (formerly `livecrawl`).
 
 
 ## Fields
@@ -9,3 +9,4 @@ Contents of the page if livecrawl was enabled.
 | --------------------------------- | --------------------------------- | --------------------------------- | --------------------------------- |
 | `html`                            | *Optional[str]*                   | :heavy_minus_sign:                | The HTML content of the page.     |
 | `markdown`                        | *Optional[str]*                   | :heavy_minus_sign:                | The Markdown content of the page. |
+| `highlights`                      | Optional[List[*str*]]             | :heavy_minus_sign:                | Query-relevant excerpts returned by `extraction_mode="highlights"`. |
