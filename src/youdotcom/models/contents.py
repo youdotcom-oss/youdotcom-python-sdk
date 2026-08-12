@@ -28,6 +28,7 @@ class Contents(BaseModel):
     r"""The Markdown content of the page."""
 
     highlights: Optional[List[str]] = Field(default=None, description="Query-relevant excerpts extracted by the highlights mode.")
+    r"""Query-relevant excerpts extracted by the highlights mode."""
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):

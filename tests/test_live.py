@@ -134,13 +134,18 @@ class TestLiveSearch:
             assert res.results is not None
 
             # Web results may have contents
-            if res.results.web:
-                for result in res.results.web:
-                    # Check that we can access the contents field
-                    if result.contents:
-                        # At least one of html or markdown should be present
-                        # (API may return empty string for some URLs)
-                        assert result.contents.markdown is not None or result.contents.html is not None
+            content_seen = [
+                (result.contents.html, result.contents.markdown)
+                for result in res.results.web or []
+                if result.contents
+                and (
+                    result.contents.html is not None
+                    or result.contents.markdown is not None
+                )
+            ]
+            assert content_seen, (
+                "Expected at least one result with contents.html and/or contents.markdown"
+            )
 
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_search_with_livecrawl_news(self, you_client):
@@ -159,15 +164,15 @@ class TestLiveSearch:
             assert res.results is not None
 
             # News results can now have contents field (new in 2.2.0)
-            if res.results.news:
-                for news_item in res.results.news:
-                    # Check that we can access the contents field
-                    if news_item.contents:
-                        # At least one of html or markdown should be present
-                        assert (
-                            news_item.contents.markdown is not None
-                            or news_item.contents.html is not None
-                        )
+            content_seen = [
+                (item.contents.html, item.contents.markdown)
+                for item in res.results.news or []
+                if item.contents
+                and (item.contents.html is not None or item.contents.markdown is not None)
+            ]
+            assert content_seen, (
+                "Expected at least one news result with contents.html and/or contents.markdown"
+            )
 
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_search_with_livecrawl_all(self, you_client):
