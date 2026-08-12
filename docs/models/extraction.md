@@ -39,5 +39,5 @@ normalizes at the method layer.
 | Field             | Type                                              | Required                       | Description |
 | ----------------- | ------------------------------------------------- | ------------------------------ | ----------- |
 | `extraction_mode` | `"highlights"` \| `"full_page"`                   | :heavy_check_mark:             | Selects between excerpts and full page content. |
-| `highlights`      | `{ max_tokens?: int (512-8192) }`                 | :heavy_minus_sign:             | Valid only when `extraction_mode == "highlights"`. |
+| `highlights`      | `{}`                                              | :heavy_minus_sign:             | Optional container for `extraction_mode == "highlights"`. Reserved for future sub-fields; unknown keys here raise `ValidationError`. |
 | `full_page`       | `{ extraction_formats?: ["html" \| "markdown"] }` | :heavy_minus_sign:             | Valid only when `extraction_mode == "full_page"`. |

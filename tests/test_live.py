@@ -247,29 +247,6 @@ class TestLiveSearchExtraction:
             assert highlights_seen, "Expected at least one result with contents.highlights"
             assert all(isinstance(h, list) for h in highlights_seen)
 
-    def test_highlights_with_max_tokens(self, you_client):
-        """Test highlights with explicit max_tokens."""
-        with you_client as you:
-            res = you.search(
-                query="machine learning basics",
-                count=3,
-                extraction={
-                    "extraction_mode": "highlights",
-                    "highlights": {"max_tokens": 1000},
-                },
-            )
-
-            assert res.results is not None
-            assert res.results.web
-            highlights_seen = [
-                result.contents.highlights
-                for result in res.results.web
-                if result.contents and result.contents.highlights is not None
-            ]
-            assert highlights_seen, (
-                "Expected at least one result with contents.highlights"
-            )
-
     def test_full_page_markdown(self, you_client):
         """Test extraction_mode=full_page with markdown format."""
         with you_client as you:

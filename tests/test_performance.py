@@ -512,15 +512,12 @@ class TestSearchPerformance:
                 you.search(
                     query="machine learning tutorials",
                     count=3,
-                    extraction={
-                        "extraction_mode": "highlights",
-                        "highlights": {"max_tokens": 1000},
-                    },
+                    extraction={"extraction_mode": "highlights"},
                     server_url=server_url,
                 )
 
             metrics = measure_sdk_call(
-                call, client, iterations, "Search: extraction=highlights (dict, max_tokens=1000)"
+                call, client, iterations, "Search: extraction=highlights (dict)"
             )
             ALL_METRICS.append(metrics)
             if show_detailed:
