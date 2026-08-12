@@ -170,6 +170,18 @@ field and one on the Pydantic field. Editing only the Pydantic string leaves the
 surface (via the TypedDict) stale, and vice versa. Always edit both in lockstep after
 any behavior or wording change.
 
+The two docstrings live in different physical locations — keep the shape in mind
+when editing:
+
+- On the `TypedDict`, the r-string sits directly below the type annotation, indented
+  one more level than the field name.
+- On the Pydantic model class, the r-string sits directly below the
+  `Field(..., description=...)` line (or, when no Field is used, below the type
+  annotation itself). The `Field(description=...)` and the r-string are
+  **independent** help surfaces — one feeds the generated OpenAPI / JSON schema, the
+  other feeds IDE/help. Both should describe the same thing in the same words; a
+  missing r-string silently breaks IDE/help while leaving the API schema intact.
+
 ### Module-level docstrings on model files
 
 A model's module docstring at the top of `src/youdotcom/models/<x>.py` often describes
@@ -188,6 +200,14 @@ rows must read "if `extraction` was enabled (formerly `livecrawl`)" instead. Ste
 above lists "existing model pages" but does not call out `*result.md` files; grep
 `docs/models/*result.md` for the deprecated name on every rename sweep.
 
+On the same sweep, also diff every `Type` cell in `docs/models/*result.md` against
+the source annotations in the matching `src/youdotcom/models/*result.py`. The
+Type-cell traps below (date↔datetime, Optional↔non-Optional, etc.) apply here too —
+and a casual sweep that only re-reads `contents` rows will miss unrelated rows like
+`snippets`, `page_age`, or `thumbnail_url` going out of sync with the source.
+Treat all `*result.md` files as part of the sweep even when the `contents` row was
+the only one written in prose.
+
 ### Cross-table identity
 
 The same parameter appears in `docs/sdks/you/README.md`, `docs/sdks/search/README.md`,
@@ -204,6 +224,21 @@ The `Type` column of `docs/models/<model>.md` is the caller-facing paraphrase of
 model's actual annotation. `Optional[List[str]]` becomes `Optional[List[*str*]]`, not
 `List[*str*]`. Eyeball every row in the touched model page for the same
 cell-vs-annotation drift; one botched cell sits there forever otherwise.
+
+A handful of broken mappings have slipped past this rule even when the implementing
+agent skimmed the rows — call them out by name so the sweep doesn't have to
+discover them anew:
+
+- `Optional[X]` ↔ `X`. The annotation determines whether the field is optional;
+  the cell must mirror that with or without `Optional[...]`.
+- `datetime` ↔ `date`. `date` strips time-of-day from the timestamp. If the source
+  annotation is `datetime` (or `Optional[datetime]`), the cell must link to the
+  `datetime-objects` anchor of `datetime.html`, not `date-objects`.
+- `bool` ↔ `int` for predicate / flag fields.
+- `str` ↔ `int` for ID fields.
+
+Eyeball every row in the touched model page for these traps, not just the rows
+whose prose changed in the same edit.
 
 ### Examples must be copy-paste runnable
 
@@ -313,3 +348,13 @@ The function name should describe what the body asserts. A test named
 `test_extraction_full_page_default_no_subkeys`. Test-name vs body divergence is
 the smoking-gun reviewer signal that the suite was written against an earlier
 version of the code.
+
+## Interactive secrets use `getpass`
+
+Any `input(...)` prompt in `examples/`, `scripts/`, or a CLI surface that asks for
+an API key, OAuth token, password, or other secret must use
+`getpass.getpass(...)` rather than the builtin `input`. The plain `input` echoes
+every keystroke to the terminal — into terminal recorders, screen-shares, and
+shell-history candidates. `getpass.getpass` suppresses the echo. Add `import
+getpass` near the top of the file alongside the other stdlib imports and apply
+to every interactive secret prompt — not just the first one.
