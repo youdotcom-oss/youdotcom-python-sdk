@@ -14,8 +14,6 @@ Locks the contract:
   raises ``ValueError`` locally.
 - ``livecrawl`` / ``livecrawl_formats`` continue to work but emit
   ``DeprecationWarning``.
-- ``highlights.max_tokens`` is bounded to [512, 8192] (mirrors the server's
-  constraint).
 """
 
 import json
@@ -95,16 +93,6 @@ class TestExtractionModelContract:
             "extraction_mode": ExtractionMode.FULL_PAGE
         }
 
-    def test_extraction_highlights_with_max_tokens(self):
-        e = Extraction(
-            extraction_mode="highlights",
-            highlights=ExtractionHighlights(max_tokens=1000),
-        )
-        assert e.model_dump(exclude_none=True) == {
-            "extraction_mode": ExtractionMode.HIGHLIGHTS,
-            "highlights": {"max_tokens": 1000},
-        }
-
     def test_extraction_full_page_explicit_formats(self):
         e = Extraction(
             extraction_mode="full_page",
@@ -117,23 +105,11 @@ class TestExtractionModelContract:
             "full_page": {"extraction_formats": ["html", "markdown"]},
         }
 
-    @pytest.mark.parametrize("value", [512, 1000, 4096, 8192])
-    def test_max_tokens_in_range_ok(self, value):
-        e = ExtractionHighlights(max_tokens=value)
-        assert e.max_tokens == value
-
     def test_extraction_accepts_dict_input(self):
         """`Extraction.model_validate(dict)` lets callers construct from dicts."""
-        e = Extraction.model_validate(
-            {"extraction_mode": "highlights", "highlights": {"max_tokens": 512}}
-        )
+        e = Extraction.model_validate({"extraction_mode": "highlights"})
         assert e.extraction_mode is ExtractionMode.HIGHLIGHTS
-        assert e.highlights.max_tokens == 512
-
-    @pytest.mark.parametrize("value", [100, 511, 8193, 10000])
-    def test_max_tokens_out_of_range_raises(self, value):
-        with pytest.raises(ValidationError):
-            ExtractionHighlights(max_tokens=value)
+        assert e.highlights is None or e.highlights.model_dump() == {}
 
 
 class TestExtractionStrictValidation:
@@ -150,7 +126,7 @@ class TestExtractionStrictValidation:
             Extraction.model_validate(
                 {
                     "extraction_mode": "highlights",
-                    "highlights": {"max_tokens": 1000, "unknown": "x"},
+                    "highlights": {"unknown": "x"},
                 }
             )
 
@@ -196,15 +172,9 @@ class TestExtractionWireContract:
 
     def test_extraction_highlights_full_body(self):
         body = _search_body(
-            extraction={
-                "extraction_mode": "highlights",
-                "highlights": {"max_tokens": 1000},
-            }
+            extraction={"extraction_mode": "highlights"}
         )
-        assert body["extraction"] == {
-            "extraction_mode": "highlights",
-            "highlights": {"max_tokens": 1000},
-        }
+        assert body["extraction"] == {"extraction_mode": "highlights"}
 
     def test_extraction_highlights_omits_subkeys(self):
         body = _search_body(extraction={"extraction_mode": "highlights"})
@@ -261,14 +231,16 @@ class TestExtractionWireContract:
                     },
                 )
 
-    def test_extraction_max_tokens_out_of_range_raises_locally(self):
+    def test_extraction_unsupported_highlights_key_raises_locally(self):
+        """Unknown keys under ``highlights`` are rejected by
+        ``extra="forbid"`` and never hit the wire."""
         with pytest.raises(ValidationError):
             with _capture() as (you, _):
                 you.search(
                     query="q",
                     extraction={
                         "extraction_mode": "highlights",
-                        "highlights": {"max_tokens": 100},  # below 512
+                        "highlights": {"unsupported_key": 100},
                     },
                 )
 

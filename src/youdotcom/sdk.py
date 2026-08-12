@@ -82,7 +82,7 @@ def _build_search_request(
     # Coerce `extraction` to an Extraction instance so we can read
     # `.extraction_mode` for the plus-value rule below. Pydantic
     # raises ValidationError on strict-validation failures (unknown
-    # keys, wrong-mode couplings, out-of-range max_tokens), matching
+    # keys, wrong-mode couplings, out-of-range values), matching
     # the server's 422 contract so callers fail-fast.
     extraction_model: Optional[models.Extraction] = None
     if extraction is not None:

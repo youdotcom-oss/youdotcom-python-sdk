@@ -210,7 +210,6 @@ python -W default::DeprecationWarning your_script.py
 Notes:
 
 - `livecrawl` supported `"web"`, `"news"`, `"all"` modes. `extraction_mode` does not have a per-section switch — `"highlights"` and `"full_page"` apply to all sections in the response.
-- `extraction_mode="highlights"` accepts an optional `highlights.max_tokens` bound `[512, 8192]`. Omit it to use the provider default (4096).
 
 ### Before / after
 
@@ -266,7 +265,7 @@ from youdotcom import You
 with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     res = you.search(
         query="how does X relate to Y",
-        extraction={"extraction_mode": "highlights", "highlights": {"max_tokens": 1000}},
+        extraction={"extraction_mode": "highlights"},
     )
 # Returns res.results.web[i].contents.highlights (List[str]) -- excerpts
 # that match the query, not whole pages. Snippets are omitted in this mode.

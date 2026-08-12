@@ -5,6 +5,18 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] - 2026-08-12
+
+### Fixed
+
+- **Stricter `extraction.highlights` contract.** The sub-object rejects
+  unknown keys with `pydantic.ValidationError` before the request goes out,
+  so callers cannot accidentally route an unsupported parameter to the
+  server's strict `extraction` schema (`extra="forbid"` was already in
+  place; the prior version allowed a small set of knobs that the server
+  does not currently accept). Both the `Extraction` model instance form and
+  the dict form are validated.
+
 ## [3.1.0] - 2026-08-10
 
 Adds `extraction` on `POST /v1/search` and deprecates `livecrawl` /
@@ -21,8 +33,6 @@ work in the API. No breaking changes.
   - `extraction_mode` (required): `"highlights"` (excerpts in
     `results.web[].contents.highlights`) or `"full_page"` (full HTML /
     Markdown in `results.web[].contents.html` / `.markdown`).
-  - `extraction.highlights.max_tokens` (optional, 512-8192; default is the
-    API's 4096 — omit for provider default).
   - `extraction.full_page.extraction_formats` (optional; default
     `["markdown"]`).
   - Top-level `crawl_timeout` (1-60, default 10) remains on the request body,
