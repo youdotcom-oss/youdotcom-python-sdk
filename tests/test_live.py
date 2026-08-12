@@ -187,8 +187,29 @@ class TestLiveSearch:
                 livecrawl=LiveCrawl.ALL,
                 livecrawl_formats=[LiveCrawlFormats.HTML],
             )
-            
+
             assert res.results is not None
+
+            # livecrawl=ALL covers both web and news; assert at least one
+            # of each has contents.html / contents.markdown populated.
+            web_content_seen = [
+                (r.contents.html, r.contents.markdown)
+                for r in res.results.web or []
+                if r.contents
+                and (r.contents.html is not None or r.contents.markdown is not None)
+            ]
+            news_content_seen = [
+                (n.contents.html, n.contents.markdown)
+                for n in res.results.news or []
+                if n.contents
+                and (n.contents.html is not None or n.contents.markdown is not None)
+            ]
+            assert web_content_seen, (
+                "Expected at least one web result with contents.html and/or contents.markdown"
+            )
+            assert news_content_seen, (
+                "Expected at least one news result with contents.html and/or contents.markdown"
+            )
 
 
 @requires_api_key
