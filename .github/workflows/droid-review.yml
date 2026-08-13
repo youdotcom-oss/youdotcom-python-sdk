@@ -51,7 +51,7 @@ jobs:
 
       - name: Run Droid Auto Review (internal)
         if: github.event_name == 'pull_request' && steps.check_internal.outputs.is_internal == 'true'
-        uses: Factory-AI/droid-action@v5
+        uses: Factory-AI/droid-action@v6
         with:
           factory_api_key: ${{ secrets.FACTORY_API_KEY }}
           automatic_review: true
