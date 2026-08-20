@@ -14,6 +14,7 @@ from youdotcom._hooks import (
 from youdotcom.utils import (
     RetryConfig,
     SerializedRequestBody,
+    build_client_info_header,
     get_body_content,
     run_sync_in_thread,
 )
@@ -199,6 +200,16 @@ class BaseSDK:
         headers = utils.get_headers(request, _globals)
         headers["Accept"] = accept_header_value
         headers[user_agent_header] = self.sdk_configuration.user_agent
+        # ``X-Client-Info`` attribution header, set at the same single
+        # site as ``User-Agent`` — every endpoint funnels through
+        # ``_build_request_with_client``, so a single construction
+        # point prevents per-endpoint drift.
+        headers["X-Client-Info"] = build_client_info_header(
+            app_name=self.sdk_configuration.app_name,
+            app_version=self.sdk_configuration.app_version,
+            app_title=self.sdk_configuration.app_title,
+            app_url=self.sdk_configuration.app_url,
+        )
 
         if security is not None:
             if callable(security):

@@ -92,3 +92,40 @@ Unknown keys inside `extraction` raise `ValidationError` locally, and passing
 `extraction` together with `livecrawl` / `livecrawl_formats` raises
 `ValueError` — both mirror the server's 422 contract so callers fail-fast.
 <!-- End SDK Example Usage [extraction] -->
+
+<!-- Start SDK Example Usage [attribution] -->
+```python
+# Tag every outbound request with a caller-identity header so the
+# analytics layer can split SDK traffic from MCP traffic.
+import os
+from youdotcom import You
+
+
+with You(
+    api_key_auth=os.getenv("YDC_API_KEY"),
+    app_name="acme-bot",
+    app_version="2.4.0",
+    app_title="Acme Bot",
+    app_url="https://acme.example",
+    timeout_ms=60_000,
+) as you:
+
+    res = you.search(query="What did OpenAI announce this week?")
+
+    # Handle response
+    print(res)
+```
+
+`X-Client-Info` sent on the wire:
+
+```
+sdk; client=acme-bot/2.4.0; title=Acme Bot; url=https://acme.example; ua=python/<V> httpx/<V>
+```
+
+`app_name`, `app_version`, `app_title` and `app_url` are all optional and
+keyword-only. When omitted, those segments are dropped entirely, so an
+undeclared caller sends just `sdk; ua=python/<V> httpx/<V>`. Values must be printable ASCII excluding `;`, and `app_name` / `app_version`
+additionally exclude `/` since they are joined as `<name>/<version>`. Passing
+`app_version` without `app_name` is also an error. Invalid
+values raise `ValueError` at construction time.
+<!-- End SDK Example Usage [attribution] -->
