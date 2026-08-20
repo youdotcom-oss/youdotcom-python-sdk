@@ -25,6 +25,7 @@ from youdotcom._hooks import HookContext, SDKHooks
 from youdotcom._shims import ContentsShim, SearchShim
 from youdotcom.types import OptionalNullable, UNSET
 from youdotcom.utils import eventstreaming, get_security_from_env
+from youdotcom.utils.attribution import validate_attribution_arg
 from youdotcom.utils.unmarshal_json_response import unmarshal_json_response
 
 
@@ -117,17 +118,27 @@ def _build_search_request(
         extraction_model is not None
         and extraction_model.extraction_mode is models.ExtractionMode.HIGHLIGHTS
     )
-    if (
-        strip_crawl_timeout
-        and crawl_timeout is not None
-        and crawl_timeout
-        != models.SearchRequestBody.model_fields["crawl_timeout"].default
-    ):
-        warnings.warn(
-            "crawl_timeout is ignored when extraction_mode == 'highlights'",
-            UserWarning,
-            stacklevel=4,
-        )
+    if strip_crawl_timeout and crawl_timeout is not None:
+        # Resolved inside the branch so the common path never forces
+        # ``models.SearchRequestBody`` to load (the lazy package root is what
+        # keeps ``import youdotcom`` transport-free -- see DX-776).
+        #
+        # astroid cannot infer attributes through the PEP 562 ``__getattr__``
+        # in ``models/__init__.py``, so it types ``model_fields`` as an
+        # unsubscriptable ``Any`` and the CI ``pylint --enable=E`` gate fails
+        # on the subscript. mypy resolves it correctly via the
+        # ``TYPE_CHECKING`` block, so this is a pylint-inference limitation,
+        # not a real typing gap.
+        # pylint: disable-next=unsubscriptable-object
+        default_crawl_timeout = models.SearchRequestBody.model_fields[
+            "crawl_timeout"
+        ].default
+        if crawl_timeout != default_crawl_timeout:
+            warnings.warn(
+                "crawl_timeout is ignored when extraction_mode == 'highlights'",
+                UserWarning,
+                stacklevel=4,
+            )
 
     body: dict[str, Any] = dict(
         query=query,
@@ -197,6 +208,8 @@ class You(BaseSDK):
         retry_config: OptionalNullable[RetryConfig] = UNSET,
         timeout_ms: Optional[int] = None,
         debug_logger: Optional[Logger] = None,
+        app_title: Optional[str] = None,
+        app_url: Optional[str] = None,
     ) -> None:
         r"""Instantiates the SDK configuring it with the provided parameters.
 
@@ -208,7 +221,27 @@ class You(BaseSDK):
         :param async_client: The Async HTTP client to use for all asynchronous methods
         :param retry_config: The retry configuration to use for all supported methods
         :param timeout_ms: Optional request timeout applied to each operation in milliseconds
+        :param app_title: Optional caller-identity title for the ``X-Client-Info``
+            attribution header. Must be printable ASCII (excluding ``;``).
+            Defaults to ``None`` → segment dropped.
+        :param app_url: Optional caller-identity URL for the ``X-Client-Info``
+            attribution header. Must be printable ASCII (excluding ``;``).
+            Defaults to ``None`` → segment dropped.
+        :raises ValueError: If ``app_title`` or ``app_url`` contains non-ASCII
+            characters, control characters, or ``;``.
         """
+        # Validated before any client is constructed. These checks depend on
+        # nothing else in ``__init__``, and raising after the internal
+        # ``httpx.Client`` / ``httpx.AsyncClient`` exist would abandon two
+        # objects the caller never received a handle to and so can never
+        # close. Today those clients hold no socket until their first request,
+        # so nothing actually leaks -- this keeps it that way if client
+        # construction ever starts acquiring a real resource.
+        if app_title is not None:
+            validate_attribution_arg("app_title", app_title)
+        if app_url is not None:
+            validate_attribution_arg("app_url", app_url)
+
         client_supplied = True
         if client is None:
             client = httpx.Client(follow_redirects=True)
@@ -276,6 +309,8 @@ class You(BaseSDK):
                 retry_config=retry_config,
                 timeout_ms=timeout_ms,
                 debug_logger=debug_logger,
+                app_title=app_title,
+                app_url=app_url,
             ),
             parent_ref=self,
         )
@@ -376,6 +411,7 @@ class You(BaseSDK):
         ] = None,
         country: Optional[Union[str, models.Country]] = None,
         language: Optional[Union[str, models.Language]] = None,
+        safesearch: Optional[str] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -386,10 +422,10 @@ class You(BaseSDK):
     ) -> models.AnswerResponse:
         r"""Returns a synthesized answer with citations from web search results.
 
-        Provide a ``query`` and optional freshness, locale, and domain controls.
-        The response includes a markdown answer with inline citations, a
-        citations array with source URLs and supporting excerpts, and the web
-        results used to generate the answer.
+        Provide a ``query`` and optional freshness, locale, domain, and
+        explicit-content controls. The response includes a markdown answer
+        with inline citations, a citations array with source URLs and
+        supporting excerpts, and the web results used to generate the answer.
 
         :param query: The search query used to retrieve relevant web results.
             Max 400 characters. Search operators (``site:``, ``OR``, etc.) are
@@ -400,6 +436,7 @@ class You(BaseSDK):
             focus of the web results.
         :param language: A supported BCP 47 language tag that determines the
             language of the web results.
+        :param safesearch: ``"strict"``, ``"moderate"``, or ``"off"``.
         :param include_domains: Domains to exclusively include. Cannot combine
             with ``exclude_domains`` or ``boost_domains``. Max 500.
         :param exclude_domains: Domains to exclude. Cannot combine with
@@ -427,6 +464,7 @@ class You(BaseSDK):
             freshness=_lower(freshness),
             country=_upper(country),
             language=_upper(language),
+            safesearch=_lower(safesearch),
             include_domains=utils.unmarshal(include_domains, Optional[List[str]]),
             exclude_domains=utils.unmarshal(exclude_domains, Optional[List[str]]),
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),
@@ -524,6 +562,7 @@ class You(BaseSDK):
         ] = None,
         country: Optional[Union[str, models.Country]] = None,
         language: Optional[Union[str, models.Language]] = None,
+        safesearch: Optional[str] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -534,10 +573,10 @@ class You(BaseSDK):
     ) -> models.AnswerResponse:
         r"""Returns a synthesized answer with citations from web search results.
 
-        Provide a ``query`` and optional freshness, locale, and domain controls.
-        The response includes a markdown answer with inline citations, a
-        citations array with source URLs and supporting excerpts, and the web
-        results used to generate the answer.
+        Provide a ``query`` and optional freshness, locale, domain, and
+        explicit-content controls. The response includes a markdown answer
+        with inline citations, a citations array with source URLs and
+        supporting excerpts, and the web results used to generate the answer.
 
         :param query: The search query used to retrieve relevant web results.
             Max 400 characters. Search operators (``site:``, ``OR``, etc.) are
@@ -548,6 +587,7 @@ class You(BaseSDK):
             focus of the web results.
         :param language: A supported BCP 47 language tag that determines the
             language of the web results.
+        :param safesearch: ``"strict"``, ``"moderate"``, or ``"off"``.
         :param include_domains: Domains to exclusively include. Cannot combine
             with ``exclude_domains`` or ``boost_domains``. Max 500.
         :param exclude_domains: Domains to exclude. Cannot combine with
@@ -575,6 +615,7 @@ class You(BaseSDK):
             freshness=_lower(freshness),
             country=_upper(country),
             language=_upper(language),
+            safesearch=_lower(safesearch),
             include_domains=utils.unmarshal(include_domains, Optional[List[str]]),
             exclude_domains=utils.unmarshal(exclude_domains, Optional[List[str]]),
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),

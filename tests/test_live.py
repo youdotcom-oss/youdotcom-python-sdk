@@ -16,6 +16,8 @@ with `-m "not slow"` for a fast smoke run:
 """
 
 import os
+
+import httpx
 import pytest
 
 from youdotcom import You
@@ -862,14 +864,116 @@ class TestLiveAnswer:
             assert isinstance(res, AnswerResponse)
             assert len(res.answer) > 0
 
+    def test_answer_with_safesearch(self, you_client):
+        """Test answer with safesearch content filter."""
+        with you_client as you:
+            res = you.answer(
+                query="Latest science news",
+                safesearch=SafeSearch.STRICT,
+            )
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+
     @pytest.mark.asyncio
     async def test_async_answer(self, you_client):
         """Test async you.answer_async()."""
-        with you_client as you:
+        # ``async with`` (not ``with``) so the async transport is closed on
+        # exit; the sync context manager leaves it open, which surfaces as an
+        # unclosed-socket ResourceWarning at interpreter teardown. Matches the
+        # convention every other async test in the suite uses.
+        async with you_client as you:
             res = await you.answer_async(query="What is 2+2?")
 
             assert isinstance(res, AnswerResponse)
             assert len(res.answer) > 0
+
+
+@requires_api_key
+class TestLiveAttribution:
+    """The ``X-Client-Info`` header on real requests (DX-777).
+
+    The mock-transport tests in ``tests/test_attribution.py`` pin the wire
+    format; what they cannot show is that the real API *accepts* the header.
+    An unknown header that tripped a WAF rule or a strict gateway would fail
+    only against prod, so this asserts both halves: the header went out on
+    every request, and the live call still succeeded.
+
+    Uses an ``httpx`` request event hook to observe the outbound headers,
+    accumulating them into a list and asserting on the accumulated matches --
+    the contract-list pattern AGENTS.md prescribes for live tests.
+    """
+
+    @staticmethod
+    def _client_with_hook(observed: list):
+        """A real httpx client that records the headers of each request."""
+
+        def record(request: httpx.Request) -> None:
+            observed.append(dict(request.headers))
+
+        return httpx.Client(
+            follow_redirects=True, event_hooks={"request": [record]}
+        )
+
+    def test_x_client_info_sent_and_accepted_live(self, api_key):
+        observed: list = []
+        http_client = self._client_with_hook(observed)
+        try:
+            with You(
+                api_key_auth=api_key,
+                timeout_ms=LIVE_TIMEOUT_MS,
+                client=http_client,
+                app_title="sdk-live-test",
+                app_url="https://example.com/live?x=1",
+            ) as you:
+                res = you.search(query="You.com Python SDK")
+
+            # The live call itself must succeed -- i.e. the header did not
+            # trip a gateway or WAF rule on the way in.
+            assert res.results is not None
+
+            matches = [
+                h["x-client-info"]
+                for h in observed
+                if "x-client-info" in {k.lower() for k in h}
+                or "x-client-info" in h
+            ]
+            assert matches, (
+                "no request carried X-Client-Info; "
+                f"headers seen: {[sorted(h) for h in observed]}"
+            )
+            for value in matches:
+                assert value.startswith("python-sdk; client=youdotcom/")
+                assert "title=sdk-live-test" in value
+                # Query strings must survive the segment delimiter.
+                assert "url=https://example.com/live?x=1" in value
+                assert "; ua=python/" in value
+                assert "httpx/" in value
+        finally:
+            http_client.close()
+
+    def test_x_mcp_attribution_absent_live(self, api_key):
+        """The SDK never sets the MCP-side header, on a real request either."""
+        observed: list = []
+        http_client = self._client_with_hook(observed)
+        try:
+            with You(
+                api_key_auth=api_key,
+                timeout_ms=LIVE_TIMEOUT_MS,
+                client=http_client,
+            ) as you:
+                you.search(query="You.com Python SDK")
+
+            assert observed, "no request was observed"
+            offenders = [
+                name
+                for headers in observed
+                for name in headers
+                if "mcp" in name.lower()
+            ]
+            assert not offenders, f"SDK emitted MCP-specific headers: {offenders}"
+        finally:
+            http_client.close()
 
 
 if __name__ == "__main__":

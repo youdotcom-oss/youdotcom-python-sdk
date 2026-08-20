@@ -92,3 +92,35 @@ Unknown keys inside `extraction` raise `ValidationError` locally, and passing
 `extraction` together with `livecrawl` / `livecrawl_formats` raises
 `ValueError` — both mirror the server's 422 contract so callers fail-fast.
 <!-- End SDK Example Usage [extraction] -->
+
+<!-- Start SDK Example Usage [attribution] -->
+```python
+# Tag every outbound request with a caller-identity header so the
+# analytics layer can split SDK traffic from MCP traffic.
+import os
+from youdotcom import You
+
+
+with You(
+    api_key_auth=os.getenv("YDC_API_KEY"),
+    app_title="MyAgent",
+    app_url="https://example.com",
+    timeout_ms=60_000,
+) as you:
+
+    res = you.search(query="What did OpenAI announce this week?")
+
+    # Handle response
+    print(res)
+```
+
+`X-Client-Info` sent on the wire:
+
+```
+python-sdk; client=youdotcom/<version>; title=MyAgent; url=https://example.com; ua=python/<V> httpx/<V>
+```
+
+`app_title` and `app_url` are optional. When omitted, those segments are
+dropped entirely. Values must be printable ASCII (excluding `;`); invalid
+values raise `ValueError` at construction time.
+<!-- End SDK Example Usage [attribution] -->

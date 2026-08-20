@@ -69,6 +69,7 @@ A synthesized answer with citations, grounded in live web results.
 res = you.answer(
     query="What are the tradeoffs of vector vs. keyword search?",
     freshness="month",
+    safesearch="strict",
     include_domains=["arxiv.org"],
 )
 
@@ -355,6 +356,39 @@ Search and contents are fast enough for the default. Research in background mode
 is the exception: the helpers under
 [Long-running research](#long-running-research) manage their own deadlines, so
 `timeout_s` there bounds the wait rather than `timeout_ms`.
+
+### Attribution
+
+Every SDK request emits an `X-Client-Info` header so the analytics layer can
+split SDK traffic from MCP traffic. The wire format is:
+
+```
+python-sdk; client=youdotcom/<version>[; title=<title>][; url=<url>]; ua=python/<V> httpx/<V>
+```
+
+Optionally pass `app_title` and `app_url` to populate the `title=` and
+`url=` segments:
+
+```python
+import os
+from youdotcom import You
+
+with You(
+    api_key_auth=os.getenv("YDC_API_KEY"),
+    app_title="MyAgent",
+    app_url="https://example.com",
+    timeout_ms=60_000,
+) as you:
+    res = you.search(query="...")
+```
+
+Both arguments are optional; existing call sites are unaffected. Values
+must be printable ASCII (excluding `;`); invalid values raise `ValueError`
+at construction time.
+
+The MCP-specific `X-MCP-Attribution` header is never set by the SDK — it is
+assembled on the MCP server, which is the only layer that can populate its
+`keyless` / `payment` / `ip` flags accurately.
 
 ### Servers
 

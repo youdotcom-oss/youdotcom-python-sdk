@@ -297,6 +297,68 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
         # str(deprecations[0].message) == "livecrawl is deprecated; use extraction instead"
 ```
 
+## 3.1.1 → 3.1.2
+
+> **Additive release.** No parameter is renamed, removed, or changed in
+> meaning. Two changes can require an edit, and only in narrow cases.
+
+### Action required
+
+| Change | Who is affected | What to do |
+|--------|-----------------|------------|
+| Import machinery no longer re-exported from the package root | Anyone importing a stdlib/typing name or internal helper *from* `youdotcom` | Import it from its real home. See [Root namespace narrowing](#root-namespace-narrowing-1) |
+| `ResearchTaskStreamEvent.event` is typed `Union[Event, str]` | Type-checked code calling `evt.event.value` | Guard with `isinstance(evt.event, Event)`. See [SSE event names](#sse-event-names) |
+
+### Root namespace narrowing
+
+`youdotcom/__init__.py` no longer does `from .sdk import *`, so the names
+those statements pulled in transitively are no longer attributes of
+`youdotcom`. This is what makes `import youdotcom` transport-free inside a
+Temporal Workflow sandbox.
+
+```python
+# Before (3.1.1): worked by accident.
+from youdotcom import httpx, Optional, eventstreaming
+
+# After (3.1.2): ImportError. Import from the real module.
+import httpx
+from typing import Optional
+from youdotcom.utils import eventstreaming
+```
+
+Everything documented still resolves from the root, including under
+`from youdotcom import *`:
+
+```python
+from youdotcom import You, SDKConfiguration, RetryConfig, BackoffStrategy
+from youdotcom import models, errors, utils, types
+import youdotcom.sdk          # private submodules still import directly
+```
+
+### SSE event names
+
+The `event` field on `ResearchTaskStreamEvent` accepts event names this SDK
+version does not enumerate, so an added server-side event no longer raises
+`ResponseValidationError`. Known names still resolve to `Event` members;
+unknown names arrive as plain `str`. The declared type now says so, which
+means an unguarded `.value` becomes a type error:
+
+```python
+# Type error on 3.1.2 -- and an AttributeError at runtime, on 3.1.1 too,
+# the first time the server emits a name this SDK doesn't know.
+print(evt.event.value)
+
+# Guarded: correct on both versions.
+if isinstance(evt.event, Event):
+    print(evt.event.value)
+else:
+    print(evt.event)
+
+# Comparing against raw strings needs no guard -- Event members are `str`.
+if evt.event == "completed":
+    ...
+```
+
 ## 2.4.0 → 2.5.0
 
 ### New `frontier` Research Effort Tier
