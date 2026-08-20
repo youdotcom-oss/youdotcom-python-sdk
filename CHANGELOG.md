@@ -5,6 +5,62 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.2] - 2026-08-19
+
+Sister release track to the extraction-parameter rollout
+(3.1.0 + 3.1.1). No breaking changes. All changes are
+backward-compatible; everything that worked on 3.1.1 keeps working
+unchanged.
+
+The top-level `from youdotcom import *` surface is narrowed to the
+documented public API (`You`, `VERSION`, `OPENAPI_DOC_VERSION`,
+`USER_AGENT`). Previously re-exported names like `SDKConfiguration`
+remain available via their submodules (e.g.,
+`from youdotcom.sdkconfiguration import SDKConfiguration`).
+
+### Fixed
+
+- **Models are usable inside a Temporal Workflow.**
+  `youdotcom/__init__.py` no longer eagerly pulls 306 modules
+  (including `httpx` and `urllib.request`), so a Workflow module that
+  does `from youdotcom.models import SearchResponse` (no
+  `workflow.unsafe.imports_passed_through()` work-around) prepares
+  cleanly under the default `SandboxedWorkflowRunner`. PEP 562 module
+  `__getattr__` mirrors the public-import surface without dragging
+  transport; the `models/__init__.py` lazy pattern shipped in 3.0.0 was
+  lifted to the package root. Regression coverage lives in
+  `tests/test_root_init.py` (subprocess assertion: `import youdotcom`
+  does not load `httpx` / `urllib.request`).
+- **`ResearchTaskStreamEvent.event` accepts future SSE event names.**
+  The discriminator field widens from `Event` to
+  `Union[Event, UnrecognizedStr]`, so a server-side event-name addition
+  (a new terminal status, a retry signal, anything the SDK does not
+  yet enumerate) does not raise `ResponseValidationError` on the
+  unmarshal path. Known event names still resolve to the `Event` enum
+  member; unknown names unwrap as a `str` subclass that compares equal
+  to its raw value, so callers branching on raw strings
+  (`evt.event == "completed"`) keep working unchanged.
+  Exhaustive-enumeration callers (`isinstance(evt.event, Event)`) get
+  the right negative answer. Coverage in
+  `tests/test_researchtaskstreamevent.py`.
+
+### Added
+
+- **Attribution header `X-Client-Info` on every outbound request.**
+  New optional `You(app_title=..., app_url=...)` constructor
+  args populate the `title=` and `url=` segments. Wire format:
+
+      python-sdk; client=youdotcom/<version>; title=<title>; url=<url>; ua=python/<V> httpx/<V>
+
+  so the analytics layer can distinguish SDK traffic from other
+  sources.
+- **`safesearch` parameter on `You.answer()`.**
+  The Answer API now supports the same explicit-content filtering
+  as the Web Search API. New optional `safesearch` kwarg on
+  `answer()` and `answer_async()` accepts ``off``, ``moderate``
+  (default), or ``strict``. Case-insensitive, like the search
+  counterpart. Existing call sites are unaffected.
+
 ## [3.1.1] - 2026-08-12
 
 ### Fixed

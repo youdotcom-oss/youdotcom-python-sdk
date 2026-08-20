@@ -14,6 +14,7 @@ async def run_sync_in_thread(func: Callable[..., _T], *args) -> _T:
 
 
 if TYPE_CHECKING:
+    from .attribution import build_client_info_header
     from .annotations import get_discriminator
     from .datetimes import parse_datetime, parse_duration
     from .enums import OpenEnumMeta
@@ -63,6 +64,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "BackoffStrategy",
+    "build_client_info_header",
     "FieldMetadata",
     "find_metadata",
     "FormMetadata",
@@ -117,6 +119,7 @@ __all__ = [
 
 _dynamic_imports: dict[str, str] = {
     "BackoffStrategy": ".retries",
+    "build_client_info_header": ".attribution",
     "FieldMetadata": ".metadata",
     "find_metadata": ".metadata",
     "FormMetadata": ".metadata",

@@ -862,6 +862,17 @@ class TestLiveAnswer:
             assert isinstance(res, AnswerResponse)
             assert len(res.answer) > 0
 
+    def test_answer_with_safesearch(self, you_client):
+        """Test answer with safesearch content filter."""
+        with you_client as you:
+            res = you.answer(
+                query="Latest science news",
+                safesearch=SafeSearch.STRICT,
+            )
+
+            assert isinstance(res, AnswerResponse)
+            assert len(res.answer) > 0
+
     @pytest.mark.asyncio
     async def test_async_answer(self, you_client):
         """Test async you.answer_async()."""

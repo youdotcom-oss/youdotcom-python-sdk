@@ -197,6 +197,8 @@ class You(BaseSDK):
         retry_config: OptionalNullable[RetryConfig] = UNSET,
         timeout_ms: Optional[int] = None,
         debug_logger: Optional[Logger] = None,
+        app_title: Optional[str] = None,
+        app_url: Optional[str] = None,
     ) -> None:
         r"""Instantiates the SDK configuring it with the provided parameters.
 
@@ -208,6 +210,12 @@ class You(BaseSDK):
         :param async_client: The Async HTTP client to use for all asynchronous methods
         :param retry_config: The retry configuration to use for all supported methods
         :param timeout_ms: Optional request timeout applied to each operation in milliseconds
+        :param app_title: Optional caller-identity title for the ``X-Client-Info``
+            attribution header. Surfaces in the analytics layer as
+            the ``title=`` segment. Defaults to ``None`` → segment dropped.
+        :param app_url: Optional caller-identity URL for the ``X-Client-Info``
+            attribution header. Surfaces in the analytics layer as
+            the ``url=`` segment. Defaults to ``None`` → segment dropped.
         """
         client_supplied = True
         if client is None:
@@ -276,6 +284,8 @@ class You(BaseSDK):
                 retry_config=retry_config,
                 timeout_ms=timeout_ms,
                 debug_logger=debug_logger,
+                app_title=app_title,
+                app_url=app_url,
             ),
             parent_ref=self,
         )
@@ -376,6 +386,7 @@ class You(BaseSDK):
         ] = None,
         country: Optional[Union[str, models.Country]] = None,
         language: Optional[Union[str, models.Language]] = None,
+        safesearch: Optional[str] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -386,10 +397,10 @@ class You(BaseSDK):
     ) -> models.AnswerResponse:
         r"""Returns a synthesized answer with citations from web search results.
 
-        Provide a ``query`` and optional freshness, locale, and domain controls.
-        The response includes a markdown answer with inline citations, a
-        citations array with source URLs and supporting excerpts, and the web
-        results used to generate the answer.
+        Provide a ``query`` and optional freshness, locale, domain, and
+        explicit-content controls. The response includes a markdown answer
+        with inline citations, a citations array with source URLs and
+        supporting excerpts, and the web results used to generate the answer.
 
         :param query: The search query used to retrieve relevant web results.
             Max 400 characters. Search operators (``site:``, ``OR``, etc.) are
@@ -400,6 +411,8 @@ class You(BaseSDK):
             focus of the web results.
         :param language: A supported BCP 47 language tag that determines the
             language of the web results.
+        :param safesearch: Explicit-content filtering: ``off``, ``moderate``
+            (default), or ``strict``. Case-insensitive.
         :param include_domains: Domains to exclusively include. Cannot combine
             with ``exclude_domains`` or ``boost_domains``. Max 500.
         :param exclude_domains: Domains to exclude. Cannot combine with
@@ -427,6 +440,7 @@ class You(BaseSDK):
             freshness=_lower(freshness),
             country=_upper(country),
             language=_upper(language),
+            safesearch=_lower(safesearch),
             include_domains=utils.unmarshal(include_domains, Optional[List[str]]),
             exclude_domains=utils.unmarshal(exclude_domains, Optional[List[str]]),
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),
@@ -524,6 +538,7 @@ class You(BaseSDK):
         ] = None,
         country: Optional[Union[str, models.Country]] = None,
         language: Optional[Union[str, models.Language]] = None,
+        safesearch: Optional[str] = None,
         include_domains: Optional[Iterable[str]] = None,
         exclude_domains: Optional[Iterable[str]] = None,
         boost_domains: Optional[Iterable[str]] = None,
@@ -534,10 +549,10 @@ class You(BaseSDK):
     ) -> models.AnswerResponse:
         r"""Returns a synthesized answer with citations from web search results.
 
-        Provide a ``query`` and optional freshness, locale, and domain controls.
-        The response includes a markdown answer with inline citations, a
-        citations array with source URLs and supporting excerpts, and the web
-        results used to generate the answer.
+        Provide a ``query`` and optional freshness, locale, domain, and
+        explicit-content controls. The response includes a markdown answer
+        with inline citations, a citations array with source URLs and
+        supporting excerpts, and the web results used to generate the answer.
 
         :param query: The search query used to retrieve relevant web results.
             Max 400 characters. Search operators (``site:``, ``OR``, etc.) are
@@ -548,6 +563,8 @@ class You(BaseSDK):
             focus of the web results.
         :param language: A supported BCP 47 language tag that determines the
             language of the web results.
+        :param safesearch: Explicit-content filtering: ``off``, ``moderate``
+            (default), or ``strict``. Case-insensitive.
         :param include_domains: Domains to exclusively include. Cannot combine
             with ``exclude_domains`` or ``boost_domains``. Max 500.
         :param exclude_domains: Domains to exclude. Cannot combine with
@@ -575,6 +592,7 @@ class You(BaseSDK):
             freshness=_lower(freshness),
             country=_upper(country),
             language=_upper(language),
+            safesearch=_lower(safesearch),
             include_domains=utils.unmarshal(include_domains, Optional[List[str]]),
             exclude_domains=utils.unmarshal(exclude_domains, Optional[List[str]]),
             boost_domains=utils.unmarshal(boost_domains, Optional[List[str]]),

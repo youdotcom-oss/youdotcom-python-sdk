@@ -42,6 +42,19 @@ with You(
     print(res)
 ```
 
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | *str* | :heavy_check_mark: | The search query. Max 400 characters. |
+| `freshness` | *str* | :heavy_minus_sign: | `day`, `week`, `month`, `year`, or `YYYY-MM-DDtoYYYY-MM-DD`. |
+| `country` | *str* | :heavy_minus_sign: | Country code (e.g. `US`, `GB`). Case-insensitive. |
+| `language` | *str* | :heavy_minus_sign: | BCP 47 language tag (e.g. `EN`, `FR`). Case-insensitive. |
+| `safesearch` | *str* | :heavy_minus_sign: | Explicit-content filtering: `off`, `moderate` (default), or `strict`. Case-insensitive. |
+| `include_domains` | List[*str*] | :heavy_minus_sign: | Only return results from these domains. Max 500. |
+| `exclude_domains` | List[*str*] | :heavy_minus_sign: | Exclude results from these domains. Max 500. |
+| `boost_domains` | List[*str*] | :heavy_minus_sign: | Prefer results from these domains. Max 500. |
+
 ## search
 
 Search via `POST /v1/search`. Returns unified search results from web and news sources. Requires an API key. Country and language accept plain strings and are normalized to uppercase.
