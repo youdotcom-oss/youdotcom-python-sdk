@@ -95,8 +95,10 @@ def _decode_raw_event(raw_json: str) -> RawStreamEvent:
     """Tolerant SSE decoder used by ``stream_research``.
 
     Accepts any JSON object regardless of whether ``event`` matches the
-    documented enum, so unknown workflow events pass through instead of
-    failing pydantic validation.
+    documented enum, and unlike the pydantic path also accepts a ``data``
+    payload that is not a JSON object at all. Since 3.1.2 the pydantic model
+    tolerates unenumerated event names too (``Event`` is an open enum), so this
+    decoder's remaining advantage is shape tolerance, not name tolerance.
     """
     parsed = json.loads(raw_json)
     if not isinstance(parsed, dict):
@@ -616,7 +618,7 @@ def _open_raw_stream(
 
     Mirrors the request setup used by ``client.stream_research_task`` but
     wires :func:`_decode_raw_event` into the ``EventStream`` instead of the
-    strict pydantic ``ResearchTaskStreamEvent`` decoder.
+    pydantic ``ResearchTaskStreamEvent`` decoder.
     """
     kwargs = _stream_build_kwargs(
         client, task_id, http_headers=http_headers, from_id=from_id,

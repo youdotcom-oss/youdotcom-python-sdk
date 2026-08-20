@@ -69,6 +69,7 @@ A synthesized answer with citations, grounded in live web results.
 res = you.answer(
     query="What are the tradeoffs of vector vs. keyword search?",
     freshness="month",
+    safesearch="strict",
     include_domains=["arxiv.org"],
 )
 
@@ -247,10 +248,14 @@ for evt in stream_research(you, task_id=task.task_id):
         break
 ```
 
-`stream_research()` tolerates event names outside the documented set, yielding
-them as raw dicts. Prefer it over `you.stream_research_task()`, which validates
-strictly and will raise on an unrecognized event. Pass `from_id` to resume a
-stream after a disconnect.
+`stream_research()` yields events as raw dicts and tolerates data frames that
+are not valid JSON. Since 3.1.2 both methods tolerate event names outside the
+documented set — `you.stream_research_task()` surfaces an unenumerated name as a
+plain `str` rather than raising — so choose between them on retry behaviour:
+`stream_research()` deliberately skips the `[429, 500, 502, 503, 504]` retries
+that `you.stream_research_task()` performs on stream-open, which can otherwise
+silently reopen a half-consumed stream. Prefer `stream_research()` for long
+tasks. Pass `from_id` to resume a stream after a disconnect.
 
 Each helper has an `_async` twin: `research_and_wait_async`,
 `research_background_async`, `poll_research_task_async`, `stream_research_async`.
@@ -355,6 +360,50 @@ Search and contents are fast enough for the default. Research in background mode
 is the exception: the helpers under
 [Long-running research](#long-running-research) manage their own deadlines, so
 `timeout_s` there bounds the wait rather than `timeout_ms`.
+
+### Attribution
+
+Every SDK request emits an `X-Client-Info` header so the analytics layer can
+split SDK traffic from MCP traffic. The wire format is:
+
+```
+sdk[; client=<name>[/<version>]][; title=<title>][; url=<url>]; ua=python/<V> httpx/<V>
+```
+
+The leading `sdk` token names the channel, matching the `mcp` and `skill`
+tokens other You.com surfaces emit. The calling language stays recoverable
+from `ua=` (`python/…` here, `node/…` from the TypeScript SDK), and the SDK's
+own version travels in the `User-Agent` (`youdotcom-python-sdk/<version>`).
+
+Identify your application with `app_name` / `app_version`, which populate the
+`client=` segment, and optionally `app_title` / `app_url`:
+
+```python
+import os
+from youdotcom import You
+
+with You(
+    api_key_auth=os.getenv("YDC_API_KEY"),
+    app_name="acme-bot",
+    app_version="2.4.0",
+    app_title="Acme Bot",
+    app_url="https://acme.example",
+    timeout_ms=60_000,
+) as you:
+    res = you.search(query="...")
+```
+
+All four are optional; existing call sites are unaffected. When `app_name` is
+unset the `client=` segment is dropped entirely, so a request from an
+undeclared caller is simply `sdk; ua=python/… httpx/…`.
+
+Values must be printable ASCII excluding `;`, and `app_name` / `app_version`
+additionally exclude `/` since the analytics side splits `client=` on it.
+Invalid values raise `ValueError` at construction time.
+
+The MCP-specific `X-MCP-Attribution` header is never set by the SDK — it is
+assembled on the MCP server, which is the only layer that can populate its
+`keyless` / `payment` / `ip` flags accurately.
 
 ### Servers
 

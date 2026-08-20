@@ -2,7 +2,7 @@
 import importlib.metadata
 
 __title__: str = "youdotcom"
-__version__: str = "3.1.0"
+__version__: str = "3.1.2"
 __openapi_doc_version__: str = "1.0.0"
 
 try:

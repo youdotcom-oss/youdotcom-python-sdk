@@ -190,6 +190,7 @@ class TestAnswerSuccess:
         body = captured["body"]
         assert "freshness" not in body
         assert "country" not in body
+        assert "safesearch" not in body
         assert "include_domains" not in body
         assert body["query"] == "test"
 
@@ -200,6 +201,32 @@ class TestAnswerSuccess:
         assert isinstance(res, AnswerResponse)
         assert len(res.citations) == 2
         assert len(res.results.web) == 2
+
+    def test_safesearch_sent_on_wire(self):
+        captured: dict = {}
+
+        def handler(request):
+            captured["body"] = json.loads(request.content)
+            return httpx.Response(
+                200, headers={"content-type": "application/json"}, content=_ANSWER_BODY
+            )
+
+        with _sync_you(handler) as you:
+            you.answer(query="test", safesearch="strict")
+        assert captured["body"]["safesearch"] == "strict"
+
+    def test_safesearch_omitted_when_not_passed(self):
+        captured: dict = {}
+
+        def handler(request):
+            captured["body"] = json.loads(request.content)
+            return httpx.Response(
+                200, headers={"content-type": "application/json"}, content=_ANSWER_BODY
+            )
+
+        with _sync_you(handler) as you:
+            you.answer(query="test")
+        assert "safesearch" not in captured["body"]
 
 
 class TestAnswerErrors:

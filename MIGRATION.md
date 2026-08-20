@@ -297,6 +297,68 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
         # str(deprecations[0].message) == "livecrawl is deprecated; use extraction instead"
 ```
 
+## 3.1.1 → 3.1.2
+
+> **Additive release.** No parameter is renamed, removed, or changed in
+> meaning. Two changes can require an edit, and only in narrow cases.
+
+### Action required
+
+| Change | Who is affected | What to do |
+|--------|-----------------|------------|
+| Import machinery no longer re-exported from the package root | Anyone importing a stdlib/typing name or internal helper *from* `youdotcom` | Import it from its real home. See [Root namespace narrowing](#root-namespace-narrowing-1) |
+| `ResearchTaskStreamEvent.event` is typed `Union[Event, str]` | Type-checked code calling `evt.event.value` | Guard with `isinstance(evt.event, Event)`. See [SSE event names](#sse-event-names) |
+
+### Root namespace narrowing
+
+`youdotcom/__init__.py` no longer does `from .sdk import *`, so the names
+those statements pulled in transitively are no longer attributes of
+`youdotcom`. This is what makes `import youdotcom` transport-free inside a
+Temporal Workflow sandbox.
+
+```python
+# Before (3.1.1): worked by accident.
+from youdotcom import httpx, Optional, eventstreaming
+
+# After (3.1.2): ImportError. Import from the real module.
+import httpx
+from typing import Optional
+from youdotcom.utils import eventstreaming
+```
+
+Everything documented still resolves from the root, including under
+`from youdotcom import *`:
+
+```python
+from youdotcom import You, SDKConfiguration, RetryConfig, BackoffStrategy
+from youdotcom import models, errors, utils, types
+import youdotcom.sdk          # private submodules still import directly
+```
+
+### SSE event names
+
+The `event` field on `ResearchTaskStreamEvent` accepts event names this SDK
+version does not enumerate, so an added server-side event no longer raises
+`ResponseValidationError`. Known names still resolve to `Event` members;
+unknown names arrive as plain `str`. The declared type now says so, which
+means an unguarded `.value` becomes a type error:
+
+```python
+# Type error on 3.1.2 -- and an AttributeError at runtime, on 3.1.1 too,
+# the first time the server emits a name this SDK doesn't know.
+print(evt.event.value)
+
+# Guarded: correct on both versions.
+if isinstance(evt.event, Event):
+    print(evt.event.value)
+else:
+    print(evt.event)
+
+# Comparing against raw strings needs no guard -- Event members are `str`.
+if evt.event == "completed":
+    ...
+```
+
 ## 2.4.0 → 2.5.0
 
 ### New `frontier` Research Effort Tier
@@ -411,15 +473,36 @@ task = research_background(you, input="...", research_effort=ResearchEffort.DEEP
 detail = poll_research_task(you, task_id=task.task_id)
 
 # Option 3: Stream SSE events with a tolerant decoder
-# (recommended over you.stream_research_task for real tasks, since
-# the server emits intermediate event types not in the strict enum)
+# (see the note below on choosing between this and
+# you.stream_research_task)
 for event in stream_research(you, task_id=task.task_id):
     print(event.event, event.data)
     if event.event in ("response.done", "complete", "completed"):
         break
 ```
 
-> **Note on streaming:** The generated `you.stream_research_task()` method uses a strict pydantic decoder that validates event names against a fixed `Event` enum. The server emits intermediate workflow events (e.g. `response.created`, `response.starting`, `response.output_item.added`) that are not in this enum, which causes `ResponseValidationError` on the first intermediate event. The `stream_research()` helper uses a tolerant decoder that surfaces unknown event names as raw dicts instead of crashing. For real research tasks, prefer `stream_research()`.
+> **Note on streaming (as written for 2.5.0):** The generated
+> `you.stream_research_task()` method uses a strict pydantic decoder that
+> validates event names against a fixed `Event` enum. The server emits
+> intermediate workflow events (e.g. `response.created`, `response.starting`,
+> `response.output_item.added`) that are not in this enum, which causes
+> `ResponseValidationError` on the first intermediate event. The
+> `stream_research()` helper uses a tolerant decoder that surfaces unknown
+> event names as raw dicts instead of crashing. For real research tasks, prefer
+> `stream_research()`.
+>
+> **Updated in 3.1.2 — the `ResponseValidationError` half of this no longer
+> applies.** `Event` is now an open enum and the field is typed
+> `EventName` (`Union[Event, str]`), so `you.stream_research_task()` decodes
+> unenumerated event names as plain `str` instead of raising. The three event
+> names above are covered by a regression test. See "3.1.1 → 3.1.2" above.
+>
+> `stream_research()` is still the better choice for long real tasks, but for a
+> different reason: `stream_research_task()` retries `[429, 500, 502, 503, 504]`
+> on stream-open, which can silently reopen a half-consumed stream, whereas
+> `stream_research()` deliberately skips those retries. It also tolerates data
+> frames that are not valid JSON. If you only needed unknown-event tolerance,
+> either method now works.
 
 ### Polling and Timeout Guidance
 
