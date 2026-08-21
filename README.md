@@ -61,6 +61,8 @@ strings work in any case. `country="us"` and `safesearch="STRICT"` are both
 accepted. Elsewhere, pass the value as the API spells it (all lowercase) or
 import the enum from `youdotcom.models`.
 
+The snippets below assume the [Quickstart](#quickstart) client is in scope as `you`.
+
 ### Answer
 
 A synthesized answer with citations, grounded in live web results.

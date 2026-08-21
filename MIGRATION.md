@@ -306,7 +306,7 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
 
 | Change | Who is affected | What to do |
 |--------|-----------------|------------|
-| Import machinery no longer re-exported from the package root | Anyone importing a stdlib/typing name or internal helper *from* `youdotcom` | Import it from its real home. See [Root namespace narrowing](#root-namespace-narrowing-1) |
+| Import machinery no longer re-exported from the package root | Anyone importing a stdlib/typing name or internal helper *from* `youdotcom` | Import it from its real home. See [Root namespace narrowing](#root-namespace-narrowing) |
 | `ResearchTaskStreamEvent.event` is typed `Union[Event, str]` | Type-checked code calling `evt.event.value` | Guard with `isinstance(evt.event, Event)`. See [SSE event names](#sse-event-names) |
 
 ### Root namespace narrowing

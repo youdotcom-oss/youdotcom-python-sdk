@@ -379,6 +379,17 @@ class TestWireRoundTrip:
             you.search(query="q", http_headers={"X-Client-Info": "caller-wins"})
         assert captured["headers"]["x-client-info"] == "caller-wins"
 
+    def test_caller_supplied_http_headers_override_case_insensitive(self):
+        """A caller's ``X-Client-Info`` wins even when the case differs.
+
+        HTTP header names are case-insensitive, so ``http_headers={"x-client-info": ...}``
+        must replace the SDK's ``X-Client-Info``, not coalesce with it as
+        ``"sdk-value, caller-wins"`` (which breaks the ``"; "``-delimited grammar).
+        """
+        with _capture(app_title="MyAgent") as (you, captured):
+            you.search(query="q", http_headers={"x-client-info": "caller-wins"})
+        assert captured["headers"]["x-client-info"] == "caller-wins"
+
 
 class TestMcpAttributionNeverSent:
     """The SDK must never emit ``X-MCP-Attribution``.
@@ -712,6 +723,14 @@ class TestGeneratedUaSegmentIsDefensive:
             out = build_client_info_header()
         assert out.endswith("httpx/unknown")
         assert out.count(";") == 1  # only the sdk -> ua separator
+
+    @pytest.mark.parametrize("version", ["0.28.1\r\n", "0.28.1\x00", "0.28.1\x0b"])
+    def test_control_chars_in_httpx_version_degrade_to_unknown(self, version):
+        """ASCII control characters pass ``isascii()`` but break header encoding."""
+        with mock.patch.object(httpx, "__version__", version):
+            out = build_client_info_header()
+        assert out.endswith("httpx/unknown")
+        assert out.count(";") == 1
 
     def test_missing_dunder_does_not_raise(self):
         with mock.patch.object(httpx, "__version__", None):

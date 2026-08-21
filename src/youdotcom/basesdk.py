@@ -242,6 +242,17 @@ class BaseSDK:
             headers["content-type"] = serialized_request_body.media_type
 
         if http_headers is not None:
+            # Delete existing headers that case-insensitively match
+            # caller-provided keys so the caller's value replaces the
+            # SDK's, not coalesces with it.  Without this, a caller
+            # passing ``{"x-client-info": ...}`` (lowercase) leaves both
+            # ``X-Client-Info`` (SDK) and ``x-client-info`` (caller) in
+            # the dict; httpx sends both raw lines and coalesces them as
+            # ``"a, b"``, breaking the ``"; "``-delimited grammar.
+            lowered = {k.lower() for k in http_headers}
+            for existing in list(headers):
+                if existing.lower() in lowered:
+                    del headers[existing]
             for header, value in http_headers.items():
                 headers[header] = value
 

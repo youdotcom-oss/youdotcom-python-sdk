@@ -175,7 +175,9 @@ def build_client_info_header(
     # break every request (a raw ``;`` would forge a segment, and non-ASCII dies
     # in httpx header encoding with no SDK frame in the traceback).
     httpx_version = str(getattr(httpx, "__version__", "unknown"))
-    if not httpx_version.isascii() or any(c in httpx_version for c in ";/"):
+    try:
+        validate_attribution_arg("httpx.__version__", httpx_version, forbidden="/")
+    except ValueError:
         httpx_version = "unknown"
     parts.append(
         f"ua=python/{py.major}.{py.minor}.{py.micro} httpx/{httpx_version}"
