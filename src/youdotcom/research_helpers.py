@@ -13,10 +13,14 @@ Convenience helpers on top of the research endpoints:
   with ``background=True``, then stream SSE events until a terminal event
   arrives, and fetch the final ``TaskDetail``.
 - ``stream_research`` / ``stream_research_async``: Iterate the SSE event
-  stream with a tolerant decoder that surfaces non-typed event names
-  (``research.searching``, etc.) as raw dicts instead of crashing on
-  validation. Use this when the server may emit event types outside the
-  documented enum.
+  stream with a tolerant decoder, yielding ``RawStreamEvent`` objects whose
+  ``event`` is the raw name as a ``str`` and whose ``data`` is the parsed
+  JSON payload (or the raw string when a frame is not valid JSON). Since
+  3.1.2 ``stream_research_task`` also tolerates unenumerated event names, so
+  the remaining difference is frame coverage: these helpers pass
+  ``data_required=False``, so they yield data-less frames (a bare
+  ``event: ping`` heartbeat, or one carrying only ``id:``/``retry:``) that
+  ``stream_research_task`` silently drops.
 """
 
 from __future__ import annotations
@@ -95,8 +99,10 @@ def _decode_raw_event(raw_json: str) -> RawStreamEvent:
     """Tolerant SSE decoder used by ``stream_research``.
 
     Accepts any JSON object regardless of whether ``event`` matches the
-    documented enum, so unknown workflow events pass through instead of
-    failing pydantic validation.
+    documented enum, and unlike the pydantic path also accepts a ``data``
+    payload that is not a JSON object at all. Since 3.1.2 the pydantic model
+    tolerates unenumerated event names too (``Event`` is an open enum), so this
+    decoder's remaining advantage is shape tolerance, not name tolerance.
     """
     parsed = json.loads(raw_json)
     if not isinstance(parsed, dict):
@@ -616,7 +622,7 @@ def _open_raw_stream(
 
     Mirrors the request setup used by ``client.stream_research_task`` but
     wires :func:`_decode_raw_event` into the ``EventStream`` instead of the
-    strict pydantic ``ResearchTaskStreamEvent`` decoder.
+    pydantic ``ResearchTaskStreamEvent`` decoder.
     """
     kwargs = _stream_build_kwargs(
         client, task_id, http_headers=http_headers, from_id=from_id,

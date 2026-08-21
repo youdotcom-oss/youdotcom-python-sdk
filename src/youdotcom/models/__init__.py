@@ -90,6 +90,7 @@ if TYPE_CHECKING:
     )
     from .researchtaskstreamevent import (
         Event,
+        EventName,
         ResearchTaskStreamEvent,
         ResearchTaskStreamEventData,
         ResearchTaskStreamEventDataTypedDict,
@@ -143,6 +144,7 @@ __all__ = [
     "ContentsTypedDict",
     "Country",
     "Event",
+    "EventName",
     "Extraction",
     "ExtractionFormat",
     "ExtractionFullPage",
@@ -304,6 +306,7 @@ _dynamic_imports: dict[str, str] = {
     "Source": ".researchresponse",
     "SourceTypedDict": ".researchresponse",
     "Event": ".researchtaskstreamevent",
+    "EventName": ".researchtaskstreamevent",
     "Extraction": ".extraction",
     "ExtractionFormat": ".extraction",
     "ExtractionFullPage": ".extraction",

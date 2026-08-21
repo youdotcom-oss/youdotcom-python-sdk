@@ -14,6 +14,7 @@ from youdotcom._hooks import (
 from youdotcom.utils import (
     RetryConfig,
     SerializedRequestBody,
+    build_client_info_header,
     get_body_content,
     run_sync_in_thread,
 )
@@ -199,6 +200,16 @@ class BaseSDK:
         headers = utils.get_headers(request, _globals)
         headers["Accept"] = accept_header_value
         headers[user_agent_header] = self.sdk_configuration.user_agent
+        # ``X-Client-Info`` attribution header, set at the same single
+        # site as ``User-Agent`` — every endpoint funnels through
+        # ``_build_request_with_client``, so a single construction
+        # point prevents per-endpoint drift.
+        headers["X-Client-Info"] = build_client_info_header(
+            app_name=self.sdk_configuration.app_name,
+            app_version=self.sdk_configuration.app_version,
+            app_title=self.sdk_configuration.app_title,
+            app_url=self.sdk_configuration.app_url,
+        )
 
         if security is not None:
             if callable(security):
@@ -231,6 +242,17 @@ class BaseSDK:
             headers["content-type"] = serialized_request_body.media_type
 
         if http_headers is not None:
+            # Delete existing headers that case-insensitively match
+            # caller-provided keys so the caller's value replaces the
+            # SDK's, not coalesces with it.  Without this, a caller
+            # passing ``{"x-client-info": ...}`` (lowercase) leaves both
+            # ``X-Client-Info`` (SDK) and ``x-client-info`` (caller) in
+            # the dict; httpx sends both raw lines and coalesces them as
+            # ``"a, b"``, breaking the ``"; "``-delimited grammar.
+            lowered = {k.lower() for k in http_headers}
+            for existing in list(headers):
+                if existing.lower() in lowered:
+                    del headers[existing]
             for header, value in http_headers.items():
                 headers[header] = value
 

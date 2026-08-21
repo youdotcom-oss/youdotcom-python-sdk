@@ -2,6 +2,7 @@ from __future__ import annotations
 from .country import Country
 from .freshnessvalue import FreshnessValue
 from .language import Language
+from .safesearch import SafeSearch
 from pydantic import model_serializer
 from typing import List, Optional
 from youdotcom.types import BaseModel, UNSET_SENTINEL
@@ -22,6 +23,9 @@ class AnswerRequestBody(BaseModel):
     language: Optional[Language] = None
     r"""A supported BCP 47 language tag that determines the language of the web results."""
 
+    safesearch: Optional[SafeSearch] = None
+    r"""Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."""
+
     include_domains: Optional[List[str]] = None
     r"""Domains to exclusively include. Cannot combine with ``exclude_domains`` or ``boost_domains``. Max 500."""
 
@@ -34,7 +38,7 @@ class AnswerRequestBody(BaseModel):
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
         optional_fields = set(
-            ["freshness", "country", "language", "include_domains", "exclude_domains", "boost_domains"]
+            ["freshness", "country", "language", "safesearch", "include_domains", "exclude_domains", "boost_domains"]
         )
         serialized = handler(self)
         m = {}

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Answer API returns a synthesized natural-language answer with citations and the web results used to generate it. Send a `query` with optional freshness, locale, and domain controls.
+The Answer API returns a synthesized natural-language answer with citations and the web results used to generate it. Send a `query` with optional freshness, locale, domain, and explicit-content controls.
 
 Called as a direct method on the `You` client: `you.answer(query=...)`.
 
@@ -12,7 +12,7 @@ Called as a direct method on the `You` client: `you.answer(query=...)`.
 
 ## answer
 
-Returns a synthesized natural-language answer with citations and the web results used to generate it. Provide a `query` and optional freshness, locale, and domain controls.
+Returns a synthesized natural-language answer with citations and the web results used to generate it. Provide a `query` and optional freshness, locale, domain, and explicit-content controls.
 
 ### Example Usage
 
@@ -23,9 +23,13 @@ from youdotcom import You
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
-    res = you.answer(query="What are the main causes of the 2008 financial crisis?")
+    res = you.answer(
+        query="What are the main causes of the 2008 financial crisis?",
+        safesearch="strict",
+    )
 
     # Handle response
     print(res.answer)
@@ -42,6 +46,7 @@ with You(
 | `freshness` | *Optional[str]* | :heavy_minus_sign: | `day`, `week`, `month`, `year`, or `YYYY-MM-DDtoYYYY-MM-DD` |
 | `country` | *Optional[str]* | :heavy_minus_sign: | Country code (e.g. `US`, `GB`, `FR`). Normalized to uppercase. |
 | `language` | *Optional[str]* | :heavy_minus_sign: | BCP 47 language tag (e.g. `EN`, `EN-GB`, `FR`). Normalized to uppercase. |
+| `safesearch` | *Optional[str]* | :heavy_minus_sign: | Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not. |
 | `include_domains` | *Optional[List[str]]* | :heavy_minus_sign: | Domains to exclusively include. Cannot combine with `exclude_domains` or `boost_domains`. Max 500. |
 | `exclude_domains` | *Optional[List[str]]* | :heavy_minus_sign: | Domains to exclude. Cannot combine with `include_domains`. Can combine with `boost_domains`. Max 500. |
 | `boost_domains` | *Optional[List[str]]* | :heavy_minus_sign: | Domains to prefer in ranking. Cannot combine with `include_domains`. Can combine with `exclude_domains`. Max 500. |

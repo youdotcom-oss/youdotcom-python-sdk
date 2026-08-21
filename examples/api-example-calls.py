@@ -254,10 +254,16 @@ def research_stream_example():
     Research API with streaming: submit in background mode, then stream
     real-time SSE events with the tolerant stream_research helper.
 
-    The tolerant helper surfaces undocumented intermediate event types
-    (e.g. research.searching, response.created) as raw dicts instead of
-    crashing on pydantic validation. Recommended over the generated
-    you.stream_research_task() for real tasks.
+    The helper yields RawStreamEvent objects, so undocumented intermediate
+    event types (e.g. research.searching, response.created) arrive with
+    .event as a plain str and .data as the parsed JSON payload.
+
+    Since 3.1.2 you.stream_research_task() also tolerates unenumerated event
+    names, so it no longer raises on them either. This helper still differs in
+    which frames it surfaces: stream_research_task() drops data-less frames
+    (a bare `event: ping` heartbeat, or one carrying only id:/retry:) and
+    requires every frame to have an id and a JSON-object data, whereas this
+    one yields them and accepts a data payload that is not valid JSON.
     """
     from youdotcom.research_helpers import research_background, stream_research
 

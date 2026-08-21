@@ -143,9 +143,13 @@ class TestAnswerNormalization:
     def test_freshness_lower(self):
         assert _answer_body(freshness="MONTH")["freshness"] == "month"
 
+    @pytest.mark.parametrize("value", ["strict", "STRICT", SafeSearch.STRICT])
+    def test_safesearch_normalizes_to_lower(self, value):
+        assert _answer_body(safesearch=value)["safesearch"] == "strict"
+
     def test_optional_params_omitted_when_unset(self):
         body = _answer_body()
-        for field in ("country", "language", "freshness"):
+        for field in ("country", "language", "freshness", "safesearch"):
             assert field not in body
 
 

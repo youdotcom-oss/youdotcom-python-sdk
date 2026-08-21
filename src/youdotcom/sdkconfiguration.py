@@ -35,6 +35,17 @@ class SDKConfiguration:
     user_agent: str = __user_agent__
     retry_config: OptionalNullable[RetryConfig] = field(default_factory=lambda: UNSET)
     timeout_ms: Optional[int] = None
+    # Optional caller-identity fields consumed by
+    # ``utils.attribution.build_client_info_header`` and emitted in the
+    # ``X-Client-Info`` header on every outbound request. All four default
+    # to ``None`` so existing callers (and every existing test) keep
+    # working without any change. ``app_name`` / ``app_version`` become the
+    # ``client=`` segment, which is omitted entirely when ``app_name`` is
+    # unset.
+    app_name: Optional[str] = None
+    app_version: Optional[str] = None
+    app_title: Optional[str] = None
+    app_url: Optional[str] = None
 
     def get_server_details(self) -> Tuple[str, Dict[str, str]]:
         if self.server_url is not None and self.server_url:

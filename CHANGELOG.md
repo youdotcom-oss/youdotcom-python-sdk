@@ -5,6 +5,128 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.2] - 2026-08-20
+
+Sister release track to the extraction-parameter rollout
+(3.1.0 + 3.1.1). Every documented surface is backward-compatible; see
+"Root namespace narrowing" below for the one exception, which affects
+only names that were never part of the public API.
+
+The top-level root surface now resolves lazily via PEP 562
+``__getattr__``. `You`, `SDKConfiguration`, `BaseSDK`, `RetryConfig`,
+`BackoffStrategy`, the `HttpClient` protocols, the logger and hook
+helpers, and the `models` / `errors` / `utils` / `types` sub-packages
+all still resolve from the package root, and all still bind under
+`from youdotcom import *` — but each is imported on first access, so
+``import youdotcom`` no longer pulls transport-layer modules into
+``sys.modules``.
+
+### Root namespace narrowing
+
+Replacing the eager `from .sdk import *` / `from .sdkconfiguration
+import *` also stops those statements from leaking their own imports
+onto `youdotcom`. On 3.1.1 the package root carried 48 public names;
+24 of them were import machinery rather than API, and are gone:
+
+- stdlib and third-party modules the SDK imports internally: `httpx`,
+  `asyncio`, `warnings`, `weakref`
+- typing and dataclass helpers: `Any`, `Callable`, `Dict`, `Iterable`,
+  `List`, `Mapping`, `Optional`, `Tuple`, `Union`, `cast`,
+  `dataclass`, `field`
+- internal plumbing: `eventstreaming`, `get_security_from_env`,
+  `unmarshal_json_response`, `remove_suffix`
+- private submodule aliases: `youdotcom.sdk`, `youdotcom.basesdk`,
+  `youdotcom.httpclient`, `youdotcom.sdkconfiguration` (still
+  importable directly, e.g. `import youdotcom.sdk`)
+
+None were documented, exported deliberately, or referenced by any
+example. The narrowing is intentional: re-exporting them is what
+dragged `httpx` and `urllib.request` into every `import youdotcom`.
+If you were relying on one, import it from its own module —
+`from youdotcom.utils import eventstreaming`. See
+`MIGRATION.md` ("3.1.1 → 3.1.2") for the before/after.
+
+Going the other way, `BackoffStrategy` now resolves from the root
+(`from youdotcom import BackoffStrategy`) alongside `RetryConfig`,
+which it configures; on 3.1.1 only `RetryConfig` did.
+
+`__version__`, `__title__`, `__user_agent__`, and
+`__openapi_doc_version__` remain reachable as attributes
+(`youdotcom.__version__`) and, as on 3.1.1, are deliberately **not**
+bound by `from youdotcom import *`, so a star import cannot overwrite
+a consumer package's own `__version__`.
+
+### Fixed
+
+- **Models are usable inside a Temporal Workflow.**
+  `youdotcom/__init__.py` no longer eagerly pulls transport-layer
+  modules (including `httpx` and `urllib.request`) into
+  ``sys.modules``, so a Workflow module that does
+  `from youdotcom.models import SearchResponse` (no
+  `workflow.unsafe.imports_passed_through()` work-around) prepares
+  cleanly under the default `SandboxedWorkflowRunner`. PEP 562 module
+  `__getattr__` mirrors the public-import surface without dragging
+  transport; the `models/__init__.py` lazy pattern shipped in 3.0.0 was
+  lifted to the package root. Regression coverage lives in
+  `tests/test_root_init.py` (subprocess assertion: `import youdotcom`
+  does not load `httpx` / `urllib.request`).
+- **`ResearchTaskStreamEvent.event` accepts future SSE event names.**
+  `Event` now uses `OpenEnumMeta` so a server-side event-name addition
+  (a new terminal status, a retry signal, anything the SDK does not
+  yet enumerate) does not raise `ResponseValidationError` on the
+  unmarshal path. Known event names still resolve to the `Event` enum
+  member; unknown names unmarshal as plain `str` values that compare
+  equal to their raw value, so callers branching on raw strings
+  (`evt.event == "completed"`) keep working unchanged.
+  Exhaustive-enumeration callers (`isinstance(evt.event, Event)`) get
+  the right negative answer. Serialization produces no warnings.
+  Coverage in `tests/test_researchtaskstreamevent.py`, including a
+  regression test that drives the real `stream_research_task` SSE
+  decode path with unknown event names.
+
+  The field is declared `EventName` (a new public alias for
+  `Union[Event, str]`, exported from `youdotcom.models`) because that
+  is what it holds at runtime. **Typed callers may see a new type
+  error:** `evt.event.value` no longer type-checks, since the value is
+  a plain `str` for any event name this SDK version does not
+  enumerate. That error is the bug surfacing rather than a new
+  restriction — the same code raises `AttributeError` at runtime the
+  first time the server emits a new name. Guard with
+  `isinstance(evt.event, Event)` before using the enum API, or compare
+  against raw strings, which needs no guard.
+
+  Direct coercion also stops validating: `Event("bogus")` now returns the
+  string rather than raising `ValueError`. That is inherent to an open enum
+  and applies only to `Event`, whose values the server may extend; the
+  request-side enums (`SafeSearch`, `Country`, `Language`, ...) stay closed
+  and still raise.
+
+### Added
+
+- **Attribution header `X-Client-Info` on every outbound request.**
+  New optional `You(app_name=..., app_version=..., app_title=...,
+  app_url=...)` constructor args identify the calling application. They are
+  keyword-only, so later attribution args can be added without a breaking
+  change; the existing positional parameters are untouched. Wire format:
+
+      sdk[; client=<name>[/<version>]][; title=<title>][; url=<url>]; ua=python/<V> httpx/<V>
+
+  so the analytics layer can distinguish SDK traffic from other
+  sources. The leading `sdk` token names the channel, matching the `mcp` and
+  `skill` tokens emitted elsewhere; the calling language stays recoverable
+  from `ua=`, and the SDK's own version from the `User-Agent`. `client=`
+  identifies the *caller* and is dropped entirely when `app_name` is unset,
+  so an undeclared caller emits `sdk; ua=python/… httpx/…`. All four values
+  must be printable ASCII excluding `;`, with `app_name` / `app_version` also
+  excluding `/`; invalid values raise `ValueError` at construction time, as
+  does passing `app_version` without `app_name`.
+- **`safesearch` parameter on `You.answer()`.**
+  The Answer API now supports the same explicit-content filtering
+  as the Web Search API. New optional `safesearch` kwarg on
+  `answer()` and `answer_async()` accepts ``off``, ``moderate``
+  (default), or ``strict``. Case-insensitive, like the search
+  counterpart. Existing call sites are unaffected.
+
 ## [3.1.1] - 2026-08-12
 
 ### Fixed
