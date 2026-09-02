@@ -30,6 +30,8 @@ returned verbatim as the string the API sent:
 Values are not parsed beyond ISO 8601. A parser only ever covers formats
 already seen, and has to guess on ambiguous input (`5/6/2024` is May 6 or
 6 May depending on the producer), so it can be wrong by months with no signal
+to the caller.
+
 A JSON object or array still raises, so a structural change to the field stays
 loud. A number is read as a Unix epoch, as it was before this change.
 
