@@ -4,9 +4,9 @@ from __future__ import annotations
 from .contents import Contents, ContentsTypedDict
 from datetime import datetime
 from pydantic import model_serializer
-from typing import Optional
+from typing import Optional, Union
 from typing_extensions import NotRequired, TypedDict
-from youdotcom.types import BaseModel, UNSET_SENTINEL
+from youdotcom.types import BaseModel, LenientDateTime, UNSET_SENTINEL
 
 
 class NewsResultTypedDict(TypedDict):
@@ -14,7 +14,7 @@ class NewsResultTypedDict(TypedDict):
     r"""The title of the news result."""
     description: NotRequired[str]
     r"""A brief description of the content of the news result."""
-    page_age: NotRequired[datetime]
+    page_age: NotRequired[Union[datetime, str]]
     r"""UTC timestamp of the article's publication date."""
     thumbnail_url: NotRequired[str]
     r"""URL of the thumbnail."""
@@ -31,7 +31,7 @@ class NewsResult(BaseModel):
     description: Optional[str] = None
     r"""A brief description of the content of the news result."""
 
-    page_age: Optional[datetime] = None
+    page_age: LenientDateTime = None
     r"""UTC timestamp of the article's publication date."""
 
     thumbnail_url: Optional[str] = None

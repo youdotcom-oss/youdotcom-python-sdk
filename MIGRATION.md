@@ -1,5 +1,42 @@
 # Migration Guide
 
+## 3.1.2 → 3.2.0
+
+> **One type widens.** `page_age` on `WebResult` and `NewsResult` is now
+> `Union[datetime, str, None]`, so a value the API sends in a non-ISO format
+> reaches you as a string instead of failing the whole response.
+
+### Action required
+
+| Change | Who is affected | What to do |
+|--------|-----------------|------------|
+| `page_age` is `Union[datetime, str, None]` | Type-checked code calling `page_age.date()`, `.strftime()`, or comparing it to a `datetime` | Guard with `isinstance`. See below |
+
+```python
+# Before (3.1.2): page_age was always a datetime or None.
+for result in res.results.web:
+    if result.page_age is not None:
+        print(result.page_age.date())
+
+# After (3.2.0): it may be the raw string the API sent.
+from datetime import datetime
+
+for result in res.results.web:
+    if isinstance(result.page_age, datetime):
+        print(result.page_age.date())
+    elif result.page_age:
+        print(f"unparsed timestamp: {result.page_age}")
+```
+
+Well-formed responses are unaffected at runtime: an ISO timestamp still
+arrives as a `datetime`, exactly as before. The string branch only appears for
+values that raised `ResponseValidationError` on 3.1.2 and killed the entire
+response — so no working code was reading them. The change is a compile-time
+one for type-checked callers.
+
+This mirrors how 3.1.2 handled unknown SSE event names
+([`EventName`](#sse-event-names)): keep the value, let the caller narrow.
+
 ## 3.1.1 → 3.1.2
 
 > **Additive release.** No parameter is renamed, removed, or changed in

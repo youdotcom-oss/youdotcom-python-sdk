@@ -34,6 +34,12 @@ scripts/publish.sh                       # build + publish (needs $PYPI_TOKEN)
   `ydc-index.io` and must be overridden per call.
 - Research helpers bound waits: 10 min default, 4h for `frontier`.
 - Never enable `YOU_DEBUG=1` in production; never commit debug logs.
+- **`page_age` may be a `str`** — `WebResult`/`NewsResult` type it
+  `types.LenientDateTime` (`Union[datetime, str, None]`): ISO parses, anything else
+  is returned verbatim so a malformed value cannot fail the whole response. Do not
+  add format parsing — it only covers shapes already seen and guesses wrong on
+  ambiguous dates. A JSON object or array must keep raising so a structural change
+  stays loud; a number is read as an epoch, which predates this field's widening.
 
 ## Verification
 
