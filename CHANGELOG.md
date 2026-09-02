@@ -5,6 +5,45 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-09-01
+
+Minor release. A non-ISO `page_age` on a search or news result no longer fails
+the response. One type widens — see [MIGRATION.md](MIGRATION.md#312--320).
+
+### `page_age` is now `Union[datetime, str, None]`
+
+`page_age` was typed `Optional[datetime]` to match the spec's
+`format: date-time`. A US-locale value arrived in practice, and because
+validation covers the whole payload, one bad timestamp raised
+`ResponseValidationError` and cost the caller *every* result in the response.
+
+An ISO 8601 value still parses to a `datetime`. Any other value is now
+returned verbatim as the string the API sent:
+
+| Value from the API | Before | After |
+| ------------------ | ------ | ----- |
+| `"2025-06-25T11:41:00"` | `datetime(2025, 6, 25, 11, 41)` | unchanged |
+| `"7/29/2024 10:38:56 AM"` | `ResponseValidationError` | `"7/29/2024 10:38:56 AM"` |
+| `"171 days ago"`, `""` | `ResponseValidationError` | returned verbatim |
+| `{...}`, `[...]` (wrong type) | `ResponseValidationError` | unchanged — still raises |
+
+Values are not parsed beyond ISO 8601. A parser only ever covers formats
+already seen, and has to guess on ambiguous input (`5/6/2024` is May 6 or
+6 May depending on the producer), so it can be wrong by months with no signal
+A JSON object or array still raises, so a structural change to the field stays
+loud. A number is read as a Unix epoch, as it was before this change.
+
+### Changed
+
+- `WebResult.page_age` and `NewsResult.page_age` are `Union[datetime, str, None]`
+  (was `Optional[datetime]`). `AnswerSearchResult.page_age` is unchanged
+  (`Optional[str]`).
+- `WebResultTypedDict.page_age` / `NewsResultTypedDict.page_age` widen to match.
+
+### Added
+
+- `youdotcom.types.LenientDateTime`, the annotated type behind the above.
+
 ## [3.1.2] - 2026-08-20
 
 Sister release track to the extraction-parameter rollout

@@ -4,9 +4,9 @@ from __future__ import annotations
 from .contents import Contents, ContentsTypedDict
 from datetime import datetime
 from pydantic import model_serializer
-from typing import List, Optional
+from typing import List, Optional, Union
 from typing_extensions import NotRequired, TypedDict
-from youdotcom.types import BaseModel, UNSET_SENTINEL
+from youdotcom.types import BaseModel, LenientDateTime, UNSET_SENTINEL
 
 
 class WebResultTypedDict(TypedDict):
@@ -20,7 +20,7 @@ class WebResultTypedDict(TypedDict):
     r"""An array of text snippets from the search result, providing a preview of the content."""
     thumbnail_url: NotRequired[str]
     r"""URL of the thumbnail."""
-    page_age: NotRequired[datetime]
+    page_age: NotRequired[Union[datetime, str]]
     r"""The age of the search result."""
     contents: NotRequired[ContentsTypedDict]
     r"""Contents of the page if ``extraction`` was enabled (formerly ``livecrawl``)."""
@@ -44,7 +44,7 @@ class WebResult(BaseModel):
     thumbnail_url: Optional[str] = None
     r"""URL of the thumbnail."""
 
-    page_age: Optional[datetime] = None
+    page_age: LenientDateTime = None
     r"""The age of the search result."""
 
     contents: Optional[Contents] = None

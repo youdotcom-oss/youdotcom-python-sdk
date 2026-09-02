@@ -1,10 +1,11 @@
 
 
-from pydantic import ConfigDict, model_serializer
+from datetime import datetime
+from pydantic import ConfigDict, Field, model_serializer
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic_core import core_schema
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, Union
-from typing_extensions import TypeAliasType, TypeAlias
+from typing_extensions import Annotated, TypeAliasType, TypeAlias
 
 
 class BaseModel(PydanticBaseModel):
@@ -75,3 +76,13 @@ class UnrecognizedInt(int):
             ]),
             strict_schema=core_schema.none_schema(),  # Always fails in strict mode
         )
+
+
+# Non-ISO values reach us, so `page_age` accepts either. Left-to-right so an
+# ISO string parses to a `datetime`; anything else stays the string it came as.
+# Do not add format parsing: it only covers shapes already seen, and it has to
+# guess on ambiguous input (`5/6/2024` is May 6 or 6 May depending on the
+# producer), which can be wrong by months with no signal to the caller.
+LenientDateTime = Annotated[
+    Union[datetime, str, None], Field(union_mode="left_to_right")
+]

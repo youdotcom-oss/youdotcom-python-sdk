@@ -249,6 +249,40 @@ class TestLiveSearchExtraction:
             assert highlights_seen, "Expected at least one result with contents.highlights"
             assert all(isinstance(h, list) for h in highlights_seen)
 
+    def test_highlights_page_age(self, you_client):
+        """`page_age` resolves on the highlights path.
+
+        Asserts the field is one of the declared union members, and that any
+        string is genuinely non-ISO rather than a parse we missed.
+        """
+        from datetime import datetime
+
+        with you_client as you:
+            res = you.search(
+                query="Python type hints guide",
+                count=10,
+                extraction=Extraction(extraction_mode=ExtractionMode.HIGHLIGHTS),
+            )
+
+            assert res.results is not None and res.results.web
+            seen = [r.page_age for r in res.results.web]
+            assert seen, "Expected at least one result"
+            for value in seen:
+                assert value is None or isinstance(value, (datetime, str))
+            # A str here means the upstream value was not ISO 8601. That is
+            # allowed, but it should not be something Pydantic could have
+            # parsed — that would mean the union is ordered wrong.
+            for value in seen:
+                if isinstance(value, str) and value:
+                    try:
+                        datetime.fromisoformat(value.replace("Z", "+00:00"))
+                    except ValueError:
+                        continue
+                    raise AssertionError(
+                        f"ISO value {value!r} arrived as str, not datetime — "
+                        "union_mode is likely no longer left_to_right"
+                    )
+
     def test_full_page_markdown(self, you_client):
         """Test extraction_mode=full_page with markdown format."""
         with you_client as you:
