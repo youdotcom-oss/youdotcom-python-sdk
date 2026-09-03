@@ -21,7 +21,12 @@ class WebResultTypedDict(TypedDict):
     thumbnail_url: NotRequired[str]
     r"""URL of the thumbnail."""
     page_age: NotRequired[Union[datetime, str]]
-    r"""The age of the search result."""
+    r"""The age of the search result.
+
+    An ISO 8601 value parses to a ``datetime``; any other value is returned
+    verbatim as the string the API sent. Narrow with ``isinstance`` before
+    using it as a datetime.
+    """
     contents: NotRequired[ContentsTypedDict]
     r"""Contents of the page if ``extraction`` was enabled (formerly ``livecrawl``)."""
     favicon_url: NotRequired[str]
@@ -45,7 +50,12 @@ class WebResult(BaseModel):
     r"""URL of the thumbnail."""
 
     page_age: LenientDateTime = None
-    r"""The age of the search result."""
+    r"""The age of the search result.
+
+    An ISO 8601 value parses to a ``datetime``; any other value is returned
+    verbatim as the string the API sent. Narrow with ``isinstance`` before
+    using it as a datetime.
+    """
 
     contents: Optional[Contents] = None
     r"""Contents of the page if ``extraction`` was enabled (formerly ``livecrawl``)."""
