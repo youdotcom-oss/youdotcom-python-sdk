@@ -5,6 +5,22 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-09-04
+
+Minor release. `extraction` gains an `extraction_source` field, matching the
+parameter on `POST /v1/search`.
+
+### Added
+
+- `extraction.extraction_source` selects where `full_page` content comes
+  from: `"blend"` (the default when unset) serves cached content when
+  available and crawls the page live otherwise, `"cache"` returns cached
+  content only (`contents` is omitted for results with none), and `"fetch"`
+  always crawls the page live. Accepts the new `models.ExtractionSource`
+  enum or its plain-string spelling; setting it alongside
+  `extraction_mode="highlights"` raises `ValidationError` locally, mirroring
+  the server's 422.
+
 ## [3.2.0] - 2026-09-01
 
 Minor release. A non-ISO `page_age` on a search or news result no longer fails

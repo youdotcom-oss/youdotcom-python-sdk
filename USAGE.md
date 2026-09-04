@@ -88,6 +88,13 @@ The `extraction` parameter replaces the deprecated `livecrawl` /
 - `extraction_mode="full_page"` — return full HTML and/or Markdown in
   `results.web[].contents.html` / `.markdown` (default: `["markdown"]`).
 
+With `extraction_mode="full_page"`, the optional `extraction_source` field
+selects where the content comes from: `"blend"` (the default) serves cached
+content when available and crawls the page live otherwise, `"cache"` returns
+cached content only (`contents` is omitted for results with none), and
+`"fetch"` always crawls the page live. Setting `extraction_source` alongside
+`extraction_mode="highlights"` raises `ValidationError` locally.
+
 Unknown keys inside `extraction` raise `ValidationError` locally, and passing
 `extraction` together with `livecrawl` / `livecrawl_formats` raises
 `ValueError` — both mirror the server's 422 contract so callers fail-fast.

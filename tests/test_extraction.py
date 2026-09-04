@@ -10,6 +10,10 @@ Locks the contract:
 - ``extraction_mode == "highlights"`` strips top-level ``crawl_timeout``
   on the wire (plus-value rule, server-side verified); an explicit
   non-default ``crawl_timeout`` additionally emits ``UserWarning``.
+- ``extraction_source`` (``blend`` | ``cache`` | ``fetch``) selects where
+  ``full_page`` content comes from; it is invalid alongside
+  ``extraction_mode == "highlights"`` and raises ``ValidationError``
+  locally (mirroring the server's 422).
 - ``extraction`` + (``livecrawl`` | ``livecrawl_formats``) is invalid;
   raises ``ValueError`` locally.
 - ``livecrawl`` / ``livecrawl_formats`` continue to work but emit
@@ -31,6 +35,7 @@ from youdotcom.models import (
     ExtractionFullPage,
     ExtractionHighlights,
     ExtractionMode,
+    ExtractionSource,
 )
 
 
@@ -79,6 +84,11 @@ class TestExtractionModelContract:
         assert ExtractionFormat.HTML.value == "html"
         assert ExtractionFormat.MARKDOWN.value == "markdown"
 
+    def test_extraction_source_enum_members(self):
+        assert ExtractionSource.BLEND.value == "blend"
+        assert ExtractionSource.CACHE.value == "cache"
+        assert ExtractionSource.FETCH.value == "fetch"
+
     def test_extraction_omits_absent_sub_objects(self):
         """Empty-extraction round-trips as just the mode (field-level Nones
         stripped by ``model_serializer``)."""
@@ -110,6 +120,16 @@ class TestExtractionModelContract:
         e = Extraction.model_validate({"extraction_mode": "highlights"})
         assert e.extraction_mode is ExtractionMode.HIGHLIGHTS
         assert e.highlights is None or e.highlights.model_dump() == {}
+
+    def test_extraction_full_page_with_source(self):
+        e = Extraction(
+            extraction_mode="full_page",
+            extraction_source=ExtractionSource.FETCH,
+        )
+        assert e.model_dump(exclude_none=True, mode="json") == {
+            "extraction_mode": "full_page",
+            "extraction_source": "fetch",
+        }
 
 
 class TestExtractionStrictValidation:
@@ -153,6 +173,13 @@ class TestExtractionStrictValidation:
                 highlights=ExtractionHighlights(),
             )
 
+    def test_wrong_mode_highlights_with_extraction_source_raises(self):
+        with pytest.raises(ValidationError, match="extraction_source"):
+            Extraction(
+                extraction_mode="highlights",
+                extraction_source=ExtractionSource.CACHE,
+            )
+
     def test_extraction_mode_required(self):
         with pytest.raises(ValidationError):
             Extraction()
@@ -183,6 +210,15 @@ class TestExtractionWireContract:
     def test_extraction_full_page_default_formats(self):
         body = _search_body(extraction={"extraction_mode": "full_page"})
         assert body["extraction"] == {"extraction_mode": "full_page"}
+
+    def test_extraction_source_dict_form_on_wire(self):
+        body = _search_body(
+            extraction={"extraction_mode": "full_page", "extraction_source": "cache"}
+        )
+        assert body["extraction"] == {
+            "extraction_mode": "full_page",
+            "extraction_source": "cache",
+        }
 
     def test_extraction_full_page_explicit_html(self):
         body = _search_body(
