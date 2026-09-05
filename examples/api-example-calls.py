@@ -29,6 +29,7 @@ from youdotcom.models import (
     Extraction,
     ExtractionFormat,
     ExtractionMode,
+    ExtractionSource,
     ResearchEffort,
     FinanceResearchEffort,
     FinanceResearchResponse,
@@ -50,6 +51,10 @@ def search_request():
       ``result.contents.highlights`` (lists excerpts, snippets are omitted).
     * ``ExtractionMode.FULL_PAGE`` — full content in
       ``result.contents.html`` / ``result.contents.markdown``.
+
+    ``ExtractionSource`` (3.3.0+) selects where ``FULL_PAGE`` content comes
+    from: ``BLEND`` (default) uses the cache when possible, ``FETCH`` always
+    crawls live, ``CACHE`` is cache-only.
     """
     print("\n🚀 Running Search Request (extraction)...\n")
 
@@ -60,6 +65,7 @@ def search_request():
         count=1,
         extraction=Extraction(
             extraction_mode=ExtractionMode.FULL_PAGE,
+            extraction_source=ExtractionSource.FETCH,
             full_page={"extraction_formats": [ExtractionFormat.MARKDOWN]},
         ),
     )

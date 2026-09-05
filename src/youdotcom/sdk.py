@@ -1025,6 +1025,9 @@ class You(BaseSDK):
             ``extraction_mode`` is required (``"highlights"`` returns
             ``results.web[].contents.highlights``; ``"full_page"`` returns
             ``results.web[].contents.html`` / ``contents.markdown``).
+            In ``"full_page"`` mode, ``extraction_source`` selects where
+            content comes from: ``"blend"`` (default when unset), ``"cache"``,
+            or ``"fetch"``.
             Mutually exclusive with ``livecrawl`` / ``livecrawl_formats``.
         :param include_domains: Restrict results to these domains (<= 500).
         :param exclude_domains: Exclude these domains (<= 500).

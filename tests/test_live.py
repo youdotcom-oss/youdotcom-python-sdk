@@ -27,6 +27,7 @@ from youdotcom.models import (
     Extraction,
     ExtractionFormat,
     ExtractionMode,
+    ExtractionSource,
     Freshness,
     LiveCrawl,
     LiveCrawlFormats,
@@ -360,6 +361,32 @@ class TestLiveSearchExtraction:
                     assert isinstance(html, str)
                 if md is not None:
                     assert isinstance(md, str)
+
+    def test_full_page_extraction_source_fetch(self, you_client):
+        """``extraction_source="fetch"`` forces a live crawl attempt (no
+        cache), so at least one result should carry contents.markdown."""
+        with you_client as you:
+            res = you.search(
+                query="how do search engines rank pages",
+                count=3,
+                extraction=Extraction(
+                    extraction_mode=ExtractionMode.FULL_PAGE,
+                    extraction_source=ExtractionSource.FETCH,
+                    full_page={"extraction_formats": ["markdown"]},
+                ),
+            )
+
+            assert res.results is not None
+            assert res.results.web
+            content_seen = [
+                result.contents.markdown
+                for result in res.results.web
+                if result.contents and result.contents.markdown is not None
+            ]
+            assert content_seen, (
+                "Expected at least one result with contents.markdown "
+                "under extraction_source='fetch'"
+            )
 
 
 @requires_api_key
