@@ -758,7 +758,7 @@ class You(BaseSDK):
         Returns the HTML or Markdown of a target webpage.
 
         :param urls: Array of URLs to fetch the contents from.
-        :param formats: Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available.
+        :param formats: Array of content formats to return. All included formats are returned in the response. The "metadata" format (JSON-LD and OpenGraph) is deprecated and will be removed in a future major release.
         :param crawl_timeout: Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds.
         :param max_age: Maximum allowed age of cached content in seconds. When set, cached content older than this threshold is ignored and the page is re-fetched. Must be 0 or greater. Default: null (no age limit, cached content is returned regardless of age).
         :param retries: Override the default retry configuration for this method
@@ -776,9 +776,17 @@ class You(BaseSDK):
         else:
             base_url = self._get_url(models.CONTENTS_OP_SERVERS[0], None)
 
+        _formats = utils.unmarshal(formats, Optional[List[models.ContentsFormats]])
+        if _formats and models.ContentsFormats.METADATA in _formats:
+            warnings.warn(
+                "The 'metadata' format is deprecated and will be removed in a future major release",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+
         request = models.ContentsRequest(
             urls=utils.unmarshal(urls, Optional[List[str]]),
-            formats=utils.unmarshal(formats, Optional[List[models.ContentsFormats]]),
+            formats=_formats,
             crawl_timeout=crawl_timeout,
             max_age=max_age,
         )
@@ -872,7 +880,7 @@ class You(BaseSDK):
         Returns the HTML or Markdown of a target webpage.
 
         :param urls: Array of URLs to fetch the contents from.
-        :param formats: Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available.
+        :param formats: Array of content formats to return. All included formats are returned in the response. The "metadata" format (JSON-LD and OpenGraph) is deprecated and will be removed in a future major release.
         :param crawl_timeout: Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds.
         :param max_age: Maximum allowed age of cached content in seconds. When set, cached content older than this threshold is ignored and the page is re-fetched. Must be 0 or greater. Default: null (no age limit, cached content is returned regardless of age).
         :param retries: Override the default retry configuration for this method
@@ -890,9 +898,17 @@ class You(BaseSDK):
         else:
             base_url = self._get_url(models.CONTENTS_OP_SERVERS[0], None)
 
+        _formats = utils.unmarshal(formats, Optional[List[models.ContentsFormats]])
+        if _formats and models.ContentsFormats.METADATA in _formats:
+            warnings.warn(
+                "The 'metadata' format is deprecated and will be removed in a future major release",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         request = models.ContentsRequest(
             urls=utils.unmarshal(urls, Optional[List[str]]),
-            formats=utils.unmarshal(formats, Optional[List[models.ContentsFormats]]),
+            formats=_formats,
             crawl_timeout=crawl_timeout,
             max_age=max_age,
         )

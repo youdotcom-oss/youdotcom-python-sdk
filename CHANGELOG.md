@@ -5,6 +5,22 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2026-09-08
+
+Minor release. The `metadata` format on the Contents API is now deprecated
+and will be removed in a future major release, matching the upstream server
+change.
+
+### Deprecated
+
+- `ContentsFormats.METADATA` — the `"metadata"` format value is now
+  deprecated. Passing it emits `DeprecationWarning`. Use `html` and/or
+  `markdown` instead.
+- `ContentsMetadata` and `ContentsMetadataTypedDict` — the model types
+  backing the `metadata` response field. Marked deprecated in docstrings.
+- `ContentsResponse.metadata` — the response field carrying OpenGraph and
+  JSON-LD data. Marked deprecated in docstrings.
+
 ## [3.3.0] - 2026-09-04
 
 Minor release. `extraction` gains an `extraction_source` field, matching the
