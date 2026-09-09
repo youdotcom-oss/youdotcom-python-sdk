@@ -46,6 +46,9 @@ scripts/publish.sh                       # build + publish (needs $PYPI_TOKEN)
 CI gate (`test.yml`): `pytest tests/` (excluding live/perf) + `mypy` + pylint errors-only
 (tree is clean at 10.00/10). Test hygiene: leaked HTTP transports fail tests
 (ResourceWarning-as-error). SemVer: breaking changes need `MIGRATION.md` + `CHANGELOG.md`.
+This repo is public: never reference internal tickets (Linear IDs, `linear.app` links)
+or internal tooling in `CHANGELOG.md`, `README.md`, `USAGE.md`, `docs/`, docstrings, or
+any other published surface. Ticket refs belong in commit subjects and PR metadata only.
 
 ## Adding a new parameter to search
 

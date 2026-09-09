@@ -13,6 +13,7 @@ if TYPE_CHECKING:
         ExtractionHighlights,
         ExtractionHighlightsTypedDict,
         ExtractionMode,
+        ExtractionSource,
         ExtractionTypedDict,
     )
     from .answercitation import AnswerCitation
@@ -152,6 +153,7 @@ __all__ = [
     "ExtractionHighlights",
     "ExtractionHighlightsTypedDict",
     "ExtractionMode",
+    "ExtractionSource",
     "ExtractionTypedDict",
     "FinanceResearchContentType",
     "FinanceResearchDetail",
@@ -314,6 +316,7 @@ _dynamic_imports: dict[str, str] = {
     "ExtractionHighlights": ".extraction",
     "ExtractionHighlightsTypedDict": ".extraction",
     "ExtractionMode": ".extraction",
+    "ExtractionSource": ".extraction",
     "ExtractionTypedDict": ".extraction",
     "ResearchTaskStreamEvent": ".researchtaskstreamevent",
     "ResearchTaskStreamEventData": ".researchtaskstreamevent",

@@ -15,4 +15,4 @@ value = ContentsFormats.HTML
 | ---------- | ---------- |
 | `HTML`     | html       |
 | `MARKDOWN` | markdown   |
-| `METADATA` | metadata   |
+| `METADATA` | metadata _(deprecated)_ |

@@ -29,6 +29,7 @@ from youdotcom.models import (
     Extraction,
     ExtractionFormat,
     ExtractionMode,
+    ExtractionSource,
     ResearchEffort,
     FinanceResearchEffort,
     FinanceResearchResponse,
@@ -50,6 +51,10 @@ def search_request():
       ``result.contents.highlights`` (lists excerpts, snippets are omitted).
     * ``ExtractionMode.FULL_PAGE`` — full content in
       ``result.contents.html`` / ``result.contents.markdown``.
+
+    ``ExtractionSource`` (3.3.0+) selects where ``FULL_PAGE`` content comes
+    from: ``BLEND`` (default) uses the cache when possible, ``FETCH`` always
+    crawls live, ``CACHE`` is cache-only.
     """
     print("\n🚀 Running Search Request (extraction)...\n")
 
@@ -60,6 +65,7 @@ def search_request():
         count=1,
         extraction=Extraction(
             extraction_mode=ExtractionMode.FULL_PAGE,
+            extraction_source=ExtractionSource.FETCH,
             full_page={"extraction_formats": [ExtractionFormat.MARKDOWN]},
         ),
     )
@@ -111,8 +117,11 @@ def content_request():
     Contents API endpoint to fetch page content
     
     In 2.0.0, the Contents API now uses:
-    - formats: Array of format types ('html', 'markdown', 'metadata')
+    - formats: Array of format types ('html', 'markdown')
     - crawl_timeout: Optional timeout between 1-60 seconds
+    
+    Note: The 'metadata' format is deprecated as of 3.4.0 and will be
+    removed in a future major release.
     """
     print("\n🚀 Running Content Request...\n")
 
@@ -133,20 +142,21 @@ def content_request():
     
     print("\n" + "-" * 40 + "\n")
     
-    # Example 2: Get multiple formats including metadata (json+ld, opengraph info)
-    print("Example 2: Fetching HTML + metadata...")
+    # Example 2: Get multiple formats (html + markdown)
+    print("Example 2: Fetching HTML + Markdown...")
     results = you.contents(
         urls=["https://you.com"],
-        formats=[ContentsFormats.HTML, ContentsFormats.METADATA],
+        formats=[ContentsFormats.HTML, ContentsFormats.MARKDOWN],
         crawl_timeout=30  # Optional: set custom timeout (1-60 seconds)
     )
     print(f"Received {len(results)} result(s)")
     for result in results:
         print(f"  URL: {result.url}")
         print(f"  Title: {result.title}")
-        if result.metadata:
-            print(f"  Metadata - Site Name: {result.metadata.site_name}")
-            print(f"  Metadata - Favicon: {result.metadata.favicon_url}")
+        if result.html:
+            print(f"  HTML preview: {result.html[:100]}...")
+        if result.markdown:
+            print(f"  Markdown preview: {result.markdown[:100]}...")
     
     print()
 

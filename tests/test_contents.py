@@ -2,7 +2,7 @@ import os
 import pytest
 
 from tests.test_client import create_test_http_client
-from youdotcom import You
+from youdotcom import You, UNSET
 from youdotcom.errors import (
     ContentsForbiddenError,
     ContentsUnauthorizedError,
@@ -55,27 +55,41 @@ class TestContentsBasic:
         client = create_test_http_client("post_/v1/contents")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.contents(
-                urls=["https://www.python.org"],
-                formats=[ContentsFormats.METADATA],
-                server_url=server_url,
-            )
+            with pytest.warns(DeprecationWarning, match="metadata.*format is deprecated"):
+                res = you.contents(
+                    urls=["https://www.python.org"],
+                    formats=[ContentsFormats.METADATA],
+                    server_url=server_url,
+                )
             
             assert isinstance(res, list)
             assert len(res) > 0
             # Metadata should be returned when metadata format is requested
-            assert res[0].metadata is not None
+            assert res[0].metadata is not UNSET
+
+    def test_metadata_format_emits_deprecation_warning(self, server_url, api_key):
+        """Using ContentsFormats.METADATA emits a DeprecationWarning."""
+        client = create_test_http_client("post_/v1/contents")
+        
+        with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
+            with pytest.warns(DeprecationWarning, match="metadata.*format is deprecated"):
+                you.contents(
+                    urls=["https://www.python.org"],
+                    formats=[ContentsFormats.METADATA],
+                    server_url=server_url,
+                )
 
     def test_multiple_formats(self, server_url, api_key):
         """Test fetching multiple formats at once (html, markdown, metadata)."""
         client = create_test_http_client("post_/v1/contents")
         
         with You(server_url=server_url, client=client, api_key_auth=api_key) as you:
-            res = you.contents(
-                urls=["https://www.python.org"],
-                formats=[ContentsFormats.HTML, ContentsFormats.MARKDOWN, ContentsFormats.METADATA],
-                server_url=server_url,
-            )
+            with pytest.warns(DeprecationWarning, match="metadata.*format is deprecated"):
+                res = you.contents(
+                    urls=["https://www.python.org"],
+                    formats=[ContentsFormats.HTML, ContentsFormats.MARKDOWN, ContentsFormats.METADATA],
+                    server_url=server_url,
+                )
             
             assert isinstance(res, list)
             assert len(res) > 0

@@ -3,15 +3,21 @@
 ``livecrawl`` is being replaced by an ``extraction`` object on Search:
 
     {
-      "extraction_mode": "highlights" | "full_page",   # required
-      "highlights":     {},                            # reserved for future fields
-      "full_page":      { "extraction_formats": [...] }
+      "extraction_mode":   "highlights" | "full_page",  # required
+      "extraction_source": "blend" | "cache" | "fetch", # full_page only
+      "highlights":        {},                          # reserved for future fields
+      "full_page":         { "extraction_formats": [...] }
     }
 
 Top-level ``crawl_timeout`` (1-60, default 10) is sibling to ``extraction``
 and is invalid alongside ``extraction_mode == "highlights"`` (the same
 constraint is handled at the SDK layer by stripping ``crawl_timeout`` from
 the request body, avoiding a round-trip 422).
+
+``extraction_source`` selects where ``full_page`` content comes from
+(``"blend"`` is the server default when the key is omitted). It is invalid
+alongside ``extraction_mode == "highlights"``; the SDK raises locally,
+mirroring the server's 422.
 
 ``extraction.highlights`` is forward-compat: the dict shape stays stable
 even when sub-fields are added. Today it carries no public configuration
@@ -53,6 +59,14 @@ class ExtractionFormat(str, Enum):
     MARKDOWN = "markdown"
 
 
+class ExtractionSource(str, Enum):
+    r"""The ``extraction_source`` selector on the ``extraction`` object."""
+
+    BLEND = "blend"
+    CACHE = "cache"
+    FETCH = "fetch"
+
+
 # ---------------------------------------------------------------------------
 # TypedDicts (user-facing API surface)
 # ---------------------------------------------------------------------------
@@ -65,6 +79,9 @@ r"""``extraction_mode`` as typed for callers: the enum or its plain string."""
 
 ExtractionFormatValue = Union[ExtractionFormat, Literal["html", "markdown"]]
 r"""``extraction_format`` as typed for callers: the enum or its plain string."""
+
+ExtractionSourceValue = Union[ExtractionSource, Literal["blend", "cache", "fetch"]]
+r"""``extraction_source`` as typed for callers: the enum or its plain string."""
 
 
 class ExtractionHighlightsTypedDict(TypedDict):
@@ -88,6 +105,13 @@ class ExtractionTypedDict(TypedDict):
 
     extraction_mode: ExtractionModeValue
     r"""Required. ``"highlights"`` or ``"full_page"``."""
+
+    extraction_source: NotRequired[ExtractionSourceValue]
+    r"""Optional. Where ``full_page`` content comes from, valid only with
+    ``extraction_mode == "full_page"``: ``"blend"`` (the default when unset)
+    serves cached content when available and crawls the page live otherwise,
+    ``"cache"`` returns cached content only (``contents`` is omitted for
+    results with none), and ``"fetch"`` always crawls the page live."""
 
     highlights: NotRequired[ExtractionHighlightsTypedDict]
     r"""Optional. Valid only when ``extraction_mode == "highlights"``."""
@@ -171,6 +195,13 @@ class Extraction(_StrictExtractionBase):
     extraction_mode: ExtractionMode
     r"""Required. ``"highlights"`` or ``"full_page"``."""
 
+    extraction_source: Optional[ExtractionSource] = None
+    r"""Optional. Where ``full_page`` content comes from, valid only with
+    ``extraction_mode == "full_page"``: ``"blend"`` (the default when unset)
+    serves cached content when available and crawls the page live otherwise,
+    ``"cache"`` returns cached content only (``contents`` is omitted for
+    results with none), and ``"fetch"`` always crawls the page live."""
+
     highlights: Optional[ExtractionHighlights] = None
     r"""Valid only when ``extraction_mode == "highlights"``."""
 
@@ -186,6 +217,14 @@ class Extraction(_StrictExtractionBase):
         if self.extraction_mode is ExtractionMode.FULL_PAGE and self.highlights is not None:
             raise ValueError(
                 "extraction.highlights must not be set when extraction_mode == 'full_page'"
+            )
+        if (
+            self.extraction_mode is ExtractionMode.HIGHLIGHTS
+            and self.extraction_source is not None
+        ):
+            raise ValueError(
+                "extraction.extraction_source must not be set when "
+                "extraction_mode == 'highlights'"
             )
         return self
 

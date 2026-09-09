@@ -1,5 +1,38 @@
 # Migration Guide
 
+## 3.3.0 → 3.4.0
+
+> **Deprecation.** The `metadata` format, `ContentsMetadata` model, and
+> `ContentsResponse.metadata` field are deprecated and will be removed in a
+> future major release. No code change is required to upgrade, but callers
+> should stop using `formats=["metadata"]` and accessing `response.metadata`.
+
+### Action required
+
+| Change | Who is affected | What to do |
+|--------|-----------------|------------|
+| `ContentsFormats.METADATA` deprecated | Callers passing `formats=[ContentsFormats.METADATA]` or `formats=["metadata"]` | Stop using the `"metadata"` format. A `DeprecationWarning` is emitted on use. Use `html` and/or `markdown` instead. |
+| `ContentsResponse.metadata` deprecated | Callers accessing `result.metadata`, `result.metadata.site_name`, or `result.metadata.favicon_url` | Stop accessing the field. It will be removed in a future major release. |
+
+```python
+import os
+
+from youdotcom import You
+
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
+    # Before (3.3.0): requesting metadata format.
+    # res = you.contents(urls=["https://example.com"], formats=["html", "metadata"])
+    # for page in res:
+    #     if page.metadata:
+    #         print(page.metadata.site_name)
+
+    # After (3.4.0): only html and markdown.
+    res = you.contents(urls=["https://example.com"], formats=["html", "markdown"])
+    for page in res:
+        if isinstance(page.html, str):
+            print(page.html)
+```
+
 ## 3.1.2 → 3.2.0
 
 > **One type widens.** `page_age` on `WebResult` and `NewsResult` is now
@@ -955,7 +988,7 @@ with res as stream:
 
 The Contents API has significant changes in 2.0.0:
 - **`format_`** parameter is replaced by **`formats`** (an array)
-- New **`metadata`** format option returns json+ld and OpenGraph information
+- New **`metadata`** format option returns json+ld and OpenGraph information (deprecated in 3.4.0 — see [3.3.0 → 3.4.0](#330--340))
 - New **`crawl_timeout`** parameter (1-60 seconds) for controlling crawl duration
 
 **Before (1.x):**
@@ -980,19 +1013,19 @@ res = you.contents.generate(
 )
 
 # Multiple formats at once (new in 2.0.0)
+# Note: ContentsFormats.METADATA was deprecated in 3.4.0.
 res = you.contents.generate(
     urls=["https://example.com"],
-    formats=[ContentsFormats.HTML, ContentsFormats.MARKDOWN, ContentsFormats.METADATA],
+    formats=[ContentsFormats.HTML, ContentsFormats.MARKDOWN],
     crawl_timeout=30,  # Optional: 1-60 seconds
 )
 
-# Access metadata (json+ld, OpenGraph info)
+# Access results
 for item in res:
     print(f"URL: {item.url}")
     print(f"Title: {item.title}")
-    if item.metadata:
-        print(f"Site Name: {item.metadata.site_name}")
-        print(f"Favicon: {item.metadata.favicon_url}")
+    # Metadata (json+ld, OpenGraph) requires the deprecated ContentsFormats.METADATA
+    # and will be removed in a future major release.
 ```
 
 ### Step 5: Update Error Handling
@@ -1020,7 +1053,7 @@ The Search API remains largely unchanged. The Contents API has significant chang
 1. **Import path**: Use `from youdotcom.models import` instead of `typesafe_models`
 2. **Format parameter**: Changed from `format_` (single value) to `formats` (array)
 3. **Format enum**: Use `ContentsFormats` instead of `Format` (note the 's')
-4. **New metadata format**: Request `ContentsFormats.METADATA` to get json+ld and OpenGraph info
+4. **New metadata format**: Request `ContentsFormats.METADATA` to get json+ld and OpenGraph info (deprecated in 3.4.0 — see [3.3.0 → 3.4.0](#330--340))
 5. **New crawl_timeout**: Optional parameter (1-60 seconds) to control crawl duration
 
 ```python
@@ -1038,16 +1071,13 @@ res = you.contents.generate(
     formats=[ContentsFormats.MARKDOWN],  # Was: format_=Format.MARKDOWN
 )
 
-# Contents API with multiple formats and metadata (new in 2.0.0)
+# Contents API with multiple formats (new in 2.0.0)
+# Note: ContentsFormats.METADATA was deprecated in 3.4.0.
 res = you.contents.generate(
     urls=["https://example.com"],
-    formats=[ContentsFormats.HTML, ContentsFormats.METADATA],
+    formats=[ContentsFormats.HTML, ContentsFormats.MARKDOWN],
     crawl_timeout=30,  # Optional: 1-60 seconds
 )
-# Access metadata
-if res[0].metadata:
-    print(res[0].metadata.site_name)
-    print(res[0].metadata.favicon_url)
 ```
 
 ## Need Help?
