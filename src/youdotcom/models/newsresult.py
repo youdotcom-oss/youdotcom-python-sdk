@@ -15,7 +15,12 @@ class NewsResultTypedDict(TypedDict):
     description: NotRequired[str]
     r"""A brief description of the content of the news result."""
     page_age: NotRequired[Union[datetime, str]]
-    r"""UTC timestamp of the article's publication date."""
+    r"""UTC timestamp of the article's publication date.
+
+    An ISO 8601 value parses to a ``datetime``; any other value is returned
+    verbatim as the string the API sent. Narrow with ``isinstance`` before
+    using it as a datetime.
+    """
     thumbnail_url: NotRequired[str]
     r"""URL of the thumbnail."""
     url: NotRequired[str]
@@ -32,7 +37,12 @@ class NewsResult(BaseModel):
     r"""A brief description of the content of the news result."""
 
     page_age: LenientDateTime = None
-    r"""UTC timestamp of the article's publication date."""
+    r"""UTC timestamp of the article's publication date.
+
+    An ISO 8601 value parses to a ``datetime``; any other value is returned
+    verbatim as the string the API sent. Narrow with ``isinstance`` before
+    using it as a datetime.
+    """
 
     thumbnail_url: Optional[str] = None
     r"""URL of the thumbnail."""
