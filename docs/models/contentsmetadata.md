@@ -1,5 +1,7 @@
 # ContentsMetadata
 
+> **Deprecated.** The `metadata` format will be removed in a future major release.
+
 Metadata about the web page. Only returned when 'metadata' is included in the formats array.
 
 
