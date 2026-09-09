@@ -18,7 +18,7 @@ class ContentsRequestTypedDict(TypedDict):
     urls: NotRequired[List[str]]
     r"""Array of URLs to fetch the contents from."""
     formats: NotRequired[List[ContentsFormats]]
-    r"""Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available."""
+    r"""Array of content formats to return. All included formats are returned in the response. The "metadata" format is deprecated and will be removed in a future major release."""
     crawl_timeout: NotRequired[int]
     r"""Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds."""
     max_age: NotRequired[Nullable[int]]
@@ -30,7 +30,7 @@ class ContentsRequest(BaseModel):
     r"""Array of URLs to fetch the contents from."""
 
     formats: Optional[List[ContentsFormats]] = None
-    r"""Array of content formats to return. All included formats are returned in the response. Include \"metadata\" to get JSON-LD and OpenGraph information, if available."""
+    r"""Array of content formats to return. All included formats are returned in the response. The "metadata" format is deprecated and will be removed in a future major release."""
 
     crawl_timeout: Optional[int] = 10
     r"""Maximum time in seconds to wait for page content. Must be between 1 and 60 seconds. Default is 10 seconds."""
@@ -78,7 +78,7 @@ class ContentsResponseTypedDict(TypedDict):
     markdown: NotRequired[Nullable[str]]
     r"""The retrieved Markdown content of the web page."""
     metadata: NotRequired[Nullable[ContentsMetadataTypedDict]]
-    r"""Metadata about the web page. Only returned when 'metadata' is included in the formats array."""
+    r"""Deprecated; the 'metadata' format will be removed in a future major release. Metadata about the web page. Only returned when 'metadata' is included in the formats array."""
 
 
 class ContentsResponse(BaseModel):
@@ -95,7 +95,7 @@ class ContentsResponse(BaseModel):
     r"""The retrieved Markdown content of the web page."""
 
     metadata: OptionalNullable[ContentsMetadata] = UNSET
-    r"""Metadata about the web page. Only returned when 'metadata' is included in the formats array."""
+    r"""Deprecated; the 'metadata' format will be removed in a future major release. Metadata about the web page. Only returned when 'metadata' is included in the formats array."""
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):

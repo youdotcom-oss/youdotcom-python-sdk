@@ -152,7 +152,7 @@ Clean HTML or Markdown for a list of URLs.
 ```python
 pages = you.contents(
     urls=["https://example.com", "https://you.com"],
-    formats=["markdown", "metadata"],
+    formats=["markdown"],
 )
 
 for page in pages:
@@ -160,7 +160,7 @@ for page in pages:
     print(page.markdown)
 ```
 
-`formats` accepts `html`, `markdown`, and `metadata` (JSON-LD and OpenGraph).
+`formats` accepts `html` and `markdown`. The `metadata` format is deprecated and will be removed in a future major release.
 Use `max_age` to reject cached content older than a given number of seconds.
 
 ### Research

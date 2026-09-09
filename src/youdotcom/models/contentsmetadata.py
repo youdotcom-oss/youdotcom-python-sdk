@@ -8,7 +8,7 @@ from youdotcom.types import BaseModel, Nullable, OptionalNullable, UNSET, UNSET_
 
 
 class ContentsMetadataTypedDict(TypedDict):
-    r"""Metadata about the web page. Only returned when 'metadata' is included in the formats array."""
+    r"""Deprecated; the 'metadata' format will be removed in a future major release. Metadata about the web page. Only returned when 'metadata' is included in the formats array."""
 
     site_name: NotRequired[Nullable[str]]
     r"""The OpenGraph site name of the web page."""
@@ -17,7 +17,7 @@ class ContentsMetadataTypedDict(TypedDict):
 
 
 class ContentsMetadata(BaseModel):
-    r"""Metadata about the web page. Only returned when 'metadata' is included in the formats array."""
+    r"""Deprecated; the 'metadata' format will be removed in a future major release. Metadata about the web page. Only returned when 'metadata' is included in the formats array."""
 
     site_name: OptionalNullable[str] = UNSET
     r"""The OpenGraph site name of the web page."""
