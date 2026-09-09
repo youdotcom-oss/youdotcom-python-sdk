@@ -251,6 +251,7 @@ def _resolve_from_final_get(
         # The stream signalled completion, but the persisted task status may
         # not be committed yet (distributed backend race). Re-poll a few times
         # before giving up instead of failing on the first GET.
+        detail: Optional[TaskDetail] = None
         for _ in range(_REPOLL_MAX_ATTEMPTS):
             detail = client.get_research_task(
                 task_id=task_id,
@@ -266,6 +267,7 @@ def _resolve_from_final_get(
                     f"{detail.status.value}"
                 )
             time.sleep(_REPOLL_INTERVAL_S)
+        assert detail is not None  # loop runs _REPOLL_MAX_ATTEMPTS times
         raise RuntimeError(
             f"research task {task_id} stream signalled completion "
             f"but GET returned status={detail.status.value} "
@@ -313,6 +315,7 @@ async def _resolve_from_final_get_async(
 ) -> TaskDetail:
     """Async counterpart of :func:`_resolve_from_final_get`."""
     if result == "ok":
+        detail: Optional[TaskDetail] = None
         for _ in range(_REPOLL_MAX_ATTEMPTS):
             detail = await client.get_research_task_async(
                 task_id=task_id,
@@ -328,6 +331,7 @@ async def _resolve_from_final_get_async(
                     f"{detail.status.value}"
                 )
             await asyncio.sleep(_REPOLL_INTERVAL_S)
+        assert detail is not None  # loop runs _REPOLL_MAX_ATTEMPTS times
         raise RuntimeError(
             f"research task {task_id} stream signalled completion "
             f"but GET returned status={detail.status.value} "

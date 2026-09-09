@@ -45,13 +45,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
       - name: Run Droid Auto Review (internal)
         if: github.event_name == 'pull_request' && steps.check_internal.outputs.is_internal == 'true'
-        uses: Factory-AI/droid-action@v5
+        uses: Factory-AI/droid-action@v7
         with:
           factory_api_key: ${{ secrets.FACTORY_API_KEY }}
           automatic_review: true
