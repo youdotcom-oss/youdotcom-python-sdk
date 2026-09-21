@@ -62,6 +62,13 @@ it.
 
 ### `as_of` is a string, not a date
 
-`as_of` stays a `str` in `YYYY-MM-DD` form. Parse it with
-`datetime.strptime(card.as_of, "%Y-%m-%d")` when you need a date object, and
-expect `None` when the provider reports no date.
+`as_of` stays a `str` in `YYYY-MM-DD` form, and is `None` when the provider
+reports no date. Parse it when you need a date object:
+
+```python
+from datetime import datetime
+
+for card in res.results.knowledge or []:
+    if card.as_of is not None:
+        print(datetime.strptime(card.as_of, "%Y-%m-%d").date())
+```

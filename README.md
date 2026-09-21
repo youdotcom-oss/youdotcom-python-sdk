@@ -378,8 +378,8 @@ retries = RetryConfig(
     retry_connection_errors=True,
 )
 
-with You(api_key_auth=key, retry_config=retries) as you:   # whole client
-    res = you.search(query="...", retries=retries)         # or one call
+with You(api_key_auth=key, retry_config=retries, timeout_ms=60_000) as you:  # whole client
+    res = you.search(query="...", retries=retries)                           # or one call
 ```
 
 Retries apply to `429`, `500`, `502`, `503`, and `504`.
