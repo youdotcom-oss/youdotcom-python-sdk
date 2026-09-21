@@ -34,7 +34,7 @@ class SearchRequestBodyTypedDict(TypedDict):
     safesearch: NotRequired[SafeSearch]
     r"""Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."""
     knowledge: NotRequired[Knowledge]
-    r"""Requests knowledge results alongside web and news search."""
+    r"""Requests knowledge results alongside web and news search. `"core"` is the only value the API accepts; anything else raises `ValidationError` locally, mirroring the server's `422`. Returns up to 25 results, limited to those relevant to the query — `count` caps the web and news sections, not knowledge."""
     livecrawl: NotRequired[LiveCrawl]
     r"""Deprecated; use `extraction` instead. Indicates which section(s) of search results to livecrawl and return full page content."""
     livecrawl_formats: NotRequired[List[LiveCrawlFormats]]
@@ -91,7 +91,7 @@ class SearchRequestBody(BaseModel):
     r"""Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."""
 
     knowledge: Optional[Knowledge] = None
-    r"""Requests knowledge results alongside web and news search."""
+    r"""Requests knowledge results alongside web and news search. `"core"` is the only value the API accepts; anything else raises `ValidationError` locally, mirroring the server's `422`. Returns up to 25 results, limited to those relevant to the query — `count` caps the web and news sections, not knowledge."""
 
     livecrawl: Optional[LiveCrawl] = None
     r"""Deprecated; use `extraction` instead. Indicates which section(s) of search results to livecrawl and return full page content."""

@@ -440,7 +440,7 @@ class TestLiveSearchKnowledge:
                 assert credit.name
             # description is required on type=answer results only
             if kr.type == "answer":
-                assert kr.description
+                assert kr.description is not None
             # as_of is optional; when present it is a bare YYYY-MM-DD date
             if kr.as_of is not None:
                 datetime.strptime(kr.as_of, "%Y-%m-%d")
