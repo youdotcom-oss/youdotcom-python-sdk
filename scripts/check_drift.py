@@ -463,7 +463,11 @@ def _compare_response_fields(
     missing_in_spec = model_fields - set(props)
 
     known = KNOWN_RESPONSE_GAPS.get((spec_name, field_path), set())
-    stale = known - missing_in_sdk
+    # Stale means the SDK model now defines the field, so the suppression no
+    # longer does anything. Compare against the model, not against what's
+    # missing: a field the spec dropped is neither missing nor defined, and
+    # must not be reported as stale.
+    stale = known & model_fields
     if stale:
         warnings.append(
             f"[response] {path}: KNOWN_RESPONSE_GAPS entry {stale} is stale — "

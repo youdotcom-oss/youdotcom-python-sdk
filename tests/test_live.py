@@ -430,13 +430,17 @@ class TestLiveSearchKnowledge:
 
         assert res.results.knowledge
         for kr in res.results.knowledge:
-            assert kr.type == "answer", "`answer` is the only kind returned today"
+            # ``type`` is a plain str so an unrecognized future kind parses
+            # rather than raising; assert only what the spec requires of every
+            # kind instead of pinning ``answer`` as the sole value.
+            assert isinstance(kr.type, str) and kr.type
             assert kr.title
-            # description is required on type=answer results
-            assert kr.description
             assert kr.attribution, "attribution is required on every kind"
             for credit in kr.attribution:
                 assert credit.name
+            # description is required on type=answer results only
+            if kr.type == "answer":
+                assert kr.description
             # as_of is optional; when present it is a bare YYYY-MM-DD date
             if kr.as_of is not None:
                 datetime.strptime(kr.as_of, "%Y-%m-%d")
