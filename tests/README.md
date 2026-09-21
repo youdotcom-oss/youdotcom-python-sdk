@@ -53,19 +53,32 @@ pytest tests/ -v
 
 - `test_client.py` - Helper utilities for creating test HTTP clients
 - `test_search.py` - Tests for the Search API (`/v1/search`)
+- `test_extraction.py` - Tests for the `extraction` parameter on `you.search` (model contract, strict validation, wire contract, conflicts, plus-value rule, async)
+- `test_knowledge.py` - Tests for the `knowledge` parameter and the knowledge result models on `you.search`
+- `test_page_age.py` - Tolerance of non-ISO `page_age` values on search and news results
 - `test_contents.py` - Tests for the Contents API (`/v1/contents`)
 - `test_answer.py` - Tests for the Answer API (`/v1/answer`)
 - `test_direct_methods.py` - Tests for direct methods on `You` (search, contents)
 - `test_shims.py` - Tests for backward-compat sub-SDK shims with DeprecationWarning
+- `test_param_normalization.py` - Tests for plain-string parameter normalization (case folding, `language`, deprecated shims)
 - `test_research.py` - Tests for the Research API (`/v1/research`) including background mode, output_schema, and source_control
 - `test_research_helpers.py` - Tests for the hand-maintained `research_helpers` module (background submission, polling, streaming, research_and_wait)
+- `test_researchtaskstreamevent.py` - Tests for `ResearchTaskStreamEvent` model contracts and the real SSE decode path
 - `test_security_env.py` - Tests for environment variable precedence (`YDC_API_KEY` / `YOU_API_KEY_AUTH`)
+- `test_attribution.py` - Tests for the `X-Client-Info` attribution header (grammar, edge cases, construction-time validation, wire round-trip, version resolution)
+- `test_redaction.py` - Tests for debug-log header redaction
+- `test_client_lifecycle.py` - Tests for client teardown in `You.__exit__` / `You.__aexit__`
+- `test_root_init.py` - Tests for the `youdotcom` package root module
 - `test_performance.py` - Performance/instrumentation tests measuring SDK overhead
 - `test_live.py` - Live API tests that run against the real You.com API (requires API key)
 
 ### Test Organization
 
 Tests are organized into logical classes using pytest:
+
+Counts below are collected tests (`pytest --collect-only`), so a parametrized case
+counts once per parameter set. The groups sum to the 425 tests in the CI gate;
+`test_performance.py` and `test_live.py` are excluded from that gate.
 
 **Search API** (10 tests):
 - Basic search functionality
@@ -74,19 +87,35 @@ Tests are organized into logical classes using pytest:
 - News livecrawl with contents
 - Error handling (unauthorized, forbidden, unprocessable, internal server error)
 
-**Contents API** (12 tests):
+**Extraction** (38 tests):
+- Model contract and strict validation
+- Wire contract and mutual exclusion with the deprecated `livecrawl`
+- Plus-value rule and async parity
+
+**Knowledge** (21 tests):
+- `Knowledge` enum and plain-string normalization
+- Request wire contract on `search` / `search_async`
+- Response parsing into `KnowledgeResult` / `KnowledgeAttribution`
+- End-to-end round-trip and sub-SDK shim parity
+
+**Page age tolerance** (15 tests):
+- ISO values still parse to `datetime`
+- Non-ISO values returned verbatim instead of failing the whole response
+- Wrong JSON types still raise
+
+**Contents API** (13 tests):
 - HTML and Markdown format generation
 - Single and multiple URL processing
 - Optional format parameter
 - Error handling (unauthorized, forbidden, empty URLs)
 
-**Answer API** (23 tests):
+**Answer API** (25 tests):
 - Basic answer functionality
 - Answer with freshness, country, boost domains
 - Async answer
 - Error handling (unauthorized, forbidden, payment required, unprocessable, internal server error)
 
-**Research API**:
+**Research API** (34 tests):
 - Basic research functionality (standard, deep, exhaustive effort)
 - Background mode (task submission, get_research_task, status polling)
 - Output schema (structured JSON output, content_type object)
@@ -94,12 +123,32 @@ Tests are organized into logical classes using pytest:
 - Error handling (unauthorized, forbidden, unprocessable entity, 422 combos)
 - Stream research task (SSE success path + 404/401/403 error paths)
 
-**Research Helpers**:
+**Research Helpers** (57 tests):
 - research_background / research_background_async (TaskResponse return)
 - poll_research_task / poll_research_task_async (terminal status)
 - research_and_wait / research_and_wait_async (submit + wait)
 - stream_research / stream_research_async (tolerant SSE)
 - RawStreamEvent decoder (_decode_raw_event)
+
+**Research Task Stream Events** (26 tests):
+- Known and unknown event names
+- Round-trip and declared-type contracts
+- End-to-end pin through the real SSE decode path
+
+**Cross-cutting** (186 tests):
+- `X-Client-Info` attribution header: grammar, edge cases, construction-time
+  validation, wire round-trip, version resolution (91)
+- Plain-string parameter normalization: case folding, `language` three-way
+  contract, deprecated shims (35)
+- Environment variable precedence `YDC_API_KEY` / `YOU_API_KEY_AUTH` (17)
+- Debug-log header redaction (14)
+- Client teardown in `You.__exit__` / `You.__aexit__` (10)
+- Direct methods on `You` (8) and backward-compat sub-SDK shims (6)
+- `youdotcom` package root module (5)
+
+**Outside the CI gate**:
+- `test_performance.py` (33 tests) - SDK overhead instrumentation
+- `test_live.py` (46 tests) - runs against the real API, requires an API key
 
 ### Running Live Tests
 
