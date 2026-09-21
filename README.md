@@ -152,15 +152,18 @@ encyclopedias, market-data firms, reference publishers. They come back in
 their own section:
 
 ```python
-res = you.search(
-    query="what is the capital of France",
-    knowledge="core",
-)
+import os
+from youdotcom import You
 
-for card in res.results.knowledge or []:
-    print(card.title)
-    print(card.description)
-    print([credit.name for credit in card.attribution])
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
+    res = you.search(
+        query="what is the capital of France",
+        knowledge="core",
+    )
+    for card in res.results.knowledge or []:
+        print(card.title)
+        print(card.description)
+        print([credit.name for credit in card.attribution])
 ```
 
 `"core"` is the only value the API accepts; anything else raises
