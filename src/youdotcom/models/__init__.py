@@ -57,6 +57,12 @@ if TYPE_CHECKING:
         GetResearchTaskRequest,
         GetResearchTaskRequestTypedDict,
     )
+    from .knowledge import Knowledge
+    from .knowledgeattribution import (
+        KnowledgeAttribution,
+        KnowledgeAttributionTypedDict,
+    )
+    from .knowledgeresult import KnowledgeResult, KnowledgeResultTypedDict
     from .language import Language
     from .livecrawl import LiveCrawl
     from .livecrawlformats import LiveCrawlFormats
@@ -178,6 +184,11 @@ __all__ = [
     "FreshnessValueTypedDict",
     "GetResearchTaskRequest",
     "GetResearchTaskRequestTypedDict",
+    "Knowledge",
+    "KnowledgeAttribution",
+    "KnowledgeAttributionTypedDict",
+    "KnowledgeResult",
+    "KnowledgeResultTypedDict",
     "Language",
     "LiveCrawl",
     "LiveCrawlFormats",
@@ -278,6 +289,11 @@ _dynamic_imports: dict[str, str] = {
     "FreshnessValueTypedDict": ".freshnessvalue",
     "GetResearchTaskRequest": ".getresearchtaskop",
     "GetResearchTaskRequestTypedDict": ".getresearchtaskop",
+    "Knowledge": ".knowledge",
+    "KnowledgeAttribution": ".knowledgeattribution",
+    "KnowledgeAttributionTypedDict": ".knowledgeattribution",
+    "KnowledgeResult": ".knowledgeresult",
+    "KnowledgeResultTypedDict": ".knowledgeresult",
     "Language": ".language",
     "LiveCrawl": ".livecrawl",
     "LiveCrawlFormats": ".livecrawlformats",

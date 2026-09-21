@@ -4,6 +4,7 @@ from __future__ import annotations
 from .country import Country
 from .extraction import Extraction, ExtractionTypedDict
 from .freshnessvalue import FreshnessValue, FreshnessValueTypedDict
+from .knowledge import Knowledge
 from .language import Language
 from .livecrawl import LiveCrawl
 from .livecrawlformats import LiveCrawlFormats
@@ -32,6 +33,8 @@ class SearchRequestBodyTypedDict(TypedDict):
     r"""The language of the web results that will be returned (BCP 47 format)."""
     safesearch: NotRequired[SafeSearch]
     r"""Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."""
+    knowledge: NotRequired[Knowledge]
+    r"""Requests knowledge results alongside web and news search."""
     livecrawl: NotRequired[LiveCrawl]
     r"""Deprecated; use `extraction` instead. Indicates which section(s) of search results to livecrawl and return full page content."""
     livecrawl_formats: NotRequired[List[LiveCrawlFormats]]
@@ -87,6 +90,9 @@ class SearchRequestBody(BaseModel):
     safesearch: Optional[SafeSearch] = None
     r"""Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."""
 
+    knowledge: Optional[Knowledge] = None
+    r"""Requests knowledge results alongside web and news search."""
+
     livecrawl: Optional[LiveCrawl] = None
     r"""Deprecated; use `extraction` instead. Indicates which section(s) of search results to livecrawl and return full page content."""
 
@@ -132,6 +138,7 @@ class SearchRequestBody(BaseModel):
                 "country",
                 "language",
                 "safesearch",
+                "knowledge",
                 "livecrawl",
                 "livecrawl_formats",
                 "include_domains",

@@ -145,6 +145,35 @@ available and crawls the page live otherwise, `"cache"` returns cached
 content only (`contents` is omitted for results with none), and `"fetch"`
 always crawls the page live.
 
+#### Knowledge results
+
+Pass `knowledge="core"` to add cards backed by licensed data providers —
+encyclopedias, market-data firms, reference publishers. They come back in
+their own section:
+
+```python
+res = you.search(
+    query="what is the capital of France",
+    knowledge="core",
+)
+
+for card in res.results.knowledge or []:
+    print(card.title)
+    print(card.description)
+    print([credit.name for credit in card.attribution])
+```
+
+`"core"` is the only value the API accepts; anything else raises
+`ValidationError` locally, mirroring the server's `422`. Results are limited
+to those relevant to the query, up to 25, and when none are relevant the API
+omits the section entirely — so `results.knowledge` is `None` rather than an
+empty list. Iterate with `or []`.
+
+`count` caps the web and news sections, not knowledge. Attribution entries
+are credits rather than citations: each names a provider and carries no URL.
+`as_of`, when present, is the `YYYY-MM-DD` date the card's underlying data
+covers.
+
 ### Contents
 
 Clean HTML or Markdown for a list of URLs.

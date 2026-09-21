@@ -5,6 +5,45 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] - 2026-09-21
+
+Minor release. Adds support for the new `knowledge` parameter on
+`POST /v1/search` and the knowledge result models that come back with it.
+Purely additive — no breaking changes.
+
+### Added
+
+- **`knowledge` parameter on `search()` and `search_async()`** — pass
+  `knowledge="core"` to request knowledge results backed by licensed data
+  providers such as encyclopedias, market-data firms, and reference publishers.
+  They arrive in their own section at `response.results.knowledge`. `"core"` is
+  the only value the API accepts, and anything else raises `ValidationError`
+  locally rather than reaching the network, mirroring the server's `422`.
+- **`Knowledge` enum** — `Knowledge.CORE`, exported from `youdotcom.models`.
+  Plain strings are accepted and normalized, so `knowledge="core"` and
+  `knowledge="CORE"` both work.
+- **`KnowledgeResult` and `KnowledgeAttribution` models** — a knowledge result
+  carries `type`, `title`, and `attribution`, plus `description` and an optional
+  `as_of` date for `type: answer` results, the only kind returned today. `type`
+  is modeled as a plain `str` so an unrecognized kind parses instead of raising,
+  since a new kind may populate a different set of fields. Attribution entries
+  are credits rather than citations and carry no URL.
+- **`Results.knowledge`** — new optional field on the search response container.
+  Up to 25 results are returned, limited to those relevant to the query. When
+  none are relevant the API omits the key entirely, so the field is `None`
+  rather than an empty list and iterating needs an `or []` guard. `count` caps
+  the web and news sections, not knowledge.
+
+### Changed
+
+- **`scripts/check_drift.py` recurses nested response schemas** — the response
+  check previously compared top-level fields only, so drift inside a nested
+  object went undetected. Two pre-existing gaps that recursion surfaced
+  (`AnswerSearchResult.description` / `.thumbnail_url` and
+  `FinanceResearchSource.snippets`) are listed in an explicit
+  `KNOWN_RESPONSE_GAPS` table that reports itself stale once the SDK catches up,
+  rather than being silently ignored.
+
 ## [3.4.0] - 2026-09-08
 
 Minor release. The `metadata` format on the Contents API is now deprecated

@@ -100,6 +100,46 @@ Unknown keys inside `extraction` raise `ValidationError` locally, and passing
 `ValueError` — both mirror the server's 422 contract so callers fail-fast.
 <!-- End SDK Example Usage [extraction] -->
 
+<!-- Start SDK Example Usage [knowledge] -->
+```python
+# Add knowledge cards backed by licensed data providers.
+import os
+from youdotcom import You
+
+
+with You(
+    api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
+) as you:
+
+    res = you.search(
+        query="what is the capital of France",
+        knowledge="core",
+    )
+
+    for card in res.results.knowledge or []:
+        print(card.title, card.description)
+        print([credit.name for credit in card.attribution])
+```
+
+`knowledge="core"` requests knowledge results — cards backed by licensed data
+providers such as encyclopedias, market-data firms, and reference publishers.
+`"core"` is the only value the API accepts; anything else raises
+`ValidationError` locally, mirroring the server's 422.
+
+Results are limited to those relevant to the query, up to 25. When none are
+relevant the API omits the section, so `results.knowledge` is `None` rather
+than an empty list — iterate with `or []`. `count` caps the web and news
+sections, not knowledge.
+
+Each card carries `type`, `title`, and `attribution`; for `type: answer` — the
+only kind returned today — `description` is present and `as_of` is an optional
+`YYYY-MM-DD` date covering the card's underlying data. `type` is a plain
+string so an unrecognized kind parses rather than raises; ignore a value you
+do not recognize. Attribution entries are credits rather than citations: each
+names a provider and carries no URL.
+<!-- End SDK Example Usage [knowledge] -->
+
 <!-- Start SDK Example Usage [attribution] -->
 ```python
 # Tag every outbound request with a caller-identity header so the

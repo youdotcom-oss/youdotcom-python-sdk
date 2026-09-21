@@ -46,6 +46,16 @@ KNOWN_UNCOVERED_ENDPOINTS = {
     ("GET", "/v1/search"),
 }
 
+# Nested response fields the SDK models don't define yet. These predate the
+# response check learning to recurse (it previously compared top-level fields
+# only, so drift inside a nested object was invisible). Keyed by
+# (spec name, dotted field path from the response root). An entry that goes
+# stale — the SDK catches up — is reported rather than silently ignored.
+KNOWN_RESPONSE_GAPS = {
+    ("answer", "results.web"): {"description", "thumbnail_url"},
+    ("finance-research", "output.sources"): {"snippets"},
+}
+
 # Map (method, path) -> SDK method name.
 # {task_id} and {task_id}/stream are handled by helpers, not direct methods.
 EXPECTED_ENDPOINTS = {
@@ -77,6 +87,7 @@ ENUM_CHECKS = [
     ("web-search", "Country", "youdotcom.models", "Country"),
     ("answer", "Country", "youdotcom.models", "Country"),
     ("research", "Country", "youdotcom.models", "Country"),
+    ("web-search", "Knowledge", "youdotcom.models", "Knowledge"),
 ]
 
 # SDK-internal parameters that aren't API params (excluded from drift comparison).
@@ -387,8 +398,116 @@ def check_request_params(specs: dict[str, dict[str, Any]]) -> list[str]:
     return warnings
 
 
+def _resolve_schema(schema: dict[str, Any], spec: dict[str, Any]) -> dict[str, Any]:
+    """Follow ``$ref`` and array ``items`` down to the underlying object schema."""
+    seen: set[str] = set()
+    while True:
+        if "$ref" in schema:
+            ref = schema["$ref"]
+            if ref in seen:
+                return {}
+            seen.add(ref)
+            schema = _resolve_ref(ref, spec)
+            continue
+        if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
+            schema = schema["items"]
+            continue
+        return schema
+
+
+def _nested_model(annotation: Any) -> Any:
+    """Return the pydantic model a field annotation points at, or ``None``.
+
+    Unwraps ``Optional[...]`` and ``List[...]`` so nested response objects
+    more than one level down are still compared.
+    """
+    args = getattr(annotation, "__args__", None)
+    if args is not None:
+        for arg in args:
+            found = _nested_model(arg)
+            if found is not None:
+                return found
+        return None
+    return annotation if hasattr(annotation, "model_fields") else None
+
+
+def _compare_response_fields(
+    schema: dict[str, Any],
+    model: Any,
+    path: str,
+    spec: dict[str, Any],
+    warnings: list[str],
+    visited: set[Any],
+    spec_name: str,
+    field_path: str,
+) -> None:
+    """Compare a spec object schema against a model, recursing into nested objects.
+
+    A top-level-only comparison misses drift inside nested response objects:
+    a new ``results.knowledge`` array is invisible when ``results`` itself is
+    unchanged.
+    """
+    if model in visited:
+        return
+    visited.add(model)
+
+    schema = _resolve_schema(schema, spec)
+    props = schema.get("properties")
+    if not props:
+        # Nothing to compare against — a `oneOf` union or an unresolvable ref.
+        # Bail rather than reporting every SDK field as absent from the spec.
+        return
+    model_fields = set(model.model_fields.keys())
+
+    missing_in_sdk = set(props) - model_fields
+    missing_in_spec = model_fields - set(props)
+
+    known = KNOWN_RESPONSE_GAPS.get((spec_name, field_path), set())
+    stale = known - missing_in_sdk
+    if stale:
+        warnings.append(
+            f"[response] {path}: KNOWN_RESPONSE_GAPS entry {stale} is stale — "
+            f"the SDK model now defines it, so remove the entry"
+        )
+    missing_in_sdk -= known
+
+    if missing_in_sdk:
+        warnings.append(
+            f"[response] {path}: spec has fields {missing_in_sdk} "
+            f"which SDK model doesn't have"
+        )
+    if missing_in_spec:
+        warnings.append(
+            f"[response] {path}: SDK model has fields {missing_in_spec} "
+            f"which spec doesn't define"
+        )
+
+    for prop_name, prop_schema in props.items():
+        if prop_name not in model_fields:
+            continue
+        child_model = _nested_model(model.model_fields[prop_name].annotation)
+        if child_model is None:
+            continue
+        if "properties" in _resolve_schema(prop_schema, spec):
+            _compare_response_fields(
+                prop_schema,
+                child_model,
+                f"{path}.{prop_name}",
+                spec,
+                warnings,
+                visited,
+                spec_name,
+                f"{field_path}.{prop_name}" if field_path else prop_name,
+            )
+
+
 def check_response_schemas(specs: dict[str, dict[str, Any]]) -> list[str]:
-    """Check that spec 200 response schema fields match SDK model fields."""
+    """Check that spec 200 response schema fields match SDK model fields.
+
+    Endpoints with a single response model are compared recursively, so fields
+    nested inside response objects are checked too. Endpoints whose response
+    can be one of several models fall back to a flat union comparison.
+    """
     warnings: list[str] = []
 
     for check in SCHEMA_CHECKS:
@@ -406,6 +525,27 @@ def check_response_schemas(specs: dict[str, dict[str, Any]]) -> list[str]:
         schema = content.get("schema", {})
 
         if not schema:
+            continue
+
+        model_names = check["sdk_response_models"]
+        # Recurse only when the response resolves to a single object schema.
+        # A `oneOf` union resolves to no properties, so it keeps the flat
+        # comparison below rather than being mistaken for an empty schema.
+        if len(model_names) == 1 and _resolve_schema(schema, spec).get("properties"):
+            import importlib
+
+            mod = importlib.import_module("youdotcom.models")
+            model = getattr(mod, model_names[0])
+            _compare_response_fields(
+                schema,
+                model,
+                f"{spec_name} {method} {path} {model_names[0]}",
+                spec,
+                warnings,
+                set(),
+                spec_name,
+                "",
+            )
             continue
 
         spec_fields = _get_schema_properties(schema, spec)

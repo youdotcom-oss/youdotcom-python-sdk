@@ -392,6 +392,40 @@ def search_request_with_boost():
             print(f"  - {result.title or 'Untitled'}: {result.url}")
 
 
+def search_request_with_knowledge():
+    """
+    Search API: use `knowledge="core"` to add knowledge cards backed by
+    licensed data providers (encyclopedias, market-data firms, reference
+    publishers). They arrive in their own `results.knowledge` section.
+
+    The section is omitted entirely when nothing relevant is found, so
+    `results.knowledge` is `None` rather than an empty list. `count` caps the
+    web and news sections, not knowledge.
+    """
+    print("\n🚀 Running Search Request (knowledge)...\n")
+
+    assert you is not None, "SDK client not initialized"
+
+    results = you.search(
+        query="what is the capital of France",
+        knowledge="core",
+    )
+
+    print("Knowledge results:")
+    if results.results and results.results.knowledge:
+        for card in results.results.knowledge:
+            print(f"  - [{card.type}] {card.title}")
+            if card.description:
+                preview = card.description[:120].replace("\n", " ")
+                print(f"    {preview}...")
+            if card.as_of:
+                print(f"    Data as of: {card.as_of}")
+            credits = ", ".join(credit.name for credit in card.attribution)
+            print(f"    Credit: {credits}")
+    else:
+        print("No knowledge results found")
+
+
 def content_request_with_max_age():
     """
     Contents API: use `max_age` to control cache freshness (in seconds).
@@ -420,6 +454,7 @@ FUNCTIONS = [
     {"name": "Search Request (extraction)", "fn": search_request},
     {"name": "Search Request (deprecated livecrawl)", "fn": search_request_livecrawl_legacy},
     {"name": "Search Request (boost_domains)", "fn": search_request_with_boost},
+    {"name": "Search Request (knowledge)", "fn": search_request_with_knowledge},
     {"name": "Content Request", "fn": content_request},
     {"name": "Content Request (max_age)", "fn": content_request_with_max_age},
     {"name": "Research Request", "fn": research_request},
