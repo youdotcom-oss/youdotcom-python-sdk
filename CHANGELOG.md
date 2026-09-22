@@ -8,8 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.5.0] - 2026-09-21
 
 Minor release. Adds support for the new `knowledge` parameter on
-`POST /v1/search` and the knowledge result models that come back with it.
-Purely additive — no breaking changes.
+`POST /v1/search` and the knowledge result models that come back with it, and
+closes two documented response fields the SDK had been dropping. Purely
+additive — no breaking changes.
 
 ### Added
 
@@ -34,15 +35,28 @@ Purely additive — no breaking changes.
   rather than an empty list and iterating needs an `or []` guard. `count` caps
   the web and news sections, not knowledge.
 
+### Fixed
+
+- **`AnswerSearchResult` was dropping `description` and `thumbnail_url`** — the
+  answer spec defines both on `results.web[]` and the API returns them on every
+  result, but the model did not declare them, so they were discarded at parse
+  time. Both are now optional `str` fields. `WebResult` on the search endpoint
+  already had them; the answer model was simply the narrower of the two.
+- **`FinanceResearchSource` was missing `snippets`** — the finance-research spec
+  defines it on `output.sources[]`, and the sibling `Source` model on the
+  Research API already declared it. Production was not returning the field at
+  the time of this release, so nothing was being lost yet, but the model now
+  matches the published contract instead of relying on a drift-checker
+  suppression that could not have noticed the API starting to send it.
+
 ### Changed
 
 - **`scripts/check_drift.py` recurses nested response schemas** — the response
   check previously compared top-level fields only, so drift inside a nested
-  object went undetected. Two pre-existing gaps that recursion surfaced
-  (`AnswerSearchResult.description` / `.thumbnail_url` and
-  `FinanceResearchSource.snippets`) are listed in an explicit
-  `KNOWN_RESPONSE_GAPS` table that reports itself stale once the SDK catches up,
-  rather than being silently ignored.
+  object went undetected. Recursion surfaced the two gaps above, which are now
+  closed by adding the fields rather than suppressed, so `KNOWN_RESPONSE_GAPS`
+  is empty. It and its mirror `KNOWN_SHARED_MODEL_EXTRAS` both report an entry
+  as stale once the side they excuse catches up, instead of quietly keeping it.
 
 ## [3.4.0] - 2026-09-08
 

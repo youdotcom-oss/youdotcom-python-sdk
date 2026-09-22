@@ -46,15 +46,17 @@ KNOWN_UNCOVERED_ENDPOINTS = {
     ("GET", "/v1/search"),
 }
 
-# Nested response fields the SDK models don't define yet. These predate the
-# response check learning to recurse (it previously compared top-level fields
-# only, so drift inside a nested object was invisible). Keyed by
-# (spec name, dotted field path from the response root). An entry that goes
-# stale — the SDK catches up — is reported rather than silently ignored.
-KNOWN_RESPONSE_GAPS = {
-    ("answer", "results.web"): {"description", "thumbnail_url"},
-    ("finance-research", "output.sources"): {"snippets"},
-}
+# Nested response fields the SDK models don't define yet. Keyed by (spec name,
+# dotted field path from the response root). An entry that goes stale — the SDK
+# catches up — is reported rather than silently ignored.
+#
+# Currently empty: the two gaps that recursion first surfaced
+# (`AnswerSearchResult.description` / `.thumbnail_url` and
+# `FinanceResearchSource.snippets`) were closed by adding the fields rather than
+# suppressed. Prefer adding the field over suppressing it — the stale check can
+# only see the SDK catching up, never the API starting to send a field the spec
+# already promises, so a suppressed gap stays silent from that side forever.
+KNOWN_RESPONSE_GAPS: dict[tuple[str, str], set[str]] = {}
 
 # The mirror image: fields an SDK model declares that the spec schema at *this*
 # path does not. The SDK shares one model across paths whose spec schemas differ

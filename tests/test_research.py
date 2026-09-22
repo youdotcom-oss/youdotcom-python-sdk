@@ -212,12 +212,14 @@ class TestFinanceResearch:
             assert res.output is not None
             assert res.output.content is not None
             assert "NVIDIA" in res.output.content
-            # Finance sources intentionally never include the `snippets` field.
+            # The spec defines `snippets` on output.sources[]; it was silently
+            # dropped at parse time until 3.5.0.
             assert res.output.sources is not None
             assert len(res.output.sources) > 0
             for source in res.output.sources:
                 assert source.url is not None
                 assert source.title is not None
+                assert source.snippets is not None
 
     def test_finance_research_unauthorized(self, server_url):
         client = create_test_http_client("post_/v1/finance_research-unauthorized")

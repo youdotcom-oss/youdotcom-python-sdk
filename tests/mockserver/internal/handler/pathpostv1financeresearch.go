@@ -35,9 +35,9 @@ func pathPostV1FinanceResearch(dir *logging.HTTPFileDirectory, rt *tracking.Requ
 	}
 }
 
-// Finance Research sources intentionally never include the `snippets` field
-// (FinanceResearchSource only defines `url` and `title`; extra fields are
-// ignored by pydantic's default config).
+// Finance Research sources include `snippets`: the spec defines it on
+// output.sources[] items and FinanceResearchSource models it. Production was not
+// returning it as of 3.5.0, so the mock emits it to keep the parse path covered.
 func testPostV1FinanceResearchSuccess(w http.ResponseWriter, req *http.Request) {
 	if err := assert.SecurityHeader(req, "X-API-Key", false); err != nil {
 		log.Printf("assertion error: %s\n", err)
@@ -82,8 +82,9 @@ func testPostV1FinanceResearchSuccess(w http.ResponseWriter, req *http.Request) 
 			"content_type": "text",
 			"sources": []map[string]interface{}{
 				{
-					"url":   "https://investor.nvidia.com/financial-info/financial-reports/default.aspx",
-					"title": "NVIDIA Corporation - Financial Reports",
+					"url":      "https://investor.nvidia.com/financial-info/financial-reports/default.aspx",
+					"title":    "NVIDIA Corporation - Financial Reports",
+					"snippets": []string{"NVIDIA reported record full-year revenue."},
 				},
 			},
 		},
