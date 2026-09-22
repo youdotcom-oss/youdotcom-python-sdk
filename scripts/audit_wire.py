@@ -46,11 +46,14 @@ from youdotcom import You
 # so the list stays a decision rather than an accident. Remove an entry once the
 # spec declares the field and the model catches up.
 #
-# Keyed by (call label, dotted path with list indices normalized to []).
+# Keyed by (call label, dotted path with list indices normalized to []). A label
+# of None means "any call" -- use that for a key no spec declares anywhere, so it
+# stays suppressed when a different endpoint starts returning it too.
 KNOWN_WIRE_EXTRAS = {
     # Observed on web results; absent from web-search.json and every other
-    # published spec. Looks like a spec omission worth reporting upstream.
-    ("search:extraction-highlights", "results.web[].original_thumbnail_url"),
+    # published spec. Looks like a spec omission worth reporting upstream. Seen on
+    # both the extraction and knowledge calls, hence the wildcard label.
+    (None, "results.web[].original_thumbnail_url"),
     # Prod sends `warnings` at the top level of the finance-research response, and
     # the sibling research spec declares it (ResearchResponse models it), but
     # finance-research.json declares only `output`. Modeling it anyway would put
@@ -104,8 +107,15 @@ def _walk(raw: Any, parsed: Any, path: str, dropped: list, kept: list) -> None:
         if parsed is None or not hasattr(type(parsed), "model_fields"):
             return
         keys = _json_keys(parsed)
+        # Models configured extra="allow" retain undeclared keys in model_extra,
+        # so those are kept, not dropped. Two models in the SDK are configured
+        # that way; without this they would report every extra key as lost.
+        extra = getattr(parsed, "model_extra", None) or {}
         for key, value in raw.items():
             if key not in keys:
+                if key in extra:
+                    kept.append(f"{path}.{key}")
+                    continue
                 dropped.append((path, key, sorted(keys)))
                 continue
             kept.append(f"{path}.{key}")
@@ -115,7 +125,12 @@ def _walk(raw: Any, parsed: Any, path: str, dropped: list, kept: list) -> None:
             _walk(raw_item, parsed_item, f"{path}[{index}]", dropped, kept)
 
 
-def _audit(label: str, call, root: Optional[str], api_key: str) -> tuple[list, list]:
+def _is_known(label: str, path: str) -> bool:
+    return (label, path) in KNOWN_WIRE_EXTRAS or (None, path) in KNOWN_WIRE_EXTRAS
+
+
+def _audit(label: str, call, root: Optional[str], api_key: str) -> tuple[list, list, bool]:
+    """Return ``(dropped, kept, root_present)`` for one live call."""
     spy = _Spy(httpx.HTTPTransport())
     client = httpx.Client(transport=spy)
     dropped: list = []
@@ -125,12 +140,14 @@ def _audit(label: str, call, root: Optional[str], api_key: str) -> tuple[list, l
             parsed = call(you)
         if spy.last is None:
             raise RuntimeError(f"{label}: no JSON response captured")
-        raw = spy.last[root] if root else spy.last
+        # `.get`, not `[]`: a valid response may omit the section entirely, and
+        # that is a finding to report, not a reason to abort the whole audit.
+        raw = spy.last.get(root) if root else spy.last
         model = getattr(parsed, root, None) if root else parsed
         _walk(raw, model, root or "root", dropped, kept)
     finally:
         client.close()
-    return dropped, kept
+    return dropped, kept, raw is not None
 
 
 SEARCH = "what is the capital of France"
@@ -177,13 +194,18 @@ def main() -> int:
         total_kept = 0
         for label, call, root in _calls(args.fast):
             try:
-                dropped, kept = _audit(label, call, root, api_key)
+                dropped, kept, present = _audit(label, call, root, api_key)
             except Exception as exc:
                 print(f"  {label}: call failed ({type(exc).__name__}: {exc})")
                 return 2
             total_kept += len(kept)
-            known = [(p, k) for p, k, _ in dropped if (label, _normalize(f"{p}.{k}")) in KNOWN_WIRE_EXTRAS]
-            new = [d for d in dropped if (label, _normalize(f"{d[0]}.{d[1]}")) not in KNOWN_WIRE_EXTRAS]
+            known = [(p, k) for p, k, _ in dropped if _is_known(label, _normalize(f"{p}.{k}"))]
+            new = [d for d in dropped if not _is_known(label, _normalize(f"{d[0]}.{d[1]}"))]
+            if not present:
+                # Nothing to compare, which is itself worth saying out loud
+                # rather than reporting a vacuous "ok".
+                print(f"  [{'no ' + root:>10}] {label}: response omitted `{root}`; nothing to walk")
+                continue
             status = "ok" if not new else f"{len(new)} DROPPED"
             print(f"  [{status:>10}] {label}: kept {len(kept)} wire keys"
                   + (f", {len(known)} known-undeclared" if known else ""))
