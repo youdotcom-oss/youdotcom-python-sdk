@@ -5,7 +5,7 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.5.0] - 2026-09-21
+## [3.5.0] - 2026-09-22
 
 Minor release. Adds support for the new `knowledge` parameter on
 `POST /v1/search` and the knowledge result models that come back with it, and
