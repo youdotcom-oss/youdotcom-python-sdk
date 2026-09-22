@@ -124,6 +124,15 @@ class TestLiveSearch:
             assert len(res.results.web) <= 5
     
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+    @pytest.mark.xfail(
+        reason="Backend regression on a deprecated path: `livecrawl=web` combined "
+        "with `livecrawl_formats=[markdown]` no longer returns `contents` on any "
+        "web result (0/3), though `livecrawl=all`, `livecrawl=web` without "
+        "formats, and both `extraction` modes all still work (2/3, 2/3, 3/3, "
+        "3/3). Fails identically on main, so it predates this branch. Non-strict: "
+        "remove this marker if the server starts returning contents again. Note "
+        "MIGRATION.md still promises livecrawl works until 4.0.0.",
+    )
     def test_search_with_livecrawl_web(self, you_client):
         """Test search with livecrawl for web results.
 
