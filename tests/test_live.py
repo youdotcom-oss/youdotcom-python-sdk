@@ -492,9 +492,10 @@ class TestLiveContents:
             assert isinstance(res, list)
             assert len(res) > 0
             assert res[0].url is not None
-            # HTML should be present when HTML format is requested
-            if res[0].html:
-                assert "<" in res[0].html  # Basic HTML check
+            # HTML must be present when the HTML format is requested; `if` would
+            # let a response with no html pass without asserting anything.
+            assert res[0].html is not None
+            assert "<" in res[0].html  # Basic HTML check
     
     def test_markdown_format(self, you_client):
         """Test fetching content in Markdown format."""
@@ -506,6 +507,7 @@ class TestLiveContents:
             
             assert isinstance(res, list)
             assert len(res) > 0
+            assert res[0].markdown is not None
     
     def test_metadata_format(self, you_client):
         """Test fetching metadata from a page."""
@@ -530,6 +532,9 @@ class TestLiveContents:
             
             assert isinstance(res, list)
             assert len(res) > 0
+            # Both requested formats must come back.
+            assert res[0].html is not None
+            assert res[0].markdown is not None
 
 
 @requires_api_key
