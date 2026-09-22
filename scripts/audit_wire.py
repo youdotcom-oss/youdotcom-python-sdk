@@ -161,7 +161,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     parser.add_argument("--strict", action="store_true", help="exit 1 on an unexplained drop")
     parser.add_argument("--fast", action="store_true", help="skip the slow research endpoints")
-    parser.add_argument("--verbose", action="store_true", help="list kept keys too")
+    parser.add_argument("--verbose", action="store_true",
+                        help="show dropped keys with list indices preserved instead of "
+                             "normalized to []; the normalized form is what matches "
+                             "KNOWN_WIRE_EXTRAS")
     args = parser.parse_args()
 
     api_key = os.getenv("YDC_API_KEY") or os.getenv("YOU_API_KEY_AUTH")
