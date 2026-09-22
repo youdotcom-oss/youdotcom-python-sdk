@@ -69,6 +69,7 @@ pytest tests/ -v
 - `test_redaction.py` - Tests for debug-log header redaction
 - `test_client_lifecycle.py` - Tests for client teardown in `You.__exit__` / `You.__aexit__`
 - `test_root_init.py` - Tests for the `youdotcom` package root module
+- `test_check_drift.py` - Regression tests for `scripts/check_drift.py` (response-schema recursion, cycle safety, suppression-table staleness)
 - `test_performance.py` - Performance/instrumentation tests measuring SDK overhead
 - `test_live.py` - Live API tests that run against the real You.com API (requires API key)
 
@@ -77,7 +78,7 @@ pytest tests/ -v
 Tests are organized into logical classes using pytest:
 
 Counts below are collected tests (`pytest --collect-only`), so a parametrized case
-counts once per parameter set. The groups sum to the 425 tests in the CI gate;
+counts once per parameter set. The groups sum to the 447 tests in the CI gate;
 `test_performance.py` and `test_live.py` are excluded from that gate.
 
 **Search API** (10 tests):
@@ -145,6 +146,12 @@ counts once per parameter set. The groups sum to the 425 tests in the CI gate;
 - Client teardown in `You.__exit__` / `You.__aexit__` (10)
 - Direct methods on `You` (8) and backward-compat sub-SDK shims (6)
 - `youdotcom` package root module (5)
+
+**Drift checker** (22 tests):
+- Response-schema recursion, including drift on a sibling branch that reuses a model
+- Cycle safety for self-referential and mutual (`A.b -> B.a -> A`) schemas
+- `KNOWN_RESPONSE_GAPS` and `KNOWN_SHARED_MODEL_EXTRAS` staleness in all three cases
+- `_resolve_schema` and `_nested_model` helpers
 
 **Outside the CI gate**:
 - `test_performance.py` (33 tests) - SDK overhead instrumentation
