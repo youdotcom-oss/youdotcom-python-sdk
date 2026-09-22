@@ -12,6 +12,27 @@ dependencies = [
 ]
 license = "MIT"
 license-files = ["LICENSE"]
+# No `License ::` trove classifier: the SPDX `license` expression above already
+# produces `License-Expression` in the metadata, and declaring both is what newer
+# setuptools warns about.
+classifiers = [
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://you.com/docs/welcome"
+Repository = "https://github.com/youdotcom-oss/youdotcom-python-sdk"
+Changelog = "https://github.com/youdotcom-oss/youdotcom-python-sdk/blob/main/CHANGELOG.md"
+Issues = "https://github.com/youdotcom-oss/youdotcom-python-sdk/issues"
 
 [dependency-groups]
 # The single source of truth for dev tooling — CI installs this group with
