@@ -16,7 +16,7 @@ Locks the contract for the Knowledge launch (``POST /v1/search``):
 """
 
 import json
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 
 import httpx
 import pytest
@@ -48,6 +48,33 @@ def _capture(response_body: dict):
 
 
 _EMPTY = {"results": {"web": []}, "metadata": {"query": "q"}}
+
+
+@asynccontextmanager
+async def _acapture(response_body: dict):
+    """Async twin of ``_capture``: yield ``(You, captured)`` over a mock transport.
+
+    Owns the ``AsyncClient`` lifetime so a caller cannot leak the transport,
+    which the suite treats as a failure (ResourceWarning-as-error).
+    """
+    captured: dict = {}
+
+    def handler(request):
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/json"},
+            content=json.dumps(response_body),
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        async with You(
+            api_key_auth="k", server_url="http://mock.local", async_client=client
+        ) as you:
+            yield you, captured
+    finally:
+        await client.aclose()
 
 
 def _search_body(**kwargs) -> dict:
@@ -220,21 +247,8 @@ class TestKnowledgeEndToEnd:
 class TestKnowledgeParity:
     @pytest.mark.asyncio
     async def test_search_async_sends_knowledge(self):
-        captured: dict = {}
-
-        def handler(request):
-            captured["body"] = json.loads(request.content)
-            return httpx.Response(
-                200,
-                headers={"content-type": "application/json"},
-                content=json.dumps({"results": {"knowledge": [_ANSWER]}}),
-            )
-
-        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as ac:
-            async with You(
-                api_key_auth="k", server_url="http://mock.local", async_client=ac
-            ) as you:
-                resp = await you.search_async(query="q", knowledge="core")
+        async with _acapture({"results": {"knowledge": [_ANSWER]}}) as (you, captured):
+            resp = await you.search_async(query="q", knowledge="core")
 
         assert captured["body"]["knowledge"] == "core"
         assert resp.results.knowledge[0].type == "answer"
@@ -247,21 +261,8 @@ class TestKnowledgeParity:
 
     @pytest.mark.asyncio
     async def test_deprecated_unified_async_passes_knowledge(self):
-        captured: dict = {}
-
-        def handler(request):
-            captured["body"] = json.loads(request.content)
-            return httpx.Response(
-                200,
-                headers={"content-type": "application/json"},
-                content=json.dumps(_EMPTY),
-            )
-
-        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as ac:
-            async with You(
-                api_key_auth="k", server_url="http://mock.local", async_client=ac
-            ) as you:
-                with pytest.warns(DeprecationWarning):
-                    await you.search.unified_async(query="q", knowledge="core")
+        async with _acapture(_EMPTY) as (you, captured):
+            with pytest.warns(DeprecationWarning):
+                await you.search.unified_async(query="q", knowledge="core")
 
         assert captured["body"]["knowledge"] == "core"
