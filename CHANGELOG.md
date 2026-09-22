@@ -5,6 +5,81 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] - 2026-09-21
+
+Minor release. Adds support for the new `knowledge` parameter on
+`POST /v1/search` and the knowledge result models that come back with it, and
+closes two documented response fields the SDK had been dropping. Purely
+additive — no breaking changes.
+
+### Added
+
+- **`knowledge` parameter on `search()` and `search_async()`** — pass
+  `knowledge="core"` to request knowledge results backed by licensed data
+  providers such as encyclopedias, market-data firms, and reference publishers.
+  They arrive in their own section at `response.results.knowledge`. `"core"` is
+  the only value the API accepts, and anything else raises `ValidationError`
+  locally rather than reaching the network, mirroring the server's `422`.
+- **`Knowledge` enum** — `Knowledge.CORE`, exported from `youdotcom.models`.
+  Plain strings are accepted and normalized, so `knowledge="core"` and
+  `knowledge="CORE"` both work.
+- **`KnowledgeResult` and `KnowledgeAttribution` models** — a knowledge result
+  carries `type`, `title`, and `attribution`, plus `description` and an optional
+  `as_of` date for `type: answer` results, the only kind returned today. `type`
+  is modeled as a plain `str` so an unrecognized kind parses instead of raising,
+  since a new kind may populate a different set of fields. Attribution entries
+  are credits rather than citations and carry no URL.
+- **`Results.knowledge`** — new optional field on the search response container.
+  Up to 25 results are returned, limited to those relevant to the query. When
+  none are relevant the API omits the key entirely, so the field is `None`
+  rather than an empty list and iterating needs an `or []` guard. `count` caps
+  the web and news sections, not knowledge.
+
+### Fixed
+
+- **`AnswerSearchResult` was dropping `description` and `thumbnail_url`** — the
+  answer spec defines both on `results.web[]` and the API returns them on every
+  result, but the model did not declare them, so they were discarded at parse
+  time. Both are now optional `str` fields. `WebResult` on the search endpoint
+  already had them; the answer model was simply the narrower of the two.
+- **`FinanceResearchSource` was missing `snippets`** — the finance-research spec
+  defines it on `output.sources[]`, and the sibling `Source` model on the
+  Research API already declared it. Production was not returning the field at
+  the time of this release, so nothing was being lost yet, but the model now
+  matches the published contract instead of relying on a drift-checker
+  suppression that could not have noticed the API starting to send it.
+- **`docs/models/researchresponse.md` never documented `warnings`** — the field
+  exists on `ResearchResponse` and has always parsed correctly; only the docs
+  page was missing its row.
+
+### Changed
+
+- **`scripts/check_drift.py` recurses nested response schemas** — the response
+  check previously compared top-level fields only, so drift inside a nested
+  object went undetected. Recursion surfaced the two gaps above, which are now
+  closed by adding the fields rather than suppressed, so `KNOWN_RESPONSE_GAPS`
+  is empty. It and its mirror `KNOWN_SHARED_MODEL_EXTRAS` both report an entry
+  as stale once the side they excuse catches up, instead of quietly keeping it.
+- **`scripts/check_drift.py` recursion hardened** — `visited` was a global
+  "already compared this model" cache, so a model reused at two response paths
+  backed by different schemas was compared only at the first and drift on later
+  branches went unreported. It is now a recursion stack, discarded on exit, so
+  cycles still terminate without suppressing sibling branches. The staleness
+  check also intersected only with the SDK's fields, which reported a field the
+  *spec* dropped as stale — contradicting the comment above it — and now requires
+  the spec to still define the field. Both were found in review, and both are
+  covered by `tests/test_check_drift.py`, the first test coverage that script has
+  had.
+- **`scripts/audit_wire.py` (new)** — walks the raw JSON from a live call next to
+  the parsed model and reports any key the model discarded. `check_drift.py`
+  compares the published specs against the models, which cannot see a field the
+  API returns but no spec declares; that is how `AnswerSearchResult` came to drop
+  `description` and `thumbnail_url` unnoticed. Needs `YDC_API_KEY`, so it is a
+  pre-release check rather than a CI gate. Two keys are recorded in
+  `KNOWN_WIRE_EXTRAS` as observed-but-undeclared rather than modeled:
+  `results.web[].original_thumbnail_url`, and finance-research's top-level
+  `warnings`, which the sibling research spec does declare.
+
 ## [3.4.0] - 2026-09-08
 
 Minor release. The `metadata` format on the Contents API is now deprecated

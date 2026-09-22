@@ -145,6 +145,39 @@ available and crawls the page live otherwise, `"cache"` returns cached
 content only (`contents` is omitted for results with none), and `"fetch"`
 always crawls the page live.
 
+#### Knowledge results
+
+Pass `knowledge="core"` to add cards backed by licensed data providers —
+encyclopedias, market-data firms, reference publishers. They come back in
+their own section:
+
+```python
+import os
+from youdotcom import You
+
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
+    res = you.search(
+        query="what is the capital of France",
+        knowledge="core",
+    )
+    if res.results:
+        for card in res.results.knowledge or []:
+            print(card.title)
+            print(card.description)
+            print([credit.name for credit in card.attribution])
+```
+
+`"core"` is the only value the API accepts; anything else raises
+`ValidationError` locally, mirroring the server's `422`. Results are limited
+to those relevant to the query, up to 25, and when none are relevant the API
+omits the section entirely — so `results.knowledge` is `None` rather than an
+empty list. Iterate with `or []`.
+
+`count` caps the web and news sections, not knowledge. Attribution entries
+are credits rather than citations: each names a provider and carries no URL.
+`as_of`, when present, is the `YYYY-MM-DD` date the card's underlying data
+covers.
+
 ### Contents
 
 Clean HTML or Markdown for a list of URLs.
@@ -338,6 +371,9 @@ failures such as connection resets and timeouts.
 The SDK does **not** retry by default. Opt in per call or for the whole client:
 
 ```python
+import os
+
+from youdotcom import You
 from youdotcom.utils import BackoffStrategy, RetryConfig
 
 retries = RetryConfig(
@@ -346,8 +382,8 @@ retries = RetryConfig(
     retry_connection_errors=True,
 )
 
-with You(api_key_auth=key, retry_config=retries) as you:   # whole client
-    res = you.search(query="...", retries=retries)         # or one call
+with You(api_key_auth=os.getenv("YDC_API_KEY"), retry_config=retries, timeout_ms=60_000) as you:  # whole client
+    res = you.search(query="...", retries=retries)                           # or one call
 ```
 
 Retries apply to `429`, `500`, `502`, `503`, and `504`.
@@ -362,7 +398,11 @@ without a timeout will raise `httpx.ReadTimeout` before the API responds.
 `timeout_ms` applies to the whole client or to a single call:
 
 ```python
-with You(api_key_auth=key, timeout_ms=60_000) as you:
+import os
+
+from youdotcom import You
+
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     answer = you.answer(query="...")                     # inherits 60s
     results = you.search(query="...", timeout_ms=10_000)  # this call only
 ```
@@ -439,11 +479,15 @@ Pass any `httpx.Client` / `httpx.AsyncClient` to control proxies, TLS, custom
 headers, or connection limits:
 
 ```python
+import os
+
 import httpx
+
+from youdotcom import You
 
 http_client = httpx.Client(proxy="http://localhost:8030", headers={"x-team": "search"})
 
-with You(api_key_auth=key, client=http_client) as you:
+with You(api_key_auth=os.getenv("YDC_API_KEY"), client=http_client) as you:
     ...
 
 http_client.close()   # a transport you supply is yours to close
@@ -460,9 +504,13 @@ creates.
 manager. Both transports are released on exit.
 
 ```python
-with You(api_key_auth=key) as you:
+import os
+
+from youdotcom import You
+
+with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
     ...
-# or: async with You(api_key_auth=key) as you:
+# or: async with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
 ```
 
 An instance is not reusable after the block exits, including for calls of the
@@ -474,8 +522,11 @@ Set `YOU_DEBUG=1` for request and response logging, or pass your own logger:
 
 ```python
 import logging
+import os
 
-with You(api_key_auth=key, debug_logger=logging.getLogger("youdotcom")) as you:
+from youdotcom import You
+
+with You(api_key_auth=os.getenv("YDC_API_KEY"), debug_logger=logging.getLogger("youdotcom")) as you:
     ...
 ```
 

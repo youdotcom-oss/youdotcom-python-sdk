@@ -1,6 +1,6 @@
 # SearchResponse
 
-A JSON object containing unified search results from web and news sources
+A JSON object containing unified search results from web, news, and knowledge sources
 
 
 ## Fields

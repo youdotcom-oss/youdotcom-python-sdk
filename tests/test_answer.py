@@ -28,7 +28,7 @@ _ANSWER_BODY = json.dumps(
         ],
         "results": {
             "web": [
-                {"url": "https://example.com/quantum", "title": "Quantum News", "snippets": ["IBM announced a new processor."], "page_age": "2025-06-25T11:41:00"},
+                {"url": "https://example.com/quantum", "title": "Quantum News", "description": "A brief description of the quantum result.", "snippets": ["IBM announced a new processor."], "thumbnail_url": "https://example.com/quantum.png", "page_age": "2025-06-25T11:41:00"},
                 {"url": "https://example.com/ibm", "title": "IBM Quantum", "snippets": ["Google achieved error correction."]},
             ]
         },
@@ -84,6 +84,13 @@ class TestAnswerSuccess:
         assert res.results.web[0].title == "Quantum News"
         assert res.results.web[0].page_age == "2025-06-25T11:41:00"
         assert res.results.web[1].page_age is None
+        # Both are defined by the answer spec and returned by prod on every web
+        # result; they were silently dropped at parse time until 3.5.0.
+        assert res.results.web[0].description == "A brief description of the quantum result."
+        assert res.results.web[0].thumbnail_url == "https://example.com/quantum.png"
+        # ...and optional: absent on the second result rather than raising.
+        assert res.results.web[1].description is None
+        assert res.results.web[1].thumbnail_url is None
 
     def test_posts_to_answer_endpoint(self):
         captured: dict = {}

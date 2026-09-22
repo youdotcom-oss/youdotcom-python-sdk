@@ -42,10 +42,10 @@ def _upper(value: Any) -> Any:
 def _lower(value: Any) -> Any:
     """Normalize a plain-string enum value to its lowercase spelling.
 
-    Used for ``safesearch``, ``livecrawl``, and ``freshness``, whose enum
-    members are lowercase (``"STRICT"`` -> ``"strict"``). Date-range freshness
-    values are unaffected apart from the ``to`` separator, which the API
-    expects in lowercase anyway.
+    Used for ``safesearch``, ``knowledge``, ``livecrawl``, and ``freshness``,
+    whose enum members are lowercase (``"STRICT"`` -> ``"strict"``). Date-range
+    freshness values are unaffected apart from the ``to`` separator, which the
+    API expects in lowercase anyway.
     """
     return value.lower() if isinstance(value, str) else value
 
@@ -66,6 +66,7 @@ def _build_search_request(
     country: Optional[str],
     language: OptionalNullable[str],
     safesearch: Optional[str],
+    knowledge: Optional[str],
     livecrawl: Optional[str],
     livecrawl_formats: Optional[Iterable[str]],
     extraction: Optional[Union[models.Extraction, Mapping[str, Any]]],
@@ -147,6 +148,7 @@ def _build_search_request(
         offset=offset,
         country=_upper(country),
         safesearch=_lower(safesearch),
+        knowledge=_lower(knowledge),
         livecrawl=_lower(livecrawl),
         livecrawl_formats=utils.unmarshal(
             _lower_each(livecrawl_formats), Optional[List[models.LiveCrawlFormats]]
@@ -995,6 +997,7 @@ class You(BaseSDK):
         country: Optional[str] = None,
         language: OptionalNullable[str] = UNSET,
         safesearch: Optional[str] = None,
+        knowledge: Optional[str] = None,
         livecrawl: Optional[str] = None,
         livecrawl_formats: Optional[Iterable[str]] = None,
         extraction: Optional[Union[models.Extraction, Mapping[str, Any]]] = None,
@@ -1010,9 +1013,9 @@ class You(BaseSDK):
         r"""Search via POST /v1/search.
 
         Enum-typed parameters (``country``, ``language``, ``safesearch``,
-        ``livecrawl``, ``livecrawl_formats``, ``freshness``) accept plain
-        strings in any case -- the SDK normalizes them to the casing the API
-        expects, so callers don't need to import enum classes.
+        ``knowledge``, ``livecrawl``, ``livecrawl_formats``, ``freshness``)
+        accept plain strings in any case -- the SDK normalizes them to the
+        casing the API expects, so callers don't need to import enum classes.
 
         ``livecrawl`` and ``livecrawl_formats`` are deprecated; prefer
         ``extraction``. The two are mutually exclusive -- passing both
@@ -1030,6 +1033,12 @@ class You(BaseSDK):
         :param language: BCP 47 language code. Omit the argument to use the API
             default (``"en"``); pass ``None`` to send no language at all.
         :param safesearch: ``"strict"``, ``"moderate"``, or ``"off"``.
+        :param knowledge: ``"core"`` -- requests knowledge results (cards backed
+            by licensed data providers), returned under
+            ``response.results.knowledge`` when relevant. Omit to skip them. It
+            is the only value the API accepts; anything else raises
+            :class:`pydantic.ValidationError` locally, mirroring the server's
+            ``422``.
         :param livecrawl: deprecated. ``"web"``, ``"news"``, or ``"all"``.
             Use ``extraction`` instead. Mutually exclusive with ``extraction``.
         :param livecrawl_formats: deprecated. ``["html"]``, ``["markdown"]``,
@@ -1075,6 +1084,7 @@ class You(BaseSDK):
             country=country,
             language=language,
             safesearch=safesearch,
+            knowledge=knowledge,
             livecrawl=livecrawl,
             livecrawl_formats=livecrawl_formats,
             extraction=extraction,
@@ -1171,6 +1181,7 @@ class You(BaseSDK):
         country: Optional[str] = None,
         language: OptionalNullable[str] = UNSET,
         safesearch: Optional[str] = None,
+        knowledge: Optional[str] = None,
         livecrawl: Optional[str] = None,
         livecrawl_formats: Optional[Iterable[str]] = None,
         extraction: Optional[Union[models.Extraction, Mapping[str, Any]]] = None,
@@ -1207,6 +1218,7 @@ class You(BaseSDK):
             country=country,
             language=language,
             safesearch=safesearch,
+            knowledge=knowledge,
             livecrawl=livecrawl,
             livecrawl_formats=livecrawl_formats,
             extraction=extraction,
