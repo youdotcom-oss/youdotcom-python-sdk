@@ -1,6 +1,6 @@
 # Knowledge
 
-Requests knowledge results alongside web and news search.
+Requests knowledge results from licensed data providers, returned under `response.results.knowledge` (omitted when none are relevant).
 
 ## Example Usage
 
