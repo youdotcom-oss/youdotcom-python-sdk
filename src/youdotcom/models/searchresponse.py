@@ -44,14 +44,14 @@ class Results(BaseModel):
 
 
 class SearchResponseTypedDict(TypedDict):
-    r"""A JSON object containing unified search results from web and news sources"""
+    r"""A JSON object containing unified search results from web, news, and knowledge sources"""
 
     results: NotRequired[ResultsTypedDict]
     metadata: NotRequired[SearchMetadataTypedDict]
 
 
 class SearchResponse(BaseModel):
-    r"""A JSON object containing unified search results from web and news sources"""
+    r"""A JSON object containing unified search results from web, news, and knowledge sources"""
 
     results: Optional[Results] = None
 

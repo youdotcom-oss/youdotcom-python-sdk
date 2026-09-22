@@ -117,9 +117,10 @@ with You(
         knowledge="core",
     )
 
-    for card in res.results.knowledge or []:
-        print(card.title, card.description)
-        print([credit.name for credit in card.attribution])
+    if res.results:
+        for card in res.results.knowledge or []:
+            print(card.title, card.description)
+            print([credit.name for credit in card.attribution])
 ```
 
 `knowledge="core"` requests knowledge results — cards backed by licensed data

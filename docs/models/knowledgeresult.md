@@ -13,10 +13,11 @@ from youdotcom import You
 with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     res = you.search(query="what is the capital of France", knowledge="core")
 
-    for card in res.results.knowledge or []:
-        print(card.type, card.title)
-        print(card.description)
-        print([credit.name for credit in card.attribution])
+    if res.results:
+        for card in res.results.knowledge or []:
+            print(card.type, card.title)
+            print(card.description)
+            print([credit.name for credit in card.attribution])
 ```
 
 Knowledge results arrive in the response rather than being constructed by the
@@ -43,8 +44,9 @@ empty array, so `response.results.knowledge` is `None` — check for `None`
 before iterating.
 
 ```python
-for card in res.results.knowledge or []:
-    print(card.title)
+if res.results:
+    for card in res.results.knowledge or []:
+        print(card.title)
 ```
 
 ### `count` does not cap knowledge
@@ -68,7 +70,8 @@ reports no date. Parse it when you need a date object:
 ```python
 from datetime import datetime
 
-for card in res.results.knowledge or []:
-    if card.as_of is not None:
-        print(datetime.strptime(card.as_of, "%Y-%m-%d").date())
+if res.results:
+    for card in res.results.knowledge or []:
+        if card.as_of is not None:
+            print(datetime.strptime(card.as_of, "%Y-%m-%d").date())
 ```

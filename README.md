@@ -160,10 +160,11 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
         query="what is the capital of France",
         knowledge="core",
     )
-    for card in res.results.knowledge or []:
-        print(card.title)
-        print(card.description)
-        print([credit.name for credit in card.attribution])
+    if res.results:
+        for card in res.results.knowledge or []:
+            print(card.title)
+            print(card.description)
+            print([credit.name for credit in card.attribution])
 ```
 
 `"core"` is the only value the API accepts; anything else raises
