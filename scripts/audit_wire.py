@@ -64,7 +64,12 @@ KNOWN_WIRE_EXTRAS = {
 
 
 class _Spy(httpx.BaseTransport):
-    """Wrap a transport and keep the last decoded JSON response body."""
+    """Wrap a transport and keep the last decoded JSON response body.
+
+    ``BaseTransport.close()`` is a no-op and ``Client.close()`` only calls the
+    outer transport, so the wrapped transport has to be closed explicitly or
+    every call in a run leaks its connection pool.
+    """
 
     def __init__(self, inner: httpx.BaseTransport):
         self.inner = inner
@@ -79,6 +84,9 @@ class _Spy(httpx.BaseTransport):
         except Exception:  # non-JSON or unreadable; nothing to audit
             self.last = None
         return response
+
+    def close(self) -> None:
+        self.inner.close()
 
 
 def _json_keys(model: Any) -> dict[str, str]:

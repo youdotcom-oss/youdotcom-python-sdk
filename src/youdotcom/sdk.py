@@ -1033,9 +1033,10 @@ class You(BaseSDK):
         :param language: BCP 47 language code. Omit the argument to use the API
             default (``"en"``); pass ``None`` to send no language at all.
         :param safesearch: ``"strict"``, ``"moderate"``, or ``"off"``.
-        :param knowledge: ``"core"`` -- requests knowledge results alongside
-            web and news search. Omit to skip them. It is the only value the
-            API accepts; anything else raises
+        :param knowledge: ``"core"`` -- requests knowledge results (cards backed
+            by licensed data providers), returned under
+            ``response.results.knowledge`` when relevant. Omit to skip them. It
+            is the only value the API accepts; anything else raises
             :class:`pydantic.ValidationError` locally, mirroring the server's
             ``422``.
         :param livecrawl: deprecated. ``"web"``, ``"news"``, or ``"all"``.
