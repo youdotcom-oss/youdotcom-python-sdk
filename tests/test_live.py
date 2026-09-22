@@ -422,12 +422,14 @@ class TestLiveSearchKnowledge:
         with you_client as you:
             res = you.search(query=self.KNOWLEDGE_QUERY, knowledge="core")
 
+            assert res.results is not None
             assert res.results.knowledge
 
     def test_knowledge_result_shape(self, you_client):
         with you_client as you:
             res = you.search(query=self.KNOWLEDGE_QUERY, knowledge="core")
 
+        assert res.results is not None
         assert res.results.knowledge
         for kr in res.results.knowledge:
             # ``type`` is a plain str so an unrecognized future kind parses
@@ -451,6 +453,7 @@ class TestLiveSearchKnowledge:
         with you_client as you:
             res = you.search(query=self.KNOWLEDGE_QUERY, knowledge="core", count=1)
 
+        assert res.results is not None
         assert res.results.knowledge
         assert len(res.results.knowledge) <= 25
 
