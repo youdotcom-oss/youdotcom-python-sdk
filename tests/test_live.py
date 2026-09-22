@@ -1056,7 +1056,7 @@ class TestLiveAnswer:
 
 @requires_api_key
 class TestLiveAttribution:
-    """The ``X-Client-Info`` header on real requests (DX-777).
+    """The ``X-Client-Info`` header on real requests.
 
     The mock-transport tests in ``tests/test_attribution.py`` pin the wire
     format; what they cannot show is that the real API *accepts* the header.

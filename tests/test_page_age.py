@@ -1,4 +1,4 @@
-"""Tolerance of non-ISO ``page_age`` values on search and news results (DX-815).
+"""Tolerance of non-ISO ``page_age`` values on search and news results.
 
 The spec types ``page_age`` as ``format: date-time``, but a US-locale
 timestamp (``7/29/2024 10:38:56 AM``) was observed in production. Pydantic rejected it,

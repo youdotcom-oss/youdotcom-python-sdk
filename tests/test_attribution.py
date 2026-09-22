@@ -394,7 +394,7 @@ class TestWireRoundTrip:
 class TestMcpAttributionNeverSent:
     """The SDK must never emit ``X-MCP-Attribution``.
 
-    Per DX-777: that header is assembled on the MCP server, which is the only
+    That header is assembled on the MCP server, which is the only
     layer that can populate its ``keyless`` / ``payment`` / ``ip`` flags. The
     SDK sits outside Cloudflare and has no ``CF-Connecting-IP`` to read, so
     emitting it here would fabricate routing flags that the downstream

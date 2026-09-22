@@ -188,7 +188,7 @@ class TestResearchTaskStreamEventDeclaredType:
 
 
 class TestStreamDecodePath:
-    """End-to-end pin through the real SSE decode path (DX-778).
+    """End-to-end pin through the real SSE decode path.
 
     The tests above validate the model directly. That is not the path a caller
     exercises: ``stream_research_task`` wraps every SSE frame in
@@ -202,7 +202,7 @@ class TestStreamDecodePath:
     _FRAMES = [
         b"id: 0\nevent: connected\ndata: "
         b'{"type":"connected","task_id":"abc","status":"running"}\n\n',
-        # Not in the Event enum -- the exact case DX-778 is about.
+        # Not in the Event enum -- the exact case this class is about.
         b"id: 1\nevent: research.searching\ndata: "
         b'{"type":"research.searching","task_id":"abc","status":"running"}\n\n',
         b"id: 2\nevent: checkpoint\ndata: "
