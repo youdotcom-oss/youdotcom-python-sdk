@@ -56,6 +56,22 @@ KNOWN_RESPONSE_GAPS = {
     ("finance-research", "output.sources"): {"snippets"},
 }
 
+# The mirror image: fields an SDK model declares that the spec schema at *this*
+# path does not. The SDK shares one model across paths whose spec schemas differ
+# in width, so the shared model is wider than some of them. Each entry is a field
+# that is Optional and never populated at that path, so narrowing the model would
+# be a breaking change with no behavioral gain. An entry that goes stale — the
+# spec catches up — is reported rather than silently kept.
+KNOWN_SHARED_MODEL_EXTRAS = {
+    # `results.web[].contents` resolves to WebContentsPost, which defines
+    # `highlights`; `results.news[].contents` resolves to the narrower Contents
+    # schema (`html`, `markdown` only). The SDK uses one Contents model for both.
+    # Verified against prod: with `extraction_mode="highlights"` news items carry
+    # no `contents` at all, and with the deprecated `livecrawl="all"` they carry
+    # `html` only — `highlights` never arrives on the news path.
+    ("web-search", "results.news.contents"): {"highlights"},
+}
+
 # Map (method, path) -> SDK method name.
 # {task_id} and {task_id}/stream are handled by helpers, not direct methods.
 EXPECTED_ENDPOINTS = {
@@ -449,60 +465,78 @@ def _compare_response_fields(
     """
     if model in visited:
         return
+    # ``visited`` is a recursion stack, not an "already compared" cache. The same
+    # model can legitimately appear at several response paths backed by different
+    # schemas, so it has to be compared at each one; discarding on exit keeps the
+    # cycle breaker (a model already on the stack) without silently suppressing
+    # sibling branches and missing real drift.
     visited.add(model)
+    try:
+        schema = _resolve_schema(schema, spec)
+        props = schema.get("properties")
+        if not props:
+            # Nothing to compare against — a `oneOf` union or an unresolvable ref.
+            # Bail rather than reporting every SDK field as absent from the spec.
+            return
+        model_fields = set(model.model_fields.keys())
 
-    schema = _resolve_schema(schema, spec)
-    props = schema.get("properties")
-    if not props:
-        # Nothing to compare against — a `oneOf` union or an unresolvable ref.
-        # Bail rather than reporting every SDK field as absent from the spec.
-        return
-    model_fields = set(model.model_fields.keys())
+        missing_in_sdk = set(props) - model_fields
+        missing_in_spec = model_fields - set(props)
 
-    missing_in_sdk = set(props) - model_fields
-    missing_in_spec = model_fields - set(props)
-
-    known = KNOWN_RESPONSE_GAPS.get((spec_name, field_path), set())
-    # Stale means the SDK model now defines the field, so the suppression no
-    # longer does anything. Compare against the model, not against what's
-    # missing: a field the spec dropped is neither missing nor defined, and
-    # must not be reported as stale.
-    stale = known & model_fields
-    if stale:
-        warnings.append(
-            f"[response] {path}: KNOWN_RESPONSE_GAPS entry {stale} is stale — "
-            f"the SDK model now defines it, so remove the entry"
-        )
-    missing_in_sdk -= known
-
-    if missing_in_sdk:
-        warnings.append(
-            f"[response] {path}: spec has fields {missing_in_sdk} "
-            f"which SDK model doesn't have"
-        )
-    if missing_in_spec:
-        warnings.append(
-            f"[response] {path}: SDK model has fields {missing_in_spec} "
-            f"which spec doesn't define"
-        )
-
-    for prop_name, prop_schema in props.items():
-        if prop_name not in model_fields:
-            continue
-        child_model = _nested_model(model.model_fields[prop_name].annotation)
-        if child_model is None:
-            continue
-        if "properties" in _resolve_schema(prop_schema, spec):
-            _compare_response_fields(
-                prop_schema,
-                child_model,
-                f"{path}.{prop_name}",
-                spec,
-                warnings,
-                visited,
-                spec_name,
-                f"{field_path}.{prop_name}" if field_path else prop_name,
+        known = KNOWN_RESPONSE_GAPS.get((spec_name, field_path), set())
+        # Stale means the SDK model now defines the field, so the suppression no
+        # longer does anything. Compare against the model, not against what's
+        # missing: a field the spec dropped is neither missing nor defined, and
+        # must not be reported as stale.
+        stale = known & model_fields
+        if stale:
+            warnings.append(
+                f"[response] {path}: KNOWN_RESPONSE_GAPS entry {stale} is stale — "
+                f"the SDK model now defines it, so remove the entry"
             )
+        missing_in_sdk -= known
+
+        known_extra = KNOWN_SHARED_MODEL_EXTRAS.get((spec_name, field_path), set())
+        # Stale here is the mirror image: the spec caught up and now defines the
+        # field at this path, so the suppression no longer does anything.
+        stale_extra = known_extra & set(props)
+        if stale_extra:
+            warnings.append(
+                f"[response] {path}: KNOWN_SHARED_MODEL_EXTRAS entry {stale_extra} "
+                f"is stale — the spec now defines it at this path, so remove the entry"
+            )
+        missing_in_spec -= known_extra
+
+        if missing_in_sdk:
+            warnings.append(
+                f"[response] {path}: spec has fields {missing_in_sdk} "
+                f"which SDK model doesn't have"
+            )
+        if missing_in_spec:
+            warnings.append(
+                f"[response] {path}: SDK model has fields {missing_in_spec} "
+                f"which spec doesn't define"
+            )
+
+        for prop_name, prop_schema in props.items():
+            if prop_name not in model_fields:
+                continue
+            child_model = _nested_model(model.model_fields[prop_name].annotation)
+            if child_model is None:
+                continue
+            if "properties" in _resolve_schema(prop_schema, spec):
+                _compare_response_fields(
+                    prop_schema,
+                    child_model,
+                    f"{path}.{prop_name}",
+                    spec,
+                    warnings,
+                    visited,
+                    spec_name,
+                    f"{field_path}.{prop_name}" if field_path else prop_name,
+                )
+    finally:
+        visited.discard(model)
 
 
 def check_response_schemas(specs: dict[str, dict[str, Any]]) -> list[str]:
