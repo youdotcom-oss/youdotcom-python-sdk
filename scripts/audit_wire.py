@@ -121,6 +121,15 @@ def _walk(raw: Any, parsed: Any, path: str, dropped: list, kept: list) -> None:
             kept.append(f"{path}.{key}")
             _walk(value, getattr(parsed, keys[key], None), f"{path}.{key}", dropped, kept)
     elif isinstance(raw, list) and isinstance(parsed, list):
+        # zip() truncates to the shorter list, so a length mismatch would silently
+        # skip trailing raw items and their keys -- the audit would report "all
+        # clear" while never looking at part of the response. Say so instead.
+        if len(raw) != len(parsed):
+            dropped.append((
+                path,
+                "<list_length_mismatch>",
+                [f"raw={len(raw)} parsed={len(parsed)}"],
+            ))
         for index, (raw_item, parsed_item) in enumerate(zip(raw, parsed)):
             _walk(raw_item, parsed_item, f"{path}[{index}]", dropped, kept)
 
