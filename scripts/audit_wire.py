@@ -53,7 +53,7 @@ KNOWN_WIRE_EXTRAS = {
     # Observed on web results; absent from web-search.json and every other
     # published spec. Looks like a spec omission worth reporting upstream. Seen on
     # both the extraction and knowledge calls, hence the wildcard label.
-    (None, "results.web[].original_thumbnail_url"),
+    (None, "root.results.web[].original_thumbnail_url"),
     # Prod sends `warnings` at the top level of the finance-research response, and
     # the sibling research spec declares it (ResearchResponse models it), but
     # finance-research.json declares only `output`. Modeling it anyway would put
@@ -164,12 +164,15 @@ RESEARCH_INPUT = "What drove NVIDIA data center revenue in fiscal 2025?"
 
 
 def _calls(fast: bool) -> list:
+    # Search is walked from the response root, like every other endpoint here.
+    # Scoping it to `results` would leave `metadata` and any future top-level
+    # field unaudited, which is a blind spot in a tool whose job is finding them.
     out = [
-        ("search:plain", lambda y: y.search(query=SEARCH, count=3), "results"),
-        ("search:knowledge-core", lambda y: y.search(query=SEARCH, count=3, knowledge="core"), "results"),
+        ("search:plain", lambda y: y.search(query=SEARCH, count=3), None),
+        ("search:knowledge-core", lambda y: y.search(query=SEARCH, count=3, knowledge="core"), None),
         ("search:extraction-highlights", lambda y: y.search(
             query="latest advances in fusion energy research", count=3,
-            extraction={"extraction_mode": "highlights"}), "results"),
+            extraction={"extraction_mode": "highlights"}), None),
         ("answer", lambda y: y.answer(query="What caused the 2008 financial crisis?"), None),
         ("contents", lambda y: y.contents(
             urls=["https://example.com"], formats=["html", "markdown"]), None),
