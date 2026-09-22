@@ -78,7 +78,7 @@ pytest tests/ -v
 Tests are organized into logical classes using pytest:
 
 Counts below are collected tests (`pytest --collect-only`), so a parametrized case
-counts once per parameter set. The groups sum to the 447 tests in the CI gate;
+counts once per parameter set. The groups sum to the 450 tests in the CI gate;
 `test_performance.py` and `test_live.py` are excluded from that gate.
 
 **Search API** (10 tests):
@@ -116,13 +116,14 @@ counts once per parameter set. The groups sum to the 447 tests in the CI gate;
 - Async answer
 - Error handling (unauthorized, forbidden, payment required, unprocessable, internal server error)
 
-**Research API** (34 tests):
+**Research API** (37 tests):
 - Basic research functionality (standard, deep, exhaustive effort)
 - Background mode (task submission, get_research_task, status polling)
 - Output schema (structured JSON output, content_type object)
 - Source control (include/exclude/boost domains, freshness, country)
 - Error handling (unauthorized, forbidden, unprocessable entity, 422 combos)
 - Stream research task (SSE success path + 404/401/403 error paths)
+- Response envelope `warnings`, and the finance-research gap recorded against it
 
 **Research Helpers** (57 tests):
 - research_background / research_background_async (TaskResponse return)

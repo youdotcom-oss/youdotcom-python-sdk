@@ -48,6 +48,9 @@ additive — no breaking changes.
   the time of this release, so nothing was being lost yet, but the model now
   matches the published contract instead of relying on a drift-checker
   suppression that could not have noticed the API starting to send it.
+- **`docs/models/researchresponse.md` never documented `warnings`** — the field
+  exists on `ResearchResponse` and has always parsed correctly; only the docs
+  page was missing its row.
 
 ### Changed
 
@@ -57,6 +60,25 @@ additive — no breaking changes.
   closed by adding the fields rather than suppressed, so `KNOWN_RESPONSE_GAPS`
   is empty. It and its mirror `KNOWN_SHARED_MODEL_EXTRAS` both report an entry
   as stale once the side they excuse catches up, instead of quietly keeping it.
+- **`scripts/check_drift.py` recursion hardened** — `visited` was a global
+  "already compared this model" cache, so a model reused at two response paths
+  backed by different schemas was compared only at the first and drift on later
+  branches went unreported. It is now a recursion stack, discarded on exit, so
+  cycles still terminate without suppressing sibling branches. The staleness
+  check also intersected only with the SDK's fields, which reported a field the
+  *spec* dropped as stale — contradicting the comment above it — and now requires
+  the spec to still define the field. Both were found in review, and both are
+  covered by `tests/test_check_drift.py`, the first test coverage that script has
+  had.
+- **`scripts/audit_wire.py` (new)** — walks the raw JSON from a live call next to
+  the parsed model and reports any key the model discarded. `check_drift.py`
+  compares the published specs against the models, which cannot see a field the
+  API returns but no spec declares; that is how `AnswerSearchResult` came to drop
+  `description` and `thumbnail_url` unnoticed. Needs `YDC_API_KEY`, so it is a
+  pre-release check rather than a CI gate. Two keys are recorded in
+  `KNOWN_WIRE_EXTRAS` as observed-but-undeclared rather than modeled:
+  `results.web[].original_thumbnail_url`, and finance-research's top-level
+  `warnings`, which the sibling research spec does declare.
 
 ## [3.4.0] - 2026-09-08
 

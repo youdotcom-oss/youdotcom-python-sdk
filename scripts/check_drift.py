@@ -27,7 +27,7 @@ import inspect
 import re
 import sys
 import traceback
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
@@ -397,7 +397,7 @@ def check_request_params(specs: dict[str, dict[str, Any]]) -> list[str]:
             continue
 
         spec_params = _get_schema_properties(schema, spec)
-        sdk_params = _get_sdk_method_params(check["sdk_method"])
+        sdk_params = _get_sdk_method_params(cast(str, check["sdk_method"]))
 
         missing_in_sdk = spec_params - sdk_params
         missing_in_spec = sdk_params - spec_params
@@ -590,7 +590,7 @@ def check_response_schemas(specs: dict[str, dict[str, Any]]) -> list[str]:
             continue
 
         spec_fields = _get_schema_properties(schema, spec)
-        sdk_fields = _get_sdk_model_fields(check["sdk_response_models"])
+        sdk_fields = _get_sdk_model_fields(cast(list[str], check["sdk_response_models"]))
 
         missing_in_sdk = spec_fields - sdk_fields
         missing_in_spec = sdk_fields - spec_fields

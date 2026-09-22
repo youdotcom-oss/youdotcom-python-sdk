@@ -117,9 +117,11 @@ class TestLiveSearch:
             
             assert res.results is not None
             assert res.metadata is not None
-            # Verify we got results
-            if res.results.web:
-                assert len(res.results.web) <= 5
+            # Assert the section is actually populated. The previous `if` guard
+            # let an empty response pass, so neither the filters nor the count cap
+            # were verified despite the test name.
+            assert res.results.web, "expected web results for a broad recent query"
+            assert len(res.results.web) <= 5
     
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_search_with_livecrawl_web(self, you_client):
