@@ -175,7 +175,9 @@ def _calls(fast: bool) -> list:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[1])
+    parser = argparse.ArgumentParser(
+        description="Audit what the live API returns against what the SDK models keep."
+    )
     parser.add_argument("--strict", action="store_true", help="exit 1 on an unexplained drop")
     parser.add_argument("--fast", action="store_true", help="skip the slow research endpoints")
     parser.add_argument("--verbose", action="store_true",
