@@ -89,8 +89,9 @@ class TestKnowledgeEnum:
         assert Knowledge.CORE.value == "core"
 
     def test_core_is_the_only_member(self):
-        """``knowledge=detailed`` is not public yet — shipping it here would
-        let callers send a value the API rejects with ``422``."""
+        """``core`` is the only value the published spec defines. Adding a member
+        the API does not accept would let callers send a value that fails with
+        ``422``, so this pins the enum to exactly what is public."""
         assert [m.value for m in Knowledge] == ["core"]
 
 
@@ -128,7 +129,7 @@ class TestKnowledgeRequest:
         request is sent -- the same local-mirrors-server pattern as
         ``extraction``."""
         with pytest.raises(ValidationError):
-            _search_body(knowledge="detailed")
+            _search_body(knowledge="not-a-real-value")
 
 
 # ---------------------------------------------------------------------------
