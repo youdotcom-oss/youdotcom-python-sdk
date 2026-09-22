@@ -141,6 +141,8 @@ class FinanceResearchSourceTypedDict(TypedDict):
     r"""The URL of the source webpage."""
     title: NotRequired[str]
     r"""The title of the source webpage."""
+    snippets: NotRequired[List[str]]
+    r"""Relevant excerpts from the source page that were used in generating the answer."""
 
 
 class FinanceResearchSource(BaseModel):
@@ -150,9 +152,12 @@ class FinanceResearchSource(BaseModel):
     title: Optional[str] = None
     r"""The title of the source webpage."""
 
+    snippets: Optional[List[str]] = None
+    r"""Relevant excerpts from the source page that were used in generating the answer."""
+
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
-        optional_fields = set(["title"])
+        optional_fields = set(["title", "snippets"])
         serialized = handler(self)
         m = {}
 

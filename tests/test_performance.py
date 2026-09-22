@@ -569,6 +569,38 @@ class TestSearchPerformance:
             if show_detailed:
                 print_detailed_metrics(metrics)
 
+    # ----------------------------------------------------------------
+    # Knowledge case: `knowledge="core"` adds a licensed-data section to
+    # the response, which changes payload size and response latency.
+    # ----------------------------------------------------------------
+
+    def test_search_with_knowledge_core(self, server_url, api_key, iterations, show_detailed):
+        """Search with knowledge="core" (adds the results.knowledge section).
+
+        Under the default ``PERF_TEST_TARGET=mock`` the server returns one fixed
+        payload regardless of the request body, with no ``knowledge`` section, so
+        this measures the request side only. Point ``PERF_TEST_TARGET`` at a real
+        server to include knowledge response parsing and payload size. The
+        extraction cases above have the same caveat.
+        """
+        client = create_timing_client("post_/v1/search")
+
+        with You(server_url=server_url, client=client, api_key_auth=api_key, timeout_ms=90_000) as you:
+            def call():
+                you.search(
+                    query="what is the capital of France",
+                    count=3,
+                    knowledge="core",
+                    server_url=server_url,
+                )
+
+            metrics = measure_sdk_call(
+                call, client, iterations, "Search: knowledge=core"
+            )
+            ALL_METRICS.append(metrics)
+            if show_detailed:
+                print_detailed_metrics(metrics)
+
 
 # ============================================================================
 # Contents Endpoint Tests

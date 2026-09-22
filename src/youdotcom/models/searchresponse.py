@@ -1,6 +1,7 @@
 
 
 from __future__ import annotations
+from .knowledgeresult import KnowledgeResult, KnowledgeResultTypedDict
 from .newsresult import NewsResult, NewsResultTypedDict
 from .searchmetadata import SearchMetadata, SearchMetadataTypedDict
 from .webresult import WebResult, WebResultTypedDict
@@ -13,6 +14,8 @@ from youdotcom.types import BaseModel, UNSET_SENTINEL
 class ResultsTypedDict(TypedDict):
     web: NotRequired[List[WebResultTypedDict]]
     news: NotRequired[List[NewsResultTypedDict]]
+    knowledge: NotRequired[List[KnowledgeResultTypedDict]]
+    r"""Results backed by licensed data providers. Up to 25 are returned, limited to those relevant to the query. When none are relevant the key is omitted rather than returned as an empty array."""
 
 
 class Results(BaseModel):
@@ -20,9 +23,12 @@ class Results(BaseModel):
 
     news: Optional[List[NewsResult]] = None
 
+    knowledge: Optional[List[KnowledgeResult]] = None
+    r"""Results backed by licensed data providers. Up to 25 are returned, limited to those relevant to the query. When none are relevant the key is omitted rather than returned as an empty array."""
+
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
-        optional_fields = set(["web", "news"])
+        optional_fields = set(["web", "news", "knowledge"])
         serialized = handler(self)
         m = {}
 
@@ -38,14 +44,14 @@ class Results(BaseModel):
 
 
 class SearchResponseTypedDict(TypedDict):
-    r"""A JSON object containing unified search results from web and news sources"""
+    r"""A JSON object containing unified search results from web, news, and knowledge sources"""
 
     results: NotRequired[ResultsTypedDict]
     metadata: NotRequired[SearchMetadataTypedDict]
 
 
 class SearchResponse(BaseModel):
-    r"""A JSON object containing unified search results from web and news sources"""
+    r"""A JSON object containing unified search results from web, news, and knowledge sources"""
 
     results: Optional[Results] = None
 

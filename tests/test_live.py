@@ -16,6 +16,7 @@ with `-m "not slow"` for a fast smoke run:
 """
 
 import os
+from datetime import datetime
 
 import httpx
 import pytest
@@ -29,6 +30,7 @@ from youdotcom.models import (
     ExtractionMode,
     ExtractionSource,
     Freshness,
+    Knowledge,
     LiveCrawl,
     LiveCrawlFormats,
     SafeSearch,
@@ -115,11 +117,22 @@ class TestLiveSearch:
             
             assert res.results is not None
             assert res.metadata is not None
-            # Verify we got results
-            if res.results.web:
-                assert len(res.results.web) <= 5
+            # Assert the section is actually populated. The previous `if` guard
+            # let an empty response pass, so neither the filters nor the count cap
+            # were verified despite the test name.
+            assert res.results.web, "expected web results for a broad recent query"
+            assert len(res.results.web) <= 5
     
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+    @pytest.mark.xfail(
+        reason="Backend regression on a deprecated path: `livecrawl=web` combined "
+        "with `livecrawl_formats=[markdown]` no longer returns `contents` on any "
+        "web result (0/3), though `livecrawl=all`, `livecrawl=web` without "
+        "formats, and both `extraction` modes all still work (2/3, 2/3, 3/3, "
+        "3/3). Fails identically on main, so it predates this branch. Non-strict: "
+        "remove this marker if the server starts returning contents again. Note "
+        "MIGRATION.md still promises livecrawl works until 4.0.0.",
+    )
     def test_search_with_livecrawl_web(self, you_client):
         """Test search with livecrawl for web results.
 
@@ -390,6 +403,92 @@ class TestLiveSearchExtraction:
 
 
 @requires_api_key
+class TestLiveSearchKnowledge:
+    """Live tests for the ``knowledge`` parameter on ``POST /v1/search``.
+
+    ``KNOWLEDGE_QUERY`` is verified against prod to return knowledge results.
+    Coverage is data-dependent, so these assert the shape of what comes back
+    rather than any specific card.
+
+    These deliberately make no assertion about ``results.web``. Knowledge
+    coverage varies by query and the web section is not part of the knowledge
+    contract, so coupling the two would make these tests flaky for reasons
+    unrelated to this surface.
+    """
+
+    KNOWLEDGE_QUERY = "what is the capital of France"
+
+    def test_knowledge_core_returns_results(self, you_client):
+        with you_client as you:
+            res = you.search(query=self.KNOWLEDGE_QUERY, knowledge=Knowledge.CORE)
+
+            assert res.results is not None
+            assert res.results.knowledge, (
+                "Expected knowledge results for a query verified to have them; "
+                "server-side coverage may have changed"
+            )
+
+    def test_knowledge_accepts_plain_string(self, you_client):
+        """Enum-typed params take plain strings, like ``safesearch``."""
+        with you_client as you:
+            res = you.search(query=self.KNOWLEDGE_QUERY, knowledge="core")
+
+            assert res.results is not None
+            assert res.results.knowledge
+
+    def test_knowledge_result_shape(self, you_client):
+        with you_client as you:
+            res = you.search(query=self.KNOWLEDGE_QUERY, knowledge="core")
+
+        assert res.results is not None
+        assert res.results.knowledge
+        for kr in res.results.knowledge:
+            # ``type`` is a plain str so an unrecognized future kind parses
+            # rather than raising; assert only what the spec requires of every
+            # kind instead of pinning ``answer`` as the sole value.
+            assert isinstance(kr.type, str) and kr.type
+            assert kr.title
+            assert kr.attribution, "attribution is required on every kind"
+            for credit in kr.attribution:
+                assert credit.name
+            # description is required on type=answer results only
+            if kr.type == "answer":
+                assert kr.description is not None
+            # as_of is optional; when present it is a bare YYYY-MM-DD date
+            if kr.as_of is not None:
+                datetime.strptime(kr.as_of, "%Y-%m-%d")
+
+    def test_knowledge_within_documented_cap(self, you_client):
+        """Up to 25 knowledge results. ``count`` caps the web/news sections,
+        not knowledge -- knowledge has its own limit."""
+        with you_client as you:
+            res = you.search(query=self.KNOWLEDGE_QUERY, knowledge="core", count=1)
+
+        assert res.results is not None
+        assert res.results.knowledge
+        assert len(res.results.knowledge) <= 25
+
+    def test_knowledge_omitted_when_not_requested(self, you_client):
+        """Baseline calls omit ``results.knowledge`` entirely, so the parsed
+        attribute is ``None`` rather than an empty list."""
+        with you_client as you:
+            res = you.search(query="Python programming language")
+
+            assert res.results is not None
+            assert res.results.knowledge is None
+
+    @pytest.mark.asyncio
+    async def test_search_async_knowledge(self, you_client):
+        async with you_client as you:
+            res = await you.search_async(
+                query=self.KNOWLEDGE_QUERY, knowledge="core"
+            )
+
+            assert res.results is not None
+            assert res.results.knowledge
+
+
+@requires_api_key
 class TestLiveContents:
     """Live tests for the Contents API."""
     
@@ -404,9 +503,10 @@ class TestLiveContents:
             assert isinstance(res, list)
             assert len(res) > 0
             assert res[0].url is not None
-            # HTML should be present when HTML format is requested
-            if res[0].html:
-                assert "<" in res[0].html  # Basic HTML check
+            # HTML must be present when the HTML format is requested; `if` would
+            # let a response with no html pass without asserting anything.
+            assert res[0].html is not None
+            assert "<" in res[0].html  # Basic HTML check
     
     def test_markdown_format(self, you_client):
         """Test fetching content in Markdown format."""
@@ -418,6 +518,7 @@ class TestLiveContents:
             
             assert isinstance(res, list)
             assert len(res) > 0
+            assert res[0].markdown is not None
     
     def test_metadata_format(self, you_client):
         """Test fetching metadata from a page."""
@@ -442,6 +543,9 @@ class TestLiveContents:
             
             assert isinstance(res, list)
             assert len(res) > 0
+            # Both requested formats must come back.
+            assert res[0].html is not None
+            assert res[0].markdown is not None
 
 
 @requires_api_key

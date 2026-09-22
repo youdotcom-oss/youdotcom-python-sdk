@@ -3,7 +3,8 @@
 The SDK advertises that enum-typed parameters accept plain strings in any
 case so callers never have to import an enum class. `country`/`language`
 normalize upward (their enum members are uppercase); `safesearch`,
-`livecrawl`, `livecrawl_formats`, and `freshness` normalize downward.
+`knowledge`, `livecrawl`, `livecrawl_formats`, and `freshness` normalize
+downward.
 
 Also pins the three-way `language` contract, which is easy to break:
 
@@ -19,7 +20,7 @@ import httpx
 import pytest
 
 from youdotcom import You
-from youdotcom.models import Country, Language, LiveCrawl, SafeSearch
+from youdotcom.models import Country, Knowledge, Language, LiveCrawl, SafeSearch
 
 
 _SEARCH_BODY = json.dumps({"results": {"web": []}})
@@ -82,6 +83,10 @@ class TestLowercaseParams:
     @pytest.mark.parametrize("value", ["strict", "STRICT", SafeSearch.STRICT])
     def test_safesearch_normalizes_to_lower(self, value):
         assert _search_body(safesearch=value)["safesearch"] == "strict"
+
+    @pytest.mark.parametrize("value", ["core", "CORE", Knowledge.CORE])
+    def test_knowledge_normalizes_to_lower(self, value):
+        assert _search_body(knowledge=value)["knowledge"] == "core"
 
     @pytest.mark.parametrize("value", ["web", "WEB", LiveCrawl.WEB])
     def test_livecrawl_normalizes_to_lower(self, value):
