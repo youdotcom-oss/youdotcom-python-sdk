@@ -499,7 +499,7 @@ class TestSearchPerformance:
 
     # ----------------------------------------------------------------
     # Extraction-mode performance cases parallel the livecrawl cases.
-    # DX-719 added these alongside the legacy livecrawl cases (the
+    # These were added alongside the legacy livecrawl cases (the
     # legacy cases remain because `livecrawl` is supported until 4.0.0).
     # ----------------------------------------------------------------
 

@@ -122,7 +122,7 @@ def _build_search_request(
     if strip_crawl_timeout and crawl_timeout is not None:
         # Resolved inside the branch so the common path never forces
         # ``models.SearchRequestBody`` to load (the lazy package root is what
-        # keeps ``import youdotcom`` transport-free -- see DX-776).
+        # keeps ``import youdotcom`` transport-free).
         #
         # astroid cannot infer attributes through the PEP 562 ``__getattr__``
         # in ``models/__init__.py``, so it types ``model_fields`` as an
