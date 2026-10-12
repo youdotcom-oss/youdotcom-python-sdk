@@ -5,6 +5,33 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.0] - 2026-10-13
+
+Minor release. Gives `extraction.highlights` on `POST /v1/search` its public
+shape: two optional token caps, mirroring the server's `SearchHighlightsConfig`.
+Purely additive — no breaking changes.
+
+### Added
+
+- **`max_tokens_per_url` on `extraction.highlights`** — caps the tokens of highlights
+  returned per URL. Optional; must be between 512 and 8192 when set. Omit it for the
+  provider's default.
+- **`total_max_tokens` on `extraction.highlights`** — caps the tokens of highlights
+  across the whole response. Optional; must be between 1024 and 8192 when set.
+  On the server, a request that sets it is served by the Brave provider alone,
+  because in-house substituted highlights would not be bound by that budget.
+- Both bounds are enforced locally: an out-of-range value raises
+  `pydantic.ValidationError` before the request is sent, mirroring the server's 422
+  instead of a round-trip. `extraction.highlights` remains strict — unknown keys
+  raise locally too.
+
+### Changed
+
+- **`ExtractionHighlights` (and its TypedDict) previously carried no public fields** —
+  the container shipped in 3.1.0 as a forward-compat stub. Both caps serialize away
+  when unset, so existing `extraction={"extraction_mode": "highlights"}` requests
+  are unchanged on the wire.
+
 ## [3.5.0] - 2026-09-22
 
 Minor release. Adds support for the new `knowledge` parameter on

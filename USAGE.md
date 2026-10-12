@@ -95,6 +95,12 @@ cached content only (`contents` is omitted for results with none), and
 `"fetch"` always crawls the page live. Setting `extraction_source` alongside
 `extraction_mode="highlights"` raises `ValidationError` locally.
 
+With `extraction_mode="highlights"`, the optional `highlights` object carries
+two token caps: `max_tokens_per_url` bounds each result's highlights
+(512–8192) and `total_max_tokens` bounds the whole response (1024–8192).
+Omit them for the provider's defaults; out-of-range values raise
+`ValidationError` locally, mirroring the server's 422.
+
 Unknown keys inside `extraction` raise `ValidationError` locally, and passing
 `extraction` together with `livecrawl` / `livecrawl_formats` raises
 `ValueError` — both mirror the server's 422 contract so callers fail-fast.
