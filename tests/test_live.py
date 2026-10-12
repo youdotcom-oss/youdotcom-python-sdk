@@ -38,6 +38,7 @@ from youdotcom.models import (
     ResearchResponse,
     TaskResponse,
     TaskDetail,
+    FinanceResearchContentType,
     FinanceResearchEffort,
     AnswerResponse,
 )
@@ -694,6 +695,32 @@ class TestLiveFinanceResearch:
             if res.output.sources:
                 for source in res.output.sources:
                     assert source.url is not None
+
+    @pytest.mark.slow
+    def test_finance_research_output_schema(self, you_client):
+        """output_schema returns a dict content with content_type "object"."""
+        with you_client as you:
+            res = you.finance_research(
+                input="What was NVIDIA's fiscal year 2025 revenue and what drove it?",
+                research_effort=FinanceResearchEffort.DEEP,
+                output_schema={
+                    "type": "object",
+                    "properties": {
+                        "revenue": {"type": "string"},
+                        "drivers": {"type": "array", "items": {"type": "string"}},
+                    },
+                    "required": ["revenue", "drivers"],
+                    "additionalProperties": False,
+                },
+            )
+
+            assert res.output.content_type == FinanceResearchContentType.OBJECT
+            assert isinstance(res.output.content, dict)
+            for field in res.output.content:
+                assert field in {"revenue", "drivers"}
+            # `warnings` is modeled Optional, so the API may omit the key on a
+            # successful response; accept None as well as a list.
+            assert res.warnings is None or isinstance(res.warnings, list)
 
 
 @requires_api_key

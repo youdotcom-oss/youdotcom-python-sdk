@@ -5,6 +5,36 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] - 2026-10-13
+
+Minor release. Closes the finance-research drift against that endpoint's published
+OpenAPI spec — the last two fields the spec declared that the SDK didn't model —
+and widens the finance-research response so a structured `output_schema` call
+round-trips. Purely additive — no breaking changes.
+
+### Added
+
+- **`output_schema` parameter on `finance_research()` and `finance_research_async()`** —
+  beta structured output on the Finance Research API, mirroring the Research API's
+  `output_schema`. Pass a JSON Schema subset and `output.content` comes back as a
+  JSON object conforming to it. Supported with every `research_effort` value, and
+  the rules and limits match the Research API, so the same schema works on both
+  endpoints.
+- **`warnings` field on `FinanceResearchResponse`** — non-fatal warnings generated
+  during the request, such as a deprecation notice for an `output_schema` that will
+  stop being accepted in a future release. `None` when the response omits the key.
+  The field was previously recorded in `scripts/audit_wire.py`'s `KNOWN_WIRE_EXTRAS`
+  as wire-observed-but-undeclared; the spec now declares it, so the entry is removed.
+
+### Changed
+
+- **`FinanceResearchOutput.content` widened from `str` to `Union[str, Dict[str, Any]]`** —
+  a structured `output_schema` request returns `content_type: "object"` with a JSON
+  object payload, so a `str`-only annotation could not parse those responses. One
+  type widens — see [MIGRATION.md](MIGRATION.md#350--360).
+- **`FinanceResearchContentType` gains the `OBJECT` (`"object"`) member** — the spec
+  declares `text` and `object`; the SDK previously modeled `text` only.
+
 ## [3.5.0] - 2026-09-22
 
 Minor release. Adds support for the new `knowledge` parameter on

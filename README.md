@@ -213,7 +213,11 @@ for source in res.output.sources or []:
 ```
 
 `you.finance_research()` is the finance-tuned counterpart, taking
-`research_effort` of `deep` or `exhaustive`.
+`research_effort` of `deep` or `exhaustive`. Both research methods accept
+`output_schema` for structured JSON output — the same schema works on both
+endpoints, with every effort level on the finance side. (`you.research()`
+accepts `output_schema` only with `standard`, `deep`, or `exhaustive`;
+sending it with `research_effort="lite"` returns a `422`.)
 
 Deep and exhaustive runs can take minutes, and `frontier` runs far longer. For
 anything beyond `standard`, use [background mode](#long-running-research).

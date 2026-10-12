@@ -361,13 +361,48 @@ def finance_research_request():
 
     assert isinstance(res, FinanceResearchResponse)
     print("Finance Answer:")
-    # Finance Research always returns `content` as a Markdown string (content_type: "text").
-    print(res.output.content[:500] + "..." if len(res.output.content) > 500 else res.output.content)
+    # Without output_schema, finance research returns `content` as a Markdown
+    # string (content_type: "text").
+    content = res.output.content
+    if isinstance(content, str):
+        print(content[:500] + "..." if len(content) > 500 else content)
 
     if res.output.sources:
         print(f"\nSources ({len(res.output.sources)}):")
         for source in res.output.sources:
             print(f"  - {source.title or 'Untitled'}: {source.url}")
+
+
+def finance_research_output_schema_request():
+    """
+    Finance Research API with `output_schema` for structured JSON output.
+    """
+    print("\n🚀 Running Finance Research with output_schema...\n")
+
+    assert you is not None, "SDK client not initialized"
+
+    res = you.finance_research(
+        input="What was NVIDIA's fiscal year 2025 revenue and what drove it?",
+        research_effort=FinanceResearchEffort.DEEP,
+        output_schema={
+            "type": "object",
+            "properties": {
+                "revenue": {"type": "string"},
+                "drivers": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["revenue", "drivers"],
+            "additionalProperties": False,
+        },
+    )
+
+    assert isinstance(res, FinanceResearchResponse)
+    print(f"content_type: {res.output.content_type.value}")
+    # output.content is Union[str, Dict[str, Any]]. When content_type is
+    # "object" it is a plain dict, so index it directly.
+    structured_content = res.output.content
+    print(f"structured payload: {structured_content}")
+    if res.warnings:
+        print(f"warnings: {res.warnings}")
 
 
 def search_request_with_boost():
@@ -463,6 +498,7 @@ FUNCTIONS = [
     {"name": "Research Stream (Helper)", "fn": research_stream_example},
     {"name": "Research with output_schema", "fn": research_output_schema_request},
     {"name": "Finance Research Request", "fn": finance_research_request},
+    {"name": "Finance Research with output_schema", "fn": finance_research_output_schema_request},
 ]
 
 
