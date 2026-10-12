@@ -442,6 +442,54 @@ class TestExtractionAsync:
 
 
 # ---------------------------------------------------------------------------
+# highlights sub-object config: total_max_tokens
+# ---------------------------------------------------------------------------
+
+
+class TestExtractionHighlightsConfig:
+    """`extraction.highlights` carries one public token cap.
+
+    Mirrors the documented surface of the server's `SearchHighlightsConfig`:
+    `total_max_tokens` bounds the whole-response token count (1024–8192), is
+    optional, serializes away when unset, and raises `ValidationError` locally
+    on out-of-range values instead of a 422 round-trip. Anything outside the
+    documented surface is rejected as an unknown key (`extra="forbid"`),
+    locked by `test_unknown_key_on_highlights_raises`.
+    """
+
+    def test_highlights_total_max_tokens_on_wire(self):
+        body = _search_body(
+            extraction={
+                "extraction_mode": "highlights",
+                "highlights": {"total_max_tokens": 4096},
+            }
+        )
+        assert body["extraction"]["highlights"] == {"total_max_tokens": 4096}
+
+    @pytest.mark.parametrize("value", [1023, 8193])
+    def test_highlights_total_max_tokens_out_of_bounds_raises(self, value):
+        with pytest.raises(ValidationError):
+            Extraction.model_validate(
+                {
+                    "extraction_mode": "highlights",
+                    "highlights": {"total_max_tokens": value},
+                }
+            )
+
+    @pytest.mark.parametrize("value", [1024, 8192])
+    def test_highlights_boundary_values_accepted(self, value):
+        """The endpoints of the range are valid."""
+        e = Extraction.model_validate(
+            {
+                "extraction_mode": "highlights",
+                "highlights": {"total_max_tokens": value},
+            }
+        )
+        assert e.highlights is not None
+        assert e.highlights.total_max_tokens == value
+
+
+# ---------------------------------------------------------------------------
 # Shim parity — search.unified() and search.__call__() both forward extraction
 # ---------------------------------------------------------------------------
 

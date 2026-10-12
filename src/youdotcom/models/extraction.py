@@ -5,7 +5,7 @@
     {
       "extraction_mode":   "highlights" | "full_page",  # required
       "extraction_source": "blend" | "cache" | "fetch", # full_page only
-      "highlights":        {},                          # reserved for future fields
+      "highlights":        { "total_max_tokens": ... },   # optional, 1024-8192
       "full_page":         { "extraction_formats": [...] }
     }
 
@@ -19,14 +19,13 @@ the request body, avoiding a round-trip 422).
 alongside ``extraction_mode == "highlights"``; the SDK raises locally,
 mirroring the server's 422.
 
-``extraction.highlights`` is forward-compat: the dict shape stays stable
-even when sub-fields are added. Today it carries no public configuration
-knobs; unknown keys at this depth raise
-:class:`pydantic.ValidationError` locally (see
-:class:`_StrictExtractionBase`, ``extra="forbid"``).
+``extraction.highlights`` carries one public token cap —
+``total_max_tokens`` — whose bounds the SDK mirrors locally (fail-fast
+:class:`pydantic.ValidationError` instead of a 422 round-trip). Unknown
+keys at this depth raise locally
+(see :class:`_StrictExtractionBase`, ``extra="forbid"``).
 
-Mirrors the locked ``extraction`` schema in the docs preview at
-``youdotcom-docs/fern/apis/search/openapi_search_v1_overrides.yaml``.
+Mirrors the ``extraction`` schema enforced by the deployed Search API.
 """
 
 from __future__ import annotations
@@ -87,9 +86,12 @@ r"""``extraction_source`` as typed for callers: the enum or its plain string."""
 class ExtractionHighlightsTypedDict(TypedDict):
     r"""Type hint for the optional ``highlights`` sub-object.
 
-    Reserved for future sub-fields. The dict shape is stable so callers
-    can write ``extraction={"extraction_mode": "highlights"}`` without
-    depending on a future sub-field appearing.
+    The cap is optional; omit it to let the provider apply its own default.
+    """
+
+    total_max_tokens: NotRequired[int]
+    r"""Maximum number of tokens of highlights across the whole response. Must
+    be between 1024 and 8192. Omit to let the provider apply its own default.
     """
 
 
@@ -153,12 +155,25 @@ class _StrictExtractionBase(BaseModel):
 class ExtractionHighlights(_StrictExtractionBase):
     r"""Configuration for ``extraction_mode == "highlights"``.
 
-    Reserved for future sub-fields. Today the container has no public
-    fields; ``extra="forbid"`` from :class:`_StrictExtractionBase` causes
-    unknown keys (e.g. typos or unsupported knobs) to raise
-    :class:`pydantic.ValidationError` locally rather than round-tripping
-    to a 422.
+    The cap is optional and serializes away when unset. Out-of-range values
+    raise :class:`pydantic.ValidationError` locally, mirroring the server's
+    422; unknown keys raise the same way (``extra="forbid"`` from
+    :class:`_StrictExtractionBase`).
     """
+
+    total_max_tokens: Optional[int] = Field(
+        default=None,
+        ge=1024,
+        le=8192,
+    )
+    r"""Maximum number of tokens of highlights across the whole response. Must
+    be between 1024 and 8192. Omit to let the provider apply its own default.
+    """
+
+    @model_serializer(mode="wrap")
+    def _serialize(self, handler):  # type: ignore[no-untyped-def]
+        serialized = handler(self)
+        return {k: v for k, v in serialized.items() if v is not None}
 
 
 class ExtractionFullPage(_StrictExtractionBase):
@@ -188,8 +203,8 @@ class Extraction(_StrictExtractionBase):
 
     Wrong-mode couplings and unknown keys raise
     :class:`pydantic.ValidationError` locally; the API would 422 for the
-    same inputs. The forward-compat container (``ExtractionHighlights``)
-    mirrors the locked server schema and has no public sub-fields today.
+    same inputs. The ``highlights`` container carries one public token cap
+    (``total_max_tokens``) with bounds mirrored locally.
     """
 
     extraction_mode: ExtractionMode

@@ -145,6 +145,11 @@ available and crawls the page live otherwise, `"cache"` returns cached
 content only (`contents` is omitted for results with none), and `"fetch"`
 always crawls the page live.
 
+In `highlights` mode, the optional `highlights` object carries
+`total_max_tokens`, capping highlight tokens across the whole response
+(1024–8192 when set). Omit it for the provider's default; out-of-range
+values raise `ValidationError` locally, mirroring the server's 422.
+
 #### Knowledge results
 
 Pass `knowledge="core"` to add cards backed by licensed data providers —

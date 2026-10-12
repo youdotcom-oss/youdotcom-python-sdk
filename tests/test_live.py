@@ -264,6 +264,27 @@ class TestLiveSearchExtraction:
             assert highlights_seen, "Expected at least one result with contents.highlights"
             assert all(isinstance(h, list) for h in highlights_seen)
 
+    def test_highlights_caps(self, you_client):
+        """total_max_tokens is accepted by the API."""
+        with you_client as you:
+            res = you.search(
+                query="Python type hints guide",
+                count=5,
+                extraction={
+                    "extraction_mode": "highlights",
+                    "highlights": {"total_max_tokens": 4096},
+                },
+            )
+
+            assert res.results is not None
+            highlights_seen = [
+                result.contents.highlights
+                for result in res.results.web or []
+                if result.contents and result.contents.highlights is not None
+            ]
+            assert highlights_seen, "Expected at least one result with contents.highlights"
+            assert all(isinstance(h, list) for h in highlights_seen)
+
     def test_highlights_page_age(self, you_client):
         """`page_age` resolves on the highlights path.
 
