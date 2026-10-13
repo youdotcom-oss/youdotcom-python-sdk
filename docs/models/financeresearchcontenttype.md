@@ -13,6 +13,7 @@ value = FinanceResearchContentType.TEXT
 
 ## Values
 
-| Name   | Value  |
-| ------ | ------ |
-| `TEXT` | text   |
+| Name     | Value   |
+| -------- | ------- |
+| `TEXT`   | text    |
+| `OBJECT` | object  |

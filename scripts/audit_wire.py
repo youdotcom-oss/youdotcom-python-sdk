@@ -54,15 +54,6 @@ KNOWN_WIRE_EXTRAS = {
     # published spec. Looks like a spec omission worth reporting upstream. Seen on
     # both the extraction and knowledge calls, hence the wildcard label.
     (None, "root.results.web[].original_thumbnail_url"),
-    # Prod sends `warnings` at the top level of the finance-research response, and
-    # the sibling research spec declares it (ResearchResponse models it), but
-    # finance-research.json declares only `output`. Modeling it anyway would put
-    # the SDK permanently ahead of that endpoint's published contract and leave a
-    # standing drift warning, so it is recorded here instead. Observed as `[]`.
-    # Add the field once finance-research.json declares it -- the sibling's
-    # wording is the one to copy. Path is `root.` because this response is walked
-    # from its top level rather than from a named section.
-    ("finance-research", "root.warnings"),
 }
 
 

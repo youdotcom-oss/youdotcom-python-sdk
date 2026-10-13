@@ -1,5 +1,51 @@
 # Migration Guide
 
+## 3.5.0 → 3.6.0
+
+> **One type widens.** `FinanceResearchOutput.content` is now
+> `Union[str, Dict[str, Any]]`, matching the Research API. Plain finance
+> research responses still return a Markdown `str` (with `content_type="text"`);
+> only when you pass `output_schema=...` does `output.content` arrive as a
+> structured JSON object (with `content_type="object"`).
+
+### Action required
+
+| Change | Who is affected | What to do |
+|--------|-----------------|------------|
+| `FinanceResearchOutput.content` is `Union[str, Dict[str, Any]]` | Type-checked code calling string methods on `output.content` | Narrow `output.content` with `isinstance` before calling string methods. See below |
+
+```python
+import os
+
+from youdotcom import You
+
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
+    # Before (3.5.0): content was always a str.
+    # res = you.finance_research(input="What was NVIDIA's fiscal year 2025 revenue and what drove it?")
+    # print(res.output.content.lower())
+
+    # After (3.6.0): opt into output_schema and narrow with isinstance —
+    # comparing content_type does not narrow the union for type checkers.
+    res = you.finance_research(
+        input="What was NVIDIA's fiscal year 2025 revenue and what drove it?",
+        output_schema={
+            "type": "object",
+            "properties": {"revenue": {"type": "string"}},
+            "required": ["revenue"],
+            "additionalProperties": False,
+        },
+    )
+    content = res.output.content
+    if isinstance(content, dict):
+        print(content["revenue"])
+    else:
+        print(content.lower())
+```
+
+Responses without `output_schema` are unchanged at runtime — the value
+remains a `str`, exactly as before — so existing code needs no change unless
+it opts in.
+
 ## 3.3.0 → 3.4.0
 
 > **Deprecation.** The `metadata` format, `ContentsMetadata` model, and

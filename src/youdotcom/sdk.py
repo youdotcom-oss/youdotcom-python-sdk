@@ -2080,6 +2080,7 @@ class You(BaseSDK):
         research_effort: Optional[
             models.FinanceResearchEffort
         ] = models.FinanceResearchEffort.DEEP,
+        output_schema: Optional[Mapping[str, Any]] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -2098,6 +2099,7 @@ class You(BaseSDK):
             Available levels:
             - `deep`: The default. Spends more time researching and cross-referencing sources. Good for most financial questions, including multi-company comparisons, earnings analysis, and regulatory research.
             - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex financial research tasks where you want the highest quality result.
+        :param output_schema: Beta. Requests structured JSON output in `output.content` using a supported JSON Schema subset. Supported with every `research_effort` value. The rules and limits match the Research API, so the same schema works on both endpoints.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -2116,6 +2118,7 @@ class You(BaseSDK):
         request = models.FinanceResearchRequest(
             input=input,
             research_effort=research_effort,
+            output_schema=utils.unmarshal(output_schema, Optional[Dict[str, Any]]),
         )
 
         req = self._build_request(
@@ -2204,6 +2207,7 @@ class You(BaseSDK):
         research_effort: Optional[
             models.FinanceResearchEffort
         ] = models.FinanceResearchEffort.DEEP,
+        output_schema: Optional[Mapping[str, Any]] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -2222,6 +2226,7 @@ class You(BaseSDK):
             Available levels:
             - `deep`: The default. Spends more time researching and cross-referencing sources. Good for most financial questions, including multi-company comparisons, earnings analysis, and regulatory research.
             - `exhaustive`: The most thorough option. Explores the topic as fully as possible, best suited for complex financial research tasks where you want the highest quality result.
+        :param output_schema: Beta. Requests structured JSON output in `output.content` using a supported JSON Schema subset. Supported with every `research_effort` value. The rules and limits match the Research API, so the same schema works on both endpoints.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -2240,6 +2245,7 @@ class You(BaseSDK):
         request = models.FinanceResearchRequest(
             input=input,
             research_effort=research_effort,
+            output_schema=utils.unmarshal(output_schema, Optional[Dict[str, Any]]),
         )
 
         req = self._build_request_async(

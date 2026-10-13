@@ -1,6 +1,8 @@
+import json
 import os
 import uuid
 import pytest
+from contextlib import contextmanager
 
 import httpx
 
@@ -17,6 +19,7 @@ from youdotcom.errors import (
     YouDefaultError,
 )
 from youdotcom.models import (
+    FinanceResearchContentType,
     FinanceResearchEffort,
     FinanceResearchResponse,
     ResearchEffort,
@@ -654,14 +657,11 @@ class TestFinanceResearchAsync:
 
 
 class TestResponseWarnings:
-    """`warnings` is a top-level field on the research response envelope.
+    """`warnings` is a top-level field on both research response envelopes.
 
-    Prod also sends `warnings` on finance_research, and the sibling research spec
-    declares it, but finance-research.json declares only `output`. The SDK models
-    what that endpoint's published spec declares, so `FinanceResearchResponse`
-    has no `warnings` field. The difference is recorded in
-    ``scripts/audit_wire.py``'s ``KNOWN_WIRE_EXTRAS`` rather than modeled ahead of
-    the contract, which would leave a permanent drift warning.
+    Both published specs declare it; each model carries its endpoint's own
+    wording for the field. It is optional in both models, so a response that
+    omits the key still parses.
     """
 
     _OUTPUT = {
@@ -680,13 +680,81 @@ class TestResponseWarnings:
         res = ResearchResponse.model_validate({"output": self._OUTPUT})
         assert res.warnings is None
 
-    def test_finance_research_does_not_model_warnings(self):
-        """Deliberate, not an oversight — see the class docstring.
+    def test_finance_research_parses_warnings(self):
+        res = FinanceResearchResponse.model_validate(
+            {"output": self._OUTPUT, "warnings": ["deprecation notice"]}
+        )
+        assert res.warnings == ["deprecation notice"]
 
-        If finance-research.json ever declares `warnings`: add the field to
-        ``FinanceResearchResponse`` and its TypedDict, add the row to
-        ``docs/models/financeresearchresponse.md``, and remove the
-        ``KNOWN_WIRE_EXTRAS`` entry in ``scripts/audit_wire.py``. This test fails
-        until all of that is done.
-        """
-        assert "warnings" not in FinanceResearchResponse.model_fields
+    def test_finance_research_warnings_are_optional(self):
+        res = FinanceResearchResponse.model_validate({"output": self._OUTPUT})
+        assert res.warnings is None
+
+
+class TestFinanceResearchOutputSchema:
+    """`output_schema` on the finance-research request and the structured
+    `output.content` it produces on the response.
+
+    The wire contract mirrors the research API: the request carries a JSON
+    Schema dict, and the response switches to `content_type: "object"` with
+    a dict `content` conforming to that schema.
+    """
+
+    _SCHEMA = {
+        "type": "object",
+        "properties": {"answer": {"type": "string"}},
+        "required": ["answer"],
+        "additionalProperties": False,
+    }
+
+    _OBJECT_RESPONSE = json.dumps(
+        {
+            "output": {
+                "content": {"answer": "NVIDIA revenue grew 114% year over year"},
+                "content_type": "object",
+                "sources": [{"url": "https://e.com", "title": "t"}],
+            },
+            "warnings": [],
+        }
+    )
+
+    @contextmanager
+    def _capture(self):
+        """Yield (You, captured) over a mock transport, closing the client after."""
+        captured: dict = {}
+
+        def handler(request):
+            captured["body"] = json.loads(request.content)
+            return httpx.Response(
+                200,
+                headers={"content-type": "application/json"},
+                content=self._OBJECT_RESPONSE,
+            )
+
+        client = httpx.Client(transport=httpx.MockTransport(handler))
+        try:
+            with You(
+                api_key_auth="k", server_url="http://mock.local", client=client
+            ) as you:
+                yield you, captured
+        finally:
+            client.close()
+
+    def test_output_schema_serialized_on_wire(self):
+        with self._capture() as (you, captured):
+            you.finance_research(input="q", output_schema=self._SCHEMA)
+        assert captured["body"]["output_schema"] == self._SCHEMA
+
+    def test_output_schema_omitted_when_unset(self):
+        with self._capture() as (you, captured):
+            you.finance_research(input="q")
+        assert "output_schema" not in captured["body"]
+
+    def test_object_response_parses(self):
+        """content_type "object" yields dict content and the enum member OBJECT."""
+        with self._capture() as (you, _):
+            res = you.finance_research(input="q", output_schema=self._SCHEMA)
+        assert res.output.content_type == FinanceResearchContentType.OBJECT
+        assert isinstance(res.output.content, dict)
+        assert res.output.content["answer"] is not None
+        assert res.warnings == []
