@@ -19,8 +19,8 @@ the request body, avoiding a round-trip 422).
 alongside ``extraction_mode == "highlights"``; the SDK raises locally,
 mirroring the server's 422.
 
-``extraction.highlights`` carries one public token cap —
-``total_max_tokens`` — whose bounds the SDK mirrors locally (fail-fast
+``extraction.highlights`` carries an optional token cap, ``total_max_tokens``,
+whose bounds the SDK mirrors locally (fail-fast
 :class:`pydantic.ValidationError` instead of a 422 round-trip). Unknown
 keys at this depth raise locally
 (see :class:`_StrictExtractionBase`, ``extra="forbid"``).
@@ -203,8 +203,8 @@ class Extraction(_StrictExtractionBase):
 
     Wrong-mode couplings and unknown keys raise
     :class:`pydantic.ValidationError` locally; the API would 422 for the
-    same inputs. The ``highlights`` container carries one public token cap
-    (``total_max_tokens``) with bounds mirrored locally.
+    same inputs. The ``highlights`` container optionally carries the
+    ``total_max_tokens`` cap with bounds mirrored locally.
     """
 
     extraction_mode: ExtractionMode

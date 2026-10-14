@@ -447,13 +447,12 @@ class TestExtractionAsync:
 
 
 class TestExtractionHighlightsConfig:
-    """`extraction.highlights` carries one public token cap.
+    """`extraction.highlights` carries an optional token cap.
 
-    Mirrors the documented surface of the server's `SearchHighlightsConfig`:
-    `total_max_tokens` bounds the whole-response token count (1024–8192), is
-    optional, serializes away when unset, and raises `ValidationError` locally
-    on out-of-range values instead of a 422 round-trip. Anything outside the
-    documented surface is rejected as an unknown key (`extra="forbid"`),
+    Mirrors the server's `SearchHighlightsConfig`: `total_max_tokens` bounds
+    the whole-response token count (1024–8192), is optional, serializes away
+    when unset, and raises `ValidationError` locally on out-of-range values
+    instead of a 422 round-trip. Unknown keys raise locally (`extra="forbid"`),
     locked by `test_unknown_key_on_highlights_raises`.
     """
 
