@@ -9,7 +9,7 @@ Locks the contract:
   call spelling at once.
 - Explicit ``None`` is the opt-out for either: ``knowledge=None`` sends no
   knowledge key and ``extraction=None`` sends no extraction key, restoring
-  the pre-3.8.0 plain-search shape. Omitted vs ``None`` is distinguished
+  the pre-3.6.0 plain-search shape. Omitted vs ``None`` is distinguished
   with the same ``UNSET`` sentinel the ``language`` parameter uses.
 - The deprecated ``livecrawl`` / ``livecrawl_formats`` parameters suppress
   the injection: an injected default ``extraction`` would trip the existing
@@ -97,7 +97,7 @@ class TestDefaultOptOuts:
         assert "extraction" not in _search_body(extraction=None)
 
     def test_both_none_restores_plain_shape(self):
-        """``knowledge=None, extraction=None`` restores the pre-3.8.0 body."""
+        """``knowledge=None, extraction=None`` restores the pre-3.6.0 body."""
         body = _search_body(knowledge=None, extraction=None)
         assert "knowledge" not in body
         assert "extraction" not in body

@@ -84,7 +84,7 @@ def _build_search_request(
     ``knowledge`` and ``extraction`` are on by default: a caller that omits both
     gets ``knowledge="core"`` and a highlights ``extraction`` on the wire.
     Passing ``None`` for either opts out of that default; passing
-    ``knowledge=None, extraction=None`` restores the pre-3.8.0 plain-search
+    ``knowledge=None, extraction=None`` restores the pre-3.6.0 plain-search
     shape. The deprecated ``livecrawl`` / ``livecrawl_formats`` suppress the
     ``extraction`` injection (an injected default would trip the conflict
     ``ValueError`` below); ``knowledge`` still flips for them.
@@ -1038,7 +1038,7 @@ class You(BaseSDK):
 
         ``knowledge`` and ``extraction`` are on by default: an omitted pair
         sends ``knowledge="core"`` and highlights extraction. Pass ``None``
-        for either to opt out of that default; restoring the pre-3.8.0
+        for either to opt out of that default; restoring the pre-3.6.0
         plain-search shape takes ``knowledge=None, extraction=None``.
 
         ``livecrawl`` and ``livecrawl_formats`` are deprecated; prefer

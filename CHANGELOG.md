@@ -5,66 +5,16 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.8.0] - 2026-10-14
+## [3.6.0] - 2026-10-14
 
-Minor release. Flips `knowledge` and `extraction` on by default for search, per the
-product call to lead with the richer response shape. Behavior change for default
-callers — see [MIGRATION.md](MIGRATION.md#370--380).
-
-### Changed
-
-- **`knowledge` and `extraction` default to on** on `you.search()`,
-  `you.search_async()`, and the deprecated `you.search.unified(...)` /
-  `you.search.unified_async(...)` shims. An omitted pair now sends
-  `knowledge="core"` and `extraction_mode="highlights"` on every search request
-  that does not use the deprecated `livecrawl` / `livecrawl_formats` parameters.
-  Pass `knowledge=None` and/or `extraction=None` to opt out of each; pass both
-  to fully restore the pre-3.8.0 default response shape (the parameters
-  distinguish omitted vs `None` with the same `UNSET` sentinel the `language`
-  parameter uses).
-- **Default responses change shape**: web results carry `contents.highlights`
-  and omit `snippets` under the default highlights mode, and a `results.knowledge`
-  section appears when relevant cards exist. All affected fields remain
-  `Optional` and typed as before — no model or signature break. Callers that
-  already passed explicit values are byte-identical.
-- **Billing**: highlights is a paid feature and knowledge cards come from licensed
-  data providers, so a default search call now requests both. The MIGRATION entry
-  shows the per-call opt-out for cost-sensitive workloads.
-- The deprecated `livecrawl` / `livecrawl_formats` path suppresses the
-  highlights default (an injected default would trip the existing conflict
-  `ValueError`), but `knowledge` still defaults to `"core"` there unless you
-  pass `knowledge=None`.
-
-## [3.7.0] - 2026-10-13
-
-Minor release. Gives `extraction.highlights` on `POST /v1/search` its public
-shape: an optional whole-response token cap. Purely additive — no breaking
-changes.
-
-### Added
-
-- **`total_max_tokens` on `extraction.highlights`** — caps the tokens of highlights
-  across the whole response. Optional; must be between 1024 and 8192 when set.
-  On the server, a request that sets it is served by the Brave provider alone,
-  because in-house substituted highlights would not be bound by that budget.
-- The bound is enforced locally: an out-of-range value raises
-  `pydantic.ValidationError` before the request is sent, mirroring the server's 422
-  instead of a round-trip. `extraction.highlights` remains strict — unknown keys
-  raise locally too.
-
-### Changed
-
-- **`ExtractionHighlights` (and its TypedDict) previously carried no fields** —
-  the container shipped in 3.1.0 as a forward-compat stub. The cap serializes away
-  when unset, so existing `extraction={"extraction_mode": "highlights"}` requests
-  are unchanged on the wire.
-
-## [3.6.0] - 2026-10-13
-
-Minor release. Closes the finance-research drift against that endpoint's published
-OpenAPI spec — the last two fields the spec declared that the SDK didn't model —
-and widens the finance-research response so a structured `output_schema` call
-round-trips. Purely additive — no breaking changes.
+Minor release, three changes. The finance-research drift against that endpoint's
+published OpenAPI spec is closed — the last two fields the spec declared that the
+SDK didn't model, plus the response widening that lets a structured `output_schema`
+call round-trip. `extraction.highlights` on `POST /v1/search` gets its public shape:
+an optional whole-response token cap. And `knowledge` and `extraction` flip on
+by default for search, leading with the richer response shape —
+a behavior change for default callers, see
+[MIGRATION.md](MIGRATION.md#350--360).
 
 ### Added
 
@@ -79,15 +29,48 @@ round-trips. Purely additive — no breaking changes.
   stop being accepted in a future release. `None` when the response omits the key.
   The field was previously recorded in `scripts/audit_wire.py`'s `KNOWN_WIRE_EXTRAS`
   as wire-observed-but-undeclared; the spec now declares it, so the entry is removed.
+- **`total_max_tokens` on `extraction.highlights`** — caps the tokens of highlights
+  across the whole response. Optional; must be between 1024 and 8192 when set.
+  On the server, a request that sets it is served by the Brave provider alone,
+  because in-house substituted highlights would not be bound by that budget.
+- The cap's bound is enforced locally: an out-of-range value raises
+  `pydantic.ValidationError` before the request is sent, mirroring the server's 422
+  instead of a round-trip. `extraction.highlights` remains strict — unknown keys
+  raise locally too.
 
 ### Changed
 
+- **`knowledge` and `extraction` default to on** on `you.search()`,
+  `you.search_async()`, and the deprecated `you.search.unified(...)` /
+  `you.search.unified_async(...)` shims. An omitted pair now sends
+  `knowledge="core"` and `extraction_mode="highlights"` on every search request
+  that does not use the deprecated `livecrawl` / `livecrawl_formats` parameters.
+  Pass `knowledge=None` and/or `extraction=None` to opt out of each; pass both
+  to fully restore the pre-3.6.0 default response shape (the parameters
+  distinguish omitted vs `None` with the same `UNSET` sentinel the `language`
+  parameter uses).
+- **Default responses change shape**: web results carry `contents.highlights`
+  and omit `snippets` under the default highlights mode, and a `results.knowledge`
+  section appears when relevant cards exist. The search fields involved stay
+  `Optional` and typed as before — no model or signature break. Callers that
+  already passed explicit values are byte-identical.
+- **Billing**: highlights is a paid feature and knowledge cards come from licensed
+  data providers, so a default search call now requests both. The MIGRATION entry
+  shows the per-call opt-out for cost-sensitive workloads.
+- The deprecated `livecrawl` / `livecrawl_formats` path suppresses the
+  highlights default (an injected default would trip the existing conflict
+  `ValueError`), but `knowledge` still defaults to `"core"` there unless you
+  pass `knowledge=None`.
 - **`FinanceResearchOutput.content` widened from `str` to `Union[str, Dict[str, Any]]`** —
   a structured `output_schema` request returns `content_type: "object"` with a JSON
   object payload, so a `str`-only annotation could not parse those responses. One
   type widens — see [MIGRATION.md](MIGRATION.md#350--360).
 - **`FinanceResearchContentType` gains the `OBJECT` (`"object"`) member** — the spec
   declares `text` and `object`; the SDK previously modeled `text` only.
+- **`ExtractionHighlights` (and its TypedDict) previously carried no fields** —
+  the container shipped in 3.1.0 as a forward-compat stub. The cap serializes away
+  when unset, so existing `extraction={"extraction_mode": "highlights"}` requests
+  are unchanged on the wire.
 
 ## [3.5.0] - 2026-09-22
 

@@ -56,7 +56,7 @@ def search_request():
     from: ``BLEND`` (default) uses the cache when possible, ``FETCH`` always
     crawls live, ``CACHE`` is cache-only.
 
-    ``highlights.total_max_tokens`` (3.7.0+) bounds the ``HIGHLIGHTS``
+    ``highlights.total_max_tokens`` (3.6.0+) bounds the ``HIGHLIGHTS``
     budget across the whole response (1024-8192).
     """
     print("\n🚀 Running Search Request (extraction)...\n")
