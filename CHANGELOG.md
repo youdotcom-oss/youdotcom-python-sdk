@@ -8,8 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.7.0] - 2026-10-13
 
 Minor release. Gives `extraction.highlights` on `POST /v1/search` its public
-shape: an optional whole-response token cap, mirroring the documented surface of
-the server's `SearchHighlightsConfig`. Purely additive — no breaking changes.
+shape: an optional whole-response token cap. Purely additive — no breaking
+changes.
 
 ### Added
 
@@ -24,7 +24,7 @@ the server's `SearchHighlightsConfig`. Purely additive — no breaking changes.
 
 ### Changed
 
-- **`ExtractionHighlights` (and its TypedDict) previously carried no public fields** —
+- **`ExtractionHighlights` (and its TypedDict) previously carried no fields** —
   the container shipped in 3.1.0 as a forward-compat stub. The cap serializes away
   when unset, so existing `extraction={"extraction_mode": "highlights"}` requests
   are unchanged on the wire.
