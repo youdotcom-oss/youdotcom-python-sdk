@@ -1,5 +1,56 @@
 # Migration Guide
 
+## 3.7.0 → 3.8.0
+
+> **Default change.** `knowledge` and `extraction` are now on by default on
+> `you.search()`, `you.search_async()`, and the deprecated
+> `you.search.unified(...)` / `you.search.unified_async(...)` shims: an omitted
+> pair sends `knowledge="core"` and `extraction_mode="highlights"` (the
+> highlights default does not apply on the deprecated `livecrawl` /
+> `livecrawl_formats` path — see the note below). Pass `None` for either to
+> opt out of that one default; pass **both** to fully restore the pre-3.8.0
+> plain-search shape.
+
+### Action required
+
+| Change | Who is affected | What to do |
+|--------|-----------------|------------|
+| `knowledge` defaults to `"core"` | Default callers who do not want knowledge cards | Pass `knowledge=None` (note: `extraction` still defaults to highlights) |
+| `extraction` defaults to highlights | Default callers reading `result.snippets` | Pass `extraction=None` (snippets return; `knowledge` still defaults to `"core"`); or read `result.contents.highlights` |
+| `snippets` is `None` under highlights | Code doing unguarded `result.snippets[0]` | Guard for `None`, or opt out with `extraction=None` |
+| Billing | Every default search call now requests highlights and knowledge cards, which may incur additional cost depending on your plan | Opt out per call with `knowledge=None, extraction=None` if cost-sensitive |
+
+```python
+import os
+
+from youdotcom import You
+
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
+    # Before (3.7.0): plain search, snippets only, no cards.
+    # res = you.search(query="nvda stock price", count=5)
+    # print(res.results.web[0].snippets)
+
+    # After (3.8.0): same call now returns highlights + knowledge cards.
+    res = you.search(query="nvda stock price", count=5)
+    for hit in res.results.web or []:
+        print(hit.contents.highlights if hit.contents else None)
+    for card in res.results.knowledge or []:
+        print(card.title)
+
+    # Restore the old shape explicitly:
+    res = you.search(
+        query="nvda stock price", count=5, knowledge=None, extraction=None
+    )
+    print(res.results.web[0].snippets)
+```
+
+No signature break: every affected field stays `Optional` and typed as
+before. Callers that already passed `knowledge="core"` or an explicit
+`extraction` are byte-identical. The deprecated `livecrawl` /
+`livecrawl_formats` path suppresses the highlights default (it would trip
+the existing conflict `ValueError`), but `knowledge` still defaults to
+`"core"` there unless you pass `knowledge=None`.
+
 ## 3.5.0 → 3.6.0
 
 > **One type widens.** `FinanceResearchOutput.content` is now

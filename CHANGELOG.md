@@ -5,6 +5,36 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.8.0] - 2026-10-14
+
+Minor release. Flips `knowledge` and `extraction` on by default for search, per the
+product call to lead with the richer response shape. Behavior change for default
+callers — see [MIGRATION.md](MIGRATION.md#370--380).
+
+### Changed
+
+- **`knowledge` and `extraction` default to on** on `you.search()`,
+  `you.search_async()`, and the deprecated `you.search.unified(...)` /
+  `you.search.unified_async(...)` shims. An omitted pair now sends
+  `knowledge="core"` and `extraction_mode="highlights"` on every search request
+  that does not use the deprecated `livecrawl` / `livecrawl_formats` parameters.
+  Pass `knowledge=None` and/or `extraction=None` to opt out of each; pass both
+  to fully restore the pre-3.8.0 default response shape (the parameters
+  distinguish omitted vs `None` with the same `UNSET` sentinel the `language`
+  parameter uses).
+- **Default responses change shape**: web results carry `contents.highlights`
+  and omit `snippets` under the default highlights mode, and a `results.knowledge`
+  section appears when relevant cards exist. All affected fields remain
+  `Optional` and typed as before — no model or signature break. Callers that
+  already passed explicit values are byte-identical.
+- **Billing**: highlights is a paid feature and knowledge cards come from licensed
+  data providers, so a default search call now requests both. The MIGRATION entry
+  shows the per-call opt-out for cost-sensitive workloads.
+- The deprecated `livecrawl` / `livecrawl_formats` path suppresses the
+  highlights default (an injected default would trip the existing conflict
+  `ValueError`), but `knowledge` still defaults to `"core"` there unless you
+  pass `knowledge=None`.
+
 ## [3.7.0] - 2026-10-13
 
 Minor release. Gives `extraction.highlights` on `POST /v1/search` its public

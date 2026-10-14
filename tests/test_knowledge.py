@@ -5,7 +5,8 @@ Locks the contract for the Knowledge launch (``POST /v1/search``):
 - ``knowledge`` is a new enum-typed request parameter. ``"core"`` is the only
   value the API accepts; anything else is rejected server-side with ``422``.
 - The parameter is normalized to lowercase like the other enum-typed search
-  parameters, and is omitted from the request body when not supplied.
+  parameters. It is on by default: an omitted ``knowledge`` sends
+  ``"core"``, and an explicit ``None`` omits the key.
 - ``results.knowledge`` is a list of ``KnowledgeResult``. ``type``, ``title``,
   and ``attribution`` are always present; ``description`` and ``as_of`` are
   optional. ``source_description`` inside an attribution entry is optional.
@@ -137,8 +138,13 @@ class TestKnowledgeRequest:
     def test_knowledge_accepts_enum_instance(self):
         assert _search_body(knowledge=Knowledge.CORE)["knowledge"] == "core"
 
-    def test_knowledge_omitted_by_default(self):
-        assert "knowledge" not in _search_body()
+    def test_knowledge_omitted_flips_to_core(self):
+        """Omitted ``knowledge`` flips to ``"core"``; explicit
+        ``None`` is the off opt-out."""
+        assert _search_body()["knowledge"] == "core"
+
+    def test_knowledge_none_sends_no_key(self):
+        assert "knowledge" not in _search_body(knowledge=None)
 
     def test_knowledge_does_not_disturb_neighbours(self):
         body = _search_body(knowledge="core", count=5, safesearch="off")

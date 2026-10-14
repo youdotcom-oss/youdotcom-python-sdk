@@ -103,7 +103,11 @@ either of the others. The API returns `422` if you try. Search also supports
 
 #### Page content extraction
 
-Pass `extraction` to attach page content to each result. Two modes:
+`extraction` is on by default: a plain `you.search(query=...)` sends
+`extraction_mode="highlights"`, so query-relevant excerpts land in
+`contents.highlights` and `snippets` are omitted. Pass `extraction=None`
+for a plain snippets-only search, or an `Extraction` object for either
+mode. Two modes:
 
 ```python
 import os
@@ -152,9 +156,10 @@ values raise `ValidationError` locally, mirroring the server's 422.
 
 #### Knowledge results
 
-Pass `knowledge="core"` to add cards backed by licensed data providers —
-encyclopedias, market-data firms, reference publishers. They come back in
-their own section:
+`knowledge` is on by default: a plain `you.search(query=...)` sends
+`knowledge="core"` and gets cards backed by licensed data providers —
+encyclopedias, market-data firms, reference publishers — in their own
+section. Pass `knowledge=None` to skip them.
 
 ```python
 import os
