@@ -7,6 +7,11 @@ The `extraction` parameter on `POST /v1/search` controls how page content is att
 
 `extraction` cannot be combined with `livecrawl` or `livecrawl_formats`.
 
+With `extraction_mode="highlights"`, the optional `highlights` object carries
+`total_max_tokens` — the token budget for highlights across the whole response
+(1024–8192). Omit it for the provider's default; out-of-range values raise
+`ValidationError` locally, mirroring the server's 422.
+
 With `extraction_mode="full_page"`, the optional `extraction_source` field
 selects where the content comes from:
 
@@ -34,6 +39,15 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
         extraction=Extraction(extraction_mode=ExtractionMode.HIGHLIGHTS),
     )
 
+    # Whole-response highlight token cap
+    res = you.search(
+        query="latest quantum computing breakthroughs",
+        extraction={
+            "extraction_mode": "highlights",
+            "highlights": {"total_max_tokens": 4096},
+        },
+    )
+
     # Full Markdown in contents.markdown, always crawled live
     res = you.search(
         query="latest quantum computing breakthroughs",
@@ -54,5 +68,5 @@ normalizes at the method layer.
 | ------------------- | ------------------------------------------------- | ------------------------------ | ----------- |
 | `extraction_mode`   | `"highlights"` \| `"full_page"`                   | :heavy_check_mark:             | Selects between excerpts and full page content. |
 | `extraction_source` | `"blend"` \| `"cache"` \| `"fetch"`               | :heavy_minus_sign:             | Where `full_page` content comes from. Defaults to `"blend"`. Valid only with `extraction_mode="full_page"`. |
-| `highlights`        | `{}`                                              | :heavy_minus_sign:             | Optional container for `extraction_mode == "highlights"`. Reserved for future sub-fields; unknown keys here raise `ValidationError`. |
+| `highlights`        | `{ total_max_tokens?: *int* (1024–8192) }` | :heavy_minus_sign:             | Optional container for `extraction_mode == "highlights"`. The cap is optional; out-of-range values and unknown keys here raise `ValidationError`. |
 | `full_page`         | `{ extraction_formats?: ["html" \| "markdown"] }` | :heavy_minus_sign:             | Valid only when `extraction_mode == "full_page"`. |

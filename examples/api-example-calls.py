@@ -55,6 +55,9 @@ def search_request():
     ``ExtractionSource`` (3.3.0+) selects where ``FULL_PAGE`` content comes
     from: ``BLEND`` (default) uses the cache when possible, ``FETCH`` always
     crawls live, ``CACHE`` is cache-only.
+
+    ``highlights.total_max_tokens`` (3.7.0+) bounds the ``HIGHLIGHTS``
+    budget across the whole response (1024-8192).
     """
     print("\n🚀 Running Search Request (extraction)...\n")
 
@@ -83,6 +86,20 @@ def search_request():
                 print(f"    Markdown preview: {preview}...")
     else:
         print("No web results found")
+
+    print("\nHighlight caps:")
+    capped = you.search(
+        query="artificial intelligence in farming",
+        count=1,
+        extraction={
+            "extraction_mode": "highlights",
+            "highlights": {"total_max_tokens": 4096},
+        },
+    )
+    if capped.results and capped.results.web:
+        for result in capped.results.web:
+            n = len(result.contents.highlights) if result.contents and result.contents.highlights else 0
+            print(f"  - {result.title}: {n} highlights")
 
 
 def search_request_livecrawl_legacy():
