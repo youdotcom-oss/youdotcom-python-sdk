@@ -16,7 +16,7 @@ with You(
     ], boost_domains=[
         "nytimes.com",
         "wired.com",
-    ], crawl_timeout=10)
+    ])
 
     # Handle response
     print(res)
@@ -45,7 +45,7 @@ async def main():
         ], boost_domains=[
             "nytimes.com",
             "wired.com",
-        ], crawl_timeout=10)
+        ])
 
         # Handle response
         print(res)
@@ -56,7 +56,9 @@ asyncio.run(main())
 
 <!-- Start SDK Example Usage [extraction] -->
 ```python
-# Attach full Markdown content to each result via the new `extraction` parameter.
+# Attach full Markdown content to each result via the `extraction` parameter.
+# (Omitting `extraction` defaults to extraction_mode="highlights"; pass
+# extraction=None for a plain snippets-only search.)
 import os
 from youdotcom import You
 from youdotcom.models import Extraction, ExtractionFormat, ExtractionMode
@@ -81,7 +83,8 @@ with You(
 
 The `extraction` parameter replaces the deprecated `livecrawl` /
 `livecrawl_formats` string pair. Pass an `Extraction` model, a dict matching
-`ExtractionTypedDict`, or omit it for snippets-only behavior. Two modes:
+`ExtractionTypedDict`, or omit it for the default highlights behavior.
+Pass `extraction=None` for a plain snippets-only search. Two modes:
 
 - `extraction_mode="highlights"` — query-relevant excerpts land in
   `results.web[].contents.highlights`; snippets are omitted.
@@ -107,7 +110,8 @@ Unknown keys inside `extraction` raise `ValidationError` locally, and passing
 
 <!-- Start SDK Example Usage [knowledge] -->
 ```python
-# Add knowledge cards backed by licensed data providers.
+# Add knowledge cards backed by licensed data providers. (On by default;
+# pass knowledge=None to skip.)
 import os
 from youdotcom import You
 

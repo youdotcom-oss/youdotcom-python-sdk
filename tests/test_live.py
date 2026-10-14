@@ -34,6 +34,7 @@ from youdotcom.models import (
     LiveCrawl,
     LiveCrawlFormats,
     SafeSearch,
+    KnowledgeResult,
     ResearchEffort,
     ResearchResponse,
     TaskResponse,
@@ -227,6 +228,59 @@ class TestLiveSearch:
             assert news_content_seen, (
                 "Expected at least one news result with contents.html and/or contents.markdown"
             )
+
+
+@requires_api_key
+class TestLiveSearchDefaults:
+    """Live tests for the flipped defaults (knowledge + highlights).
+
+    A default ``you.search(query=...)`` call sends ``knowledge="core"`` and
+    ``extraction_mode="highlights"``, covering the web+knowledge+highlights
+    combination.
+    """
+
+    @pytest.mark.slow
+    def test_default_search_returns_highlights_and_knowledge(self, you_client):
+        """The default call returns contents.highlights and knowledge cards."""
+        with you_client as you:
+            res = you.search(query="nvda stock price", count=5)
+
+            assert res.results is not None
+            web = res.results.web or []
+            assert web, "Expected web results on the default search"
+            highlights_seen = [
+                r.contents.highlights
+                for r in web
+                if r.contents and r.contents.highlights is not None
+            ]
+            assert highlights_seen, "Expected at least one result with contents.highlights"
+            assert all(isinstance(h, list) for h in highlights_seen)
+            # Snippets are omitted under the default highlights mode.
+            assert all(r.snippets is None for r in web)
+
+            # Cards are limited to those relevant to the query, so the
+            # section can legitimately be empty; when present, parse-check.
+            knowledge_seen = [
+                card
+                for card in (res.results.knowledge or [])
+                if isinstance(card, KnowledgeResult) and card.title is not None
+            ]
+            assert len(knowledge_seen) == len(res.results.knowledge or [])
+
+    @pytest.mark.slow
+    def test_default_search_optout_returns_snippets(self, you_client):
+        """knowledge=None, extraction=None restores the plain-search shape."""
+        with you_client as you:
+            res = you.search(
+                query="nvda stock price", count=5, knowledge=None, extraction=None
+            )
+
+            assert res.results is not None
+            web = res.results.web or []
+            assert web, "Expected web results on the plain search"
+            snippets_seen = [r.snippets for r in web if r.snippets is not None]
+            assert snippets_seen, "Expected at least one result with snippets"
+            assert res.results.knowledge is None
 
 
 @requires_api_key
@@ -490,11 +544,12 @@ class TestLiveSearchKnowledge:
         assert res.results.knowledge
         assert len(res.results.knowledge) <= 25
 
-    def test_knowledge_omitted_when_not_requested(self, you_client):
-        """Baseline calls omit ``results.knowledge`` entirely, so the parsed
-        attribute is ``None`` rather than an empty list."""
+    def test_knowledge_none_sends_no_knowledge(self, you_client):
+        """An explicit ``knowledge=None`` opts out of the default: the API
+        omits ``results.knowledge`` entirely, so the parsed attribute is
+        ``None`` rather than an empty list."""
         with you_client as you:
-            res = you.search(query="Python programming language")
+            res = you.search(query="Python programming language", knowledge=None)
 
             assert res.results is not None
             assert res.results.knowledge is None

@@ -193,8 +193,14 @@ class TestExtractionStrictValidation:
 class TestExtractionWireContract:
     """End-to-end MockTransport checks via you.search() / search_async()."""
 
-    def test_extraction_omitted_sends_no_key(self):
+    def test_extraction_omitted_sends_highlights_by_default(self):
+        """Omitted ``extraction`` flips to highlights; explicit
+        ``None`` is the plain-search opt-out."""
         body = _search_body()
+        assert body["extraction"] == {"extraction_mode": "highlights"}
+
+    def test_extraction_none_sends_no_key(self):
+        body = _search_body(extraction=None)
         assert "extraction" not in body
 
     def test_extraction_highlights_full_body(self):
@@ -366,7 +372,9 @@ class TestExtractionPlusValueRule:
         assert body["crawl_timeout"] == 30
 
     def test_no_extraction_keeps_default_crawl_timeout(self):
-        body = _search_body()
+        """Explicit ``extraction=None`` keeps the default ``crawl_timeout``
+        on the wire; the omitted (injected highlights) case strips it."""
+        body = _search_body(extraction=None)
         assert body["crawl_timeout"] == 10
 
 

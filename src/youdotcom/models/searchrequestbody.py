@@ -33,8 +33,8 @@ class SearchRequestBodyTypedDict(TypedDict):
     r"""The language of the web results that will be returned (BCP 47 format)."""
     safesearch: NotRequired[SafeSearch]
     r"""Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."""
-    knowledge: NotRequired[Knowledge]
-    r"""Requests knowledge results from licensed data providers. `"core"` is the only value the API accepts; anything else raises `ValidationError` locally, mirroring the server's `422`. Returns up to 25 results, limited to those relevant to the query — `count` caps the web and news sections, not knowledge."""
+    knowledge: NotRequired[Optional[Knowledge]]
+    r"""Requests knowledge results from licensed data providers. `"core"` is the only value the API accepts; anything else raises `ValidationError` locally, mirroring the server's `422`. Returns up to 25 results, limited to those relevant to the query — `count` caps the web and news sections, not knowledge. On by default on `search()` and `search_async()`; pass `None` to skip knowledge results."""
     livecrawl: NotRequired[LiveCrawl]
     r"""Deprecated; use `extraction` instead. Indicates which section(s) of search results to livecrawl and return full page content."""
     livecrawl_formats: NotRequired[List[LiveCrawlFormats]]
@@ -53,7 +53,7 @@ class SearchRequestBodyTypedDict(TypedDict):
     r"""A list of domains to boost in search ranking. Matching results from these domains receive a relative ranking boost, but results are not limited to these domains. Supports up to 500 domains. Can be combined with `exclude_domains`, but cannot be combined with `include_domains` (returns `422`)."""
     crawl_timeout: NotRequired[int]
     r"""Maximum time in seconds to wait for page content when `extraction.extraction_mode == "full_page"` (or the deprecated `livecrawl`) is enabled. Must be between 1 and 60 seconds. Default is 10 seconds. Stripped from the body when `extraction_mode == "highlights"`."""
-    extraction: NotRequired[ExtractionTypedDict]
+    extraction: NotRequired[Optional[ExtractionTypedDict]]
     r"""Controls how page content is attached to each result.
 
     Preferred over `livecrawl`/`livecrawl_formats`. The two are mutually
@@ -62,6 +62,11 @@ class SearchRequestBodyTypedDict(TypedDict):
     `crawl_timeout` is invalid alongside `extraction.extraction_mode ==
     "highlights"` (server-side verification); the SDK method strips
     `crawl_timeout` from the body in that case to avoid round-tripping a 422.
+
+    On by default on ``search()`` / ``search_async()``: an omitted ``extraction``
+    sends ``extraction_mode="highlights"``. Pass ``None`` for a plain
+    snippets-only search (this model itself has no default; the SDK method
+    injects it).
     """
 
 
@@ -91,7 +96,7 @@ class SearchRequestBody(BaseModel):
     r"""Configures the safesearch filter for content moderation. This allows you to decide whether to return NSFW content or not."""
 
     knowledge: Optional[Knowledge] = None
-    r"""Requests knowledge results from licensed data providers. `"core"` is the only value the API accepts; anything else raises `ValidationError` locally, mirroring the server's `422`. Returns up to 25 results, limited to those relevant to the query — `count` caps the web and news sections, not knowledge."""
+    r"""Requests knowledge results from licensed data providers. `"core"` is the only value the API accepts; anything else raises `ValidationError` locally, mirroring the server's `422`. Returns up to 25 results, limited to those relevant to the query — `count` caps the web and news sections, not knowledge. On by default on `search()` and `search_async()`; pass `None` to skip knowledge results."""
 
     livecrawl: Optional[LiveCrawl] = None
     r"""Deprecated; use `extraction` instead. Indicates which section(s) of search results to livecrawl and return full page content."""
@@ -126,6 +131,11 @@ class SearchRequestBody(BaseModel):
     `crawl_timeout` is invalid alongside `extraction.extraction_mode ==
     "highlights"` (server-side verification); the SDK method strips
     `crawl_timeout` from the body in that case to avoid round-tripping a 422.
+
+    On by default on ``search()`` / ``search_async()``: an omitted ``extraction``
+    sends ``extraction_mode="highlights"``. Pass ``None`` for a plain
+    snippets-only search (this model itself has no default; the SDK method
+    injects it).
     """
 
     @model_serializer(mode="wrap")
