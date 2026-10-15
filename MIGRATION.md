@@ -1,15 +1,22 @@
 # Migration Guide
 
-## 3.7.0 → 3.8.0
+## 3.5.0 → 3.6.0
 
-> **Default change.** `knowledge` and `extraction` are now on by default on
-> `you.search()`, `you.search_async()`, and the deprecated
-> `you.search.unified(...)` / `you.search.unified_async(...)` shims: an omitted
-> pair sends `knowledge="core"` and `extraction_mode="highlights"` (the
-> highlights default does not apply on the deprecated `livecrawl` /
-> `livecrawl_formats` path — see the note below). Pass `None` for either to
-> opt out of that one default; pass **both** to fully restore the pre-3.8.0
-> plain-search shape.
+> **Default change, and one type widens.** `knowledge` and `extraction` are
+> now on by default on `you.search()`, `you.search_async()`, and the
+> deprecated `you.search.unified(...)` / `you.search.unified_async(...)`
+> shims: an omitted pair sends `knowledge="core"` and
+> `extraction_mode="highlights"` (the highlights default does not apply on
+> the deprecated `livecrawl` / `livecrawl_formats` path — see the note
+> below). Pass `None` for either to opt out of that one default; pass
+> **both** to fully restore the pre-3.6.0 plain-search shape.
+>
+> Separately, `FinanceResearchOutput.content` is now
+> `Union[str, Dict[str, Any]]`, matching the Research API. Plain finance
+> research responses still return a Markdown `str` (with
+> `content_type="text"`); only when you pass `output_schema=...` does
+> `output.content` arrive as a structured JSON object (with
+> `content_type="object"`).
 
 ### Action required
 
@@ -19,6 +26,7 @@
 | `extraction` defaults to highlights | Default callers reading `result.snippets` | Pass `extraction=None` (snippets return; `knowledge` still defaults to `"core"`); or read `result.contents.highlights` |
 | `snippets` is `None` under highlights | Code doing unguarded `result.snippets[0]` | Guard for `None`, or opt out with `extraction=None` |
 | Billing | Every default search call now requests highlights and knowledge cards, which may incur additional cost depending on your plan | Opt out per call with `knowledge=None, extraction=None` if cost-sensitive |
+| `FinanceResearchOutput.content` is `Union[str, Dict[str, Any]]` | Type-checked code calling string methods on `output.content` | Narrow `output.content` with `isinstance` before calling string methods. See below |
 
 ```python
 import os
@@ -26,11 +34,11 @@ import os
 from youdotcom import You
 
 with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
-    # Before (3.7.0): plain search, snippets only, no cards.
+    # Before (3.5.0): plain search, snippets only, no cards.
     # res = you.search(query="nvda stock price", count=5)
     # print(res.results.web[0].snippets)
 
-    # After (3.8.0): same call now returns highlights + knowledge cards.
+    # After (3.6.0): same call now returns highlights + knowledge cards.
     res = you.search(query="nvda stock price", count=5)
     for hit in res.results.web or []:
         print(hit.contents.highlights if hit.contents else None)
@@ -44,34 +52,13 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     print(res.results.web[0].snippets)
 ```
 
-No signature break: every affected field stays `Optional` and typed as
-before. Callers that already passed `knowledge="core"` or an explicit
-`extraction` are byte-identical. The deprecated `livecrawl` /
-`livecrawl_formats` path suppresses the highlights default (it would trip
-the existing conflict `ValueError`), but `knowledge` still defaults to
-`"core"` there unless you pass `knowledge=None`.
-
-## 3.5.0 → 3.6.0
-
-> **One type widens.** `FinanceResearchOutput.content` is now
-> `Union[str, Dict[str, Any]]`, matching the Research API. Plain finance
-> research responses still return a Markdown `str` (with `content_type="text"`);
-> only when you pass `output_schema=...` does `output.content` arrive as a
-> structured JSON object (with `content_type="object"`).
-
-### Action required
-
-| Change | Who is affected | What to do |
-|--------|-----------------|------------|
-| `FinanceResearchOutput.content` is `Union[str, Dict[str, Any]]` | Type-checked code calling string methods on `output.content` | Narrow `output.content` with `isinstance` before calling string methods. See below |
-
 ```python
 import os
 
 from youdotcom import You
 
 with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
-    # Before (3.5.0): content was always a str.
+    # Before (3.5.0): finance research content was always a str.
     # res = you.finance_research(input="What was NVIDIA's fiscal year 2025 revenue and what drove it?")
     # print(res.output.content.lower())
 
@@ -93,9 +80,19 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
         print(content.lower())
 ```
 
-Responses without `output_schema` are unchanged at runtime — the value
-remains a `str`, exactly as before — so existing code needs no change unless
-it opts in.
+No signature break anywhere in 3.6.0: the search request and response
+fields affected by the flip stay `Optional` and typed as before. Search
+callers that already passed `knowledge="core"` or an explicit `extraction`
+are byte-identical, and the deprecated `livecrawl` / `livecrawl_formats`
+path suppresses the highlights default (it would trip the existing
+conflict `ValueError`) — but `knowledge` still defaults to `"core"` there
+unless you pass `knowledge=None`. The one type that changes in 3.6.0 is
+`FinanceResearchOutput.content`, widened to `Union[str, Dict[str, Any]]`
+to support structured `output_schema` responses; finance research calls
+without `output_schema` are unchanged at runtime — the value remains a
+`str`, exactly as before — so existing code needs no change unless it
+opts in.
+
 
 ## 3.3.0 → 3.4.0
 
