@@ -186,3 +186,49 @@ additionally exclude `/` since they are joined as `<name>/<version>`. Passing
 `app_version` without `app_name` is also an error. Invalid
 values raise `ValueError` at construction time.
 <!-- End SDK Example Usage [attribution] -->
+<!-- Start SDK Example Usage [extract] -->
+```python
+# Extract one web page or PDF, by URL, as clean Markdown and/or HTML.
+import os
+from youdotcom import You, errors
+
+
+with You(
+    api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
+) as you:
+
+    try:
+        res = you.extract(
+            url="https://en.wikipedia.org/wiki/Retrieval-augmented_generation",
+            full_page={"extraction_formats": ["markdown", "html"]},
+            extraction_source="blend",
+        )
+    except errors.ExtractError as e:
+        print(e.code, e.retryable, e.request_id)
+    else:
+        if res.contents and res.contents.full_page:
+            print(res.title)
+            print(res.contents.full_page.markdown[:500])
+```
+
+`extract()` takes one `url` per call; send several calls concurrently (for
+example with `extract_async()`) for a list. It replaces `contents()` for new
+integrations.
+
+- `full_page.extraction_formats` — `"markdown"`, `"html"`, or both (default:
+  `["markdown"]`).
+- `extraction_source` — `"blend"` (the default) serves cached content when it is
+  available and crawls the page live when it is not, `"cache"` returns cached
+  content only, and `"fetch"` always crawls the page live.
+- `timeout` — seconds the whole request may take, 2–100 (default 30). With no
+  `timeout_ms` on the call or the client, the SDK waits 10 seconds longer than
+  `timeout`, so the API's own `timeout` error arrives first.
+- `parse_effort` — PDFs only. `"lite"` extracts the content embedded in each
+  page; `"standard"` (the default) also sends complex pages through an advanced
+  model and is billed per PDF page.
+
+When nothing could be extracted the API returns an empty object, and every
+field on the `ExtractResponse` is `None`. Errors the API returns raise
+`ExtractError`; branch on its stable `code`, not the message.
+<!-- End SDK Example Usage [extract] -->

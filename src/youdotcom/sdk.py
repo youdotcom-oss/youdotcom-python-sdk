@@ -23,6 +23,7 @@ from typing import (
 from youdotcom import errors, models, utils
 from youdotcom._hooks import HookContext, SDKHooks
 from youdotcom._shims import ContentsShim, SearchShim
+from youdotcom.errors.extractop import parse_extract_error
 from youdotcom.types import OptionalNullable, UNSET
 from youdotcom.utils import eventstreaming, get_security_from_env
 from youdotcom.utils.attribution import validate_attribution_arg
@@ -192,6 +193,80 @@ def _build_search_request(
     return models.SearchRequestBody(**body)
 
 
+# Server-side default for the Extract ``timeout`` parameter, in seconds.
+_EXTRACT_DEFAULT_TIMEOUT_S = 30
+# Client-side headroom over the server ``timeout`` so the API's own 504 (with
+# its error body) arrives before the HTTP client gives up.
+_EXTRACT_CLIENT_HEADROOM_S = 10
+# No 502: the API returns it only for a page that cannot be extracted, which a
+# retry cannot fix.
+_EXTRACT_RETRY_CODES = ["429", "500", "503", "504"]
+
+
+def _build_extract_request(
+    *,
+    url: str,
+    full_page: Optional[Union[models.ExtractionFullPage, Mapping[str, Any]]],
+    extraction_source: Optional[str],
+    timeout: Optional[int],
+    parse_effort: Optional[str],
+) -> models.ExtractRequest:
+    """Build the ``POST /v1/extract`` body; shared by the sync and async paths."""
+    return models.ExtractRequest(
+        url=url,
+        full_page=(
+            None
+            if full_page is None
+            else models.ExtractionFullPage.model_validate(full_page)
+        ),
+        extraction_source=_lower(extraction_source),
+        timeout=timeout,
+        parse_effort=_lower(parse_effort),
+    )
+
+
+def _extract_timeout_ms(
+    timeout_ms: Optional[int], configured_ms: Optional[int], timeout: Optional[int]
+) -> int:
+    """Client timeout for an Extract call: the caller's, else the client's, else
+    the server ``timeout`` plus headroom (httpx's 5s default would cut most
+    uncached pages and PDFs short)."""
+    if timeout_ms is not None:
+        return timeout_ms
+    if configured_ms is not None:
+        return configured_ms
+    server_s = timeout if timeout is not None else _EXTRACT_DEFAULT_TIMEOUT_S
+    return (server_s + _EXTRACT_CLIENT_HEADROOM_S) * 1000
+
+
+def _raise_extract_error(http_res: httpx.Response) -> None:
+    """Raise the error for a non-2xx Extract response.
+
+    The API's own errors share one body and raise :class:`errors.ExtractError`.
+    The API gateway answers some 401/402/403s with its own bodies first.
+    """
+    body = http_res.text
+    data = parse_extract_error(body)
+    if data is not None:
+        raise errors.ExtractError(data, http_res, body)
+    if utils.match_response(http_res, "401", "application/json"):
+        raise errors.UnauthorizedResponseError(
+            unmarshal_json_response(errors.UnauthorizedResponseErrorData, http_res),
+            http_res,
+        )
+    if utils.match_response(http_res, "402", "application/json"):
+        raise errors.PaymentRequiredResponseError(
+            unmarshal_json_response(errors.PaymentRequiredResponseErrorData, http_res),
+            http_res,
+        )
+    if utils.match_response(http_res, "403", "application/json"):
+        raise errors.ForbiddenResponseError(
+            unmarshal_json_response(errors.ForbiddenResponseErrorData, http_res),
+            http_res,
+        )
+    raise errors.YouDefaultError("API error occurred", http_res, body)
+
+
 _EMPTY_API_KEY_MESSAGE = (
     "api_key_auth was an empty string. Every You.com endpoint requires an API "
     'key, so this is never valid. If you meant to read the key from the '
@@ -206,6 +281,7 @@ class You(BaseSDK):
     r"""You.com API: Unified API for search, answers, research, and content from You.com
     Get the best search results from web and news sources
     Returns the HTML or Markdown of a target webpage
+    Extracts a web page or PDF as clean Markdown or HTML
     Multi-step reasoning with comprehensive research capabilities
     Finance-focused multi-step research with competitive accuracy at same price points and latencies as the Research API
     Comprehensive API for You.com services:
@@ -213,7 +289,8 @@ class You(BaseSDK):
     - **Research API**: In-depth, multi-step research with citations and sources
     - **Finance Research API**: Finance-focused multi-step research with citations and sources
     - **Search API**: Get search results from web and news sources
-    - **Contents API**: Retrieve and process web page content
+    - **Extract API**: Extract a web page or PDF as clean Markdown or HTML
+    - **Contents API**: Retrieve and process web page content (prefer the Extract API for new integrations)
     """
 
     def __init__(
@@ -245,7 +322,7 @@ class You(BaseSDK):
 
         :param api_key_auth: The api_key_auth required for authentication
         :param server_idx: The index of the server to use for all methods
-        :param server_url: The server URL to use for all methods. Note: ``search()``/``search_async()`` and ``contents()``/``contents_async()`` default to ``ydc-index.io`` (via ``SEARCH_OP_SERVERS``/``CONTENTS_OP_SERVERS``) and are not affected by this parameter unless the per-method ``server_url`` argument is passed.
+        :param server_url: The server URL to use for all methods. Note: ``search()``, ``contents()``, and ``extract()`` (and their async forms) default to ``ydc-index.io`` (via ``SEARCH_OP_SERVERS``/``CONTENTS_OP_SERVERS``/``EXTRACT_OP_SERVERS``) and are not affected by this parameter unless the per-method ``server_url`` argument is passed.
         :param url_params: Parameters to optionally template the server URL with
         :param client: The HTTP client to use for all synchronous methods
         :param async_client: The Async HTTP client to use for all asynchronous methods
@@ -1003,6 +1080,212 @@ class You(BaseSDK):
         if utils.match_response(http_res, "5XX", "*"):
             http_res_text = await utils.stream_to_text_async(http_res)
             raise errors.YouDefaultError("API error occurred", http_res, http_res_text)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    def extract(
+        self,
+        *,
+        url: str,
+        full_page: Optional[
+            Union[models.ExtractionFullPage, models.ExtractionFullPageTypedDict]
+        ] = None,
+        extraction_source: Optional[Union[str, models.ExtractionSource]] = None,
+        timeout: Optional[int] = None,
+        parse_effort: Optional[Union[str, models.ParseEffort]] = None,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> models.ExtractResponse:
+        r"""Extract one web page or PDF via POST /v1/extract.
+
+        Returns the page as clean Markdown and/or HTML. Use it when you already
+        have the URL; it replaces :meth:`contents` for new integrations. When
+        nothing could be extracted the API answers with an empty object, which
+        comes back as an :class:`~youdotcom.models.ExtractResponse` whose
+        fields are all ``None``.
+
+        Errors the API returns raise :class:`~youdotcom.errors.ExtractError`;
+        branch on its ``code`` (for example ``invalid_url``, ``pdf_too_large``,
+        ``site_blocked``, ``timeout``), not on the message.
+
+        :param url: The URL to extract content from.
+        :param full_page: Options for the returned page content, such as
+            ``{"extraction_formats": ["markdown", "html"]}``. Omit to return
+            the page as Markdown.
+        :param extraction_source: Where content comes from: ``"blend"`` (the
+            default) serves cached content when it is available and crawls the
+            page live when it is not, ``"cache"`` returns cached content only,
+            and ``"fetch"`` always crawls the page live.
+        :param timeout: Seconds the request may take end to end, including the
+            cache lookup and the crawl. Must be between 2 and 100. Default is 30.
+        :param parse_effort: How much effort to spend parsing PDF pages; no
+            effect on web pages. ``"lite"`` extracts the content embedded in
+            each page and suits digitally created PDFs. ``"standard"`` (the
+            default) also sends complex pages, such as charts and images,
+            through an advanced model, and is billed per PDF page.
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the request timeout for this method in
+            milliseconds. When neither this nor the client's ``timeout_ms`` is
+            set, it defaults to ``timeout`` (or 30) plus 10 seconds, so the
+            API's own timeout error arrives before the HTTP client gives up.
+        :param http_headers: Additional headers to set or replace on requests.
+        """
+        request = _build_extract_request(
+            url=url,
+            full_page=full_page,
+            extraction_source=extraction_source,
+            timeout=timeout,
+            parse_effort=parse_effort,
+        )
+        timeout_ms = _extract_timeout_ms(
+            timeout_ms, self.sdk_configuration.timeout_ms, timeout
+        )
+        base_url = (
+            server_url
+            if server_url is not None
+            else self._get_url(models.EXTRACT_OP_SERVERS[0], None)
+        )
+
+        req = self._build_request(
+            method="POST",
+            path="/v1/extract",
+            base_url=base_url,
+            url_variables=None,
+            request=request,
+            request_body_required=True,
+            request_has_path_params=False,
+            request_has_query_params=True,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            security=self.sdk_configuration.security,
+            get_serialized_body=lambda: utils.serialize_request_body(
+                request, False, False, "json", models.ExtractRequest
+            ),
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, _EXTRACT_RETRY_CODES)
+
+        http_res = self.do_request(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="extract",
+                oauth2_scopes=None,
+                security_source=get_security_from_env(
+                    self.sdk_configuration.security, models.Security
+                ),
+                tags=["extract"],
+                extensions=None,
+            ),
+            request=req,
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
+            retry_config=retry_config,
+        )
+
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(models.ExtractResponse, http_res)
+        if utils.match_response(http_res, ["4XX", "5XX"], "*"):
+            _raise_extract_error(http_res)
+
+        raise errors.YouDefaultError("Unexpected response received", http_res)
+
+    async def extract_async(
+        self,
+        *,
+        url: str,
+        full_page: Optional[
+            Union[models.ExtractionFullPage, models.ExtractionFullPageTypedDict]
+        ] = None,
+        extraction_source: Optional[Union[str, models.ExtractionSource]] = None,
+        timeout: Optional[int] = None,
+        parse_effort: Optional[Union[str, models.ParseEffort]] = None,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> models.ExtractResponse:
+        r"""Extract one web page or PDF via POST /v1/extract.
+
+        The async form of :meth:`extract`; the parameters, response, and errors
+        are the same.
+        """
+        request = _build_extract_request(
+            url=url,
+            full_page=full_page,
+            extraction_source=extraction_source,
+            timeout=timeout,
+            parse_effort=parse_effort,
+        )
+        timeout_ms = _extract_timeout_ms(
+            timeout_ms, self.sdk_configuration.timeout_ms, timeout
+        )
+        base_url = (
+            server_url
+            if server_url is not None
+            else self._get_url(models.EXTRACT_OP_SERVERS[0], None)
+        )
+
+        req = self._build_request_async(
+            method="POST",
+            path="/v1/extract",
+            base_url=base_url,
+            url_variables=None,
+            request=request,
+            request_body_required=True,
+            request_has_path_params=False,
+            request_has_query_params=True,
+            user_agent_header="user-agent",
+            accept_header_value="application/json",
+            http_headers=http_headers,
+            security=self.sdk_configuration.security,
+            get_serialized_body=lambda: utils.serialize_request_body(
+                request, False, False, "json", models.ExtractRequest
+            ),
+            allow_empty_value=None,
+            timeout_ms=timeout_ms,
+        )
+
+        if retries == UNSET:
+            if self.sdk_configuration.retry_config is not UNSET:
+                retries = self.sdk_configuration.retry_config
+
+        retry_config = None
+        if isinstance(retries, utils.RetryConfig):
+            retry_config = (retries, _EXTRACT_RETRY_CODES)
+
+        http_res = await self.do_request_async(
+            hook_ctx=HookContext(
+                config=self.sdk_configuration,
+                base_url=base_url or "",
+                operation_id="extract",
+                oauth2_scopes=None,
+                security_source=get_security_from_env(
+                    self.sdk_configuration.security, models.Security
+                ),
+                tags=["extract"],
+                extensions=None,
+            ),
+            request=req,
+            is_error_status_code=lambda c: utils.match_status_codes(["4XX", "5XX"], c),
+            retry_config=retry_config,
+        )
+
+        if utils.match_response(http_res, "200", "application/json"):
+            return unmarshal_json_response(models.ExtractResponse, http_res)
+        if utils.match_response(http_res, ["4XX", "5XX"], "*"):
+            _raise_extract_error(http_res)
 
         raise errors.YouDefaultError("Unexpected response received", http_res)
 

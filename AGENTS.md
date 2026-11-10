@@ -30,7 +30,7 @@ scripts/publish.sh                       # build + publish (needs $PYPI_TOKEN)
 - `You` is a context manager and is **not reusable after `with` exits**; never close
   caller-supplied transports.
 - `include_domains` cannot combine with `exclude_domains`/`boost_domains` (422).
-- `server_url` only affects `api.you.com` endpoints; search/contents default to
+- `server_url` only affects `api.you.com` endpoints; search/contents/extract default to
   `ydc-index.io` and must be overridden per call.
 - Research helpers bound waits: 10 min default, 4h for `frontier`.
 - Never enable `YOU_DEBUG=1` in production; never commit debug logs.

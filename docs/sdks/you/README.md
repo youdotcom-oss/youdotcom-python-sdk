@@ -5,6 +5,7 @@
 You.com API: Unified API for search, answers, research, and content from You.com
 Get the best search results from web and news sources
 Returns the HTML or Markdown of a target webpage
+Extracts a web page or PDF as clean Markdown or HTML
 Multi-step reasoning with comprehensive research capabilities
 Finance-focused multi-step research with competitive accuracy at same price points and latencies as the Research API
 Comprehensive API for You.com services:
@@ -12,13 +13,15 @@ Comprehensive API for You.com services:
 - **Research API**: In-depth, multi-step research with citations and sources
 - **Finance Research API**: Finance-focused multi-step research with citations and sources
 - **Search API**: Get search results from web and news sources
-- **Contents API**: Retrieve and process web page content
+- **Extract API**: Extract a web page or PDF as clean Markdown or HTML
+- **Contents API**: Retrieve and process web page content (prefer the Extract API for new integrations)
 
 ### Available Operations
 
 * [answer](#answer) - Returns a synthesized answer with citations from web search results
 * [search](#search) - Returns a list of unified search results from web and news sources
 * [contents](#contents) - Returns the content of the web pages
+* [extract](#extract) - Extracts one web page or PDF as clean Markdown or HTML
 * [research](#research) - Returns comprehensive research-grade answers with multi-step reasoning
 * [get_research_task](#get_research_task) - Get the status of a background research task
 * [stream_research_task](#stream_research_task) - Stream updates for a background research task
@@ -305,6 +308,64 @@ with You(
     res = you.contents(urls=["https://example.com"], formats=[models.ContentsFormats.MARKDOWN])
     print(res)
 ```
+
+## extract
+
+Extracts one web page or PDF via `POST /v1/extract` and returns it as clean Markdown, HTML, or both. Use it when you already have the URL; it replaces `contents` for new integrations. Requires an API key.
+
+When nothing could be extracted, the API returns an empty object, which comes back as an `ExtractResponse` whose fields are all `None`.
+
+### Example Usage
+
+```python
+import os
+from youdotcom import You, errors
+
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
+    try:
+        res = you.extract(
+            url="https://en.wikipedia.org/wiki/Retrieval-augmented_generation",
+            full_page={"extraction_formats": ["markdown", "html"]},
+        )
+    except errors.ExtractError as e:
+        # Branch on the stable code, not the message
+        print(e.code, e.retryable, e.request_id)
+    else:
+        if res.contents and res.contents.full_page:
+            print(res.title)
+            print(res.contents.full_page.markdown[:500])
+```
+
+### Parameters
+
+The request body these build is [models.ExtractRequest](../../models/extractrequest.md).
+
+| Parameter | Type | Required | Description | Example |
+|-----------|------|----------|-------------|---------|
+| `url` | *str* | :heavy_check_mark: | The URL to extract content from. | https://en.wikipedia.org/wiki/Retrieval-augmented_generation |
+| `full_page` | [Optional[models.ExtractionFullPage]](../../models/extraction.md) | :heavy_minus_sign: | Options for the returned page content. Omit to return the page as Markdown. | `{"extraction_formats": ["markdown", "html"]}` |
+| `extraction_source` | [Optional[models.ExtractionSource]](../../models/extraction.md) | :heavy_minus_sign: | Where content comes from: `"blend"` (the default) serves cached content when it is available and crawls the page live when it is not, `"cache"` returns cached content only, and `"fetch"` always crawls the page live. | fetch |
+| `timeout` | *Optional[int]* | :heavy_minus_sign: | Seconds the request may take end to end, including the cache lookup and the crawl. Must be between 2 and 100. Default is 30. | 60 |
+| `parse_effort` | [Optional[models.ParseEffort]](../../models/parseeffort.md) | :heavy_minus_sign: | How much effort to spend parsing PDF pages; no effect on web pages. `"lite"` extracts the content embedded in each page and suits digitally created PDFs. `"standard"` (the default) also sends complex pages, such as charts and images, through an advanced model, and is billed per PDF page. | lite |
+| `retries` | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md) | :heavy_minus_sign: | Configuration to override the default retry behavior of the client. Retries apply to 429, 500, 503, and 504; a 502 means the page itself cannot be extracted and is not retried. | |
+| `server_url` | *Optional[str]* | :heavy_minus_sign: | An optional server URL to use. | http://localhost:8080 |
+| `timeout_ms` | *Optional[int]* | :heavy_minus_sign: | Request timeout in milliseconds. When neither this nor the client's `timeout_ms` is set, it defaults to `timeout` (or 30) plus 10 seconds, so the API's own timeout error arrives before the HTTP client gives up. | 110000 |
+
+### Response
+
+**[models.ExtractResponse](../../models/extractresponse.md)**
+
+### Errors
+
+| Error Type | Status Code | Content Type |
+|------------|-------------|--------------|
+| errors.ExtractError | 402, 422, 500, 502, 503, 504 | application/json |
+| errors.UnauthorizedResponseError | 401 | application/json |
+| errors.PaymentRequiredResponseError | 402 (answered by the API gateway) | application/json |
+| errors.ForbiddenResponseError | 403 | application/json |
+| errors.YouDefaultError | 4XX, 5XX | \*/\* |
+
+See [ExtractError](../../errors/extracterror.md) for the error codes.
 
 ## research
 
