@@ -321,7 +321,7 @@ When nothing could be extracted, the API returns an empty object, which comes ba
 import os
 from youdotcom import You, errors
 
-with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     try:
         res = you.extract(
             url="https://en.wikipedia.org/wiki/Retrieval-augmented_generation",
@@ -338,10 +338,12 @@ with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
 
 ### Parameters
 
+The request body these build is [models.ExtractRequest](../../models/extractrequest.md).
+
 | Parameter | Type | Required | Description | Example |
 |-----------|------|----------|-------------|---------|
 | `url` | *str* | :heavy_check_mark: | The URL to extract content from. | https://en.wikipedia.org/wiki/Retrieval-augmented_generation |
-| `full_page` | [Optional[models.ExtractFullPage]](../../models/extractfullpage.md) | :heavy_minus_sign: | Options for the returned page content. Omit to return the page as Markdown. | `{"extraction_formats": ["markdown", "html"]}` |
+| `full_page` | [Optional[models.ExtractionFullPage]](../../models/extraction.md) | :heavy_minus_sign: | Options for the returned page content. Omit to return the page as Markdown. | `{"extraction_formats": ["markdown", "html"]}` |
 | `extraction_source` | [Optional[models.ExtractionSource]](../../models/extraction.md) | :heavy_minus_sign: | Where content comes from: `"blend"` (the default) serves cached content when it is available and crawls the page live when it is not, `"cache"` returns cached content only, and `"fetch"` always crawls the page live. | fetch |
 | `timeout` | *Optional[int]* | :heavy_minus_sign: | Seconds the request may take end to end, including the cache lookup and the crawl. Must be between 2 and 100. Default is 30. | 60 |
 | `parse_effort` | [Optional[models.ParseEffort]](../../models/parseeffort.md) | :heavy_minus_sign: | How much effort to spend parsing PDF pages; no effect on web pages. `"lite"` extracts the content embedded in each page and suits digitally created PDFs. `"standard"` (the default) also sends complex pages, such as charts and images, through an advanced model, and is billed per PDF page. | lite |

@@ -79,7 +79,7 @@ pytest tests/ -v
 Tests are organized into logical classes using pytest:
 
 Counts below are collected tests (`pytest --collect-only`), so a parametrized case
-counts once per parameter set. The groups sum to the 513 tests in the CI gate;
+counts once per parameter set. The groups sum to the 514 tests in the CI gate;
 `test_performance.py` and `test_live.py` are excluded from that gate.
 
 **Search API** (10 tests):
@@ -111,8 +111,8 @@ counts once per parameter set. The groups sum to the 513 tests in the CI gate;
 - Optional format parameter
 - Error handling (unauthorized, forbidden, empty URLs)
 
-**Extract API** (37 tests):
-- Wire contract: bare `url`, explicit `None`s, every option, dict/model/enum parity, default host
+**Extract API** (38 tests):
+- Wire contract: bare `url`, explicit `None`s, every option, dict/model/enum parity, `ExtractRequestTypedDict`, default host
 - Strict local validation (unknown keys, `timeout` bounds, bad enums) before sending
 - Client timeout derived from the server `timeout`, and `timeout_ms` precedence
 - Response parsing, including the empty `{}` and unknown fields

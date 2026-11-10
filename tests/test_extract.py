@@ -3,7 +3,7 @@
 Locks the contract:
 
 - One ``url`` per call. Unset options stay off the wire so the API applies its
-  own defaults; ``full_page`` takes a dict or an ``ExtractFullPage``.
+  own defaults; ``full_page`` takes a dict or an ``ExtractionFullPage``.
 - The request is strict: unknown keys and an out-of-range ``timeout`` raise
   ``ValidationError`` locally, mirroring the API's 422.
 - ``{}`` (nothing extracted) parses to an ``ExtractResponse`` of ``None``s.
@@ -22,8 +22,8 @@ from pydantic import ValidationError
 
 from youdotcom import You, errors
 from youdotcom.models import (
-    ExtractFullPage,
     ExtractionFormat,
+    ExtractionFullPage,
     ExtractionSource,
     ExtractResponse,
     ParseEffort,
@@ -109,7 +109,7 @@ class TestRequest:
 
     def test_model_and_enum_forms_match_the_dict_form(self):
         as_models = _extract_body(
-            full_page=ExtractFullPage(extraction_formats=[ExtractionFormat.HTML]),
+            full_page=ExtractionFullPage(extraction_formats=[ExtractionFormat.HTML]),
             extraction_source=ExtractionSource.CACHE,
             parse_effort=ParseEffort.STANDARD,
         )
@@ -146,6 +146,20 @@ class TestRequest:
         with _capture() as (you, captured):
             you.extract(url="https://example.com", server_url=MOCK_URL)
         assert captured["api_key"] == "k"
+
+
+class TestTypes:
+    def test_request_typeddict_is_exported(self):
+        from youdotcom.models import ExtractRequest, ExtractRequestTypedDict
+
+        body: ExtractRequestTypedDict = {
+            "url": "https://example.com",
+            "full_page": {"extraction_formats": ["html"]},
+            "extraction_source": "cache",
+            "timeout": 60,
+            "parse_effort": "lite",
+        }
+        assert ExtractRequest.model_validate(body).timeout == 60
 
 
 class TestClientTimeout:

@@ -25,7 +25,7 @@ The API gateway answers some `401`, `402`, and `403` responses before the reques
 import os
 from youdotcom import You, errors
 
-with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     try:
         res = you.extract(url="https://example.com/large-report.pdf", timeout=30)
     except errors.ExtractError as e:

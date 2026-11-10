@@ -4,7 +4,7 @@ Extract returns one web page or PDF, by URL, as clean Markdown and/or HTML:
 
     {
       "url":               "https://...",                # required
-      "full_page":         { "extraction_formats": [...] },
+      "full_page":         { "extraction_formats": [...] },  # ExtractionFullPage
       "extraction_source": "blend" | "cache" | "fetch",
       "timeout":           2-100,                         # seconds, end to end
       "parse_effort":      "lite" | "standard"            # PDFs only
@@ -21,15 +21,16 @@ break parsing.
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Optional
+from typing import Literal, Optional, Union
 
 from pydantic import ConfigDict, Field
 from typing_extensions import NotRequired, TypedDict
 
 from youdotcom.models.extraction import (
-    ExtractionFormat,
-    ExtractionFormatValue,
+    ExtractionFullPage,
+    ExtractionFullPageTypedDict,
     ExtractionSource,
+    ExtractionSourceValue,
 )
 from youdotcom.types import BaseModel
 
@@ -44,6 +45,10 @@ class ParseEffort(str, Enum):
 
     LITE = "lite"
     STANDARD = "standard"
+
+
+ParseEffortValue = Union[ParseEffort, Literal["lite", "standard"]]
+r"""``parse_effort`` as typed for callers: the enum or its plain string."""
 
 
 # ---------------------------------------------------------------------------
@@ -66,18 +71,19 @@ class _StrictExtractBase(BaseModel):
     )
 
 
-class ExtractFullPageTypedDict(TypedDict):
-    r"""Options for the returned page content."""
+class ExtractRequestTypedDict(TypedDict):
+    r"""The ``POST /v1/extract`` request body."""
 
-    extraction_formats: NotRequired[List[ExtractionFormatValue]]
-    r"""Content formats to return, one or both of ``"markdown"`` and ``"html"``. ``["markdown"]`` by default; an empty list is treated the same."""
-
-
-class ExtractFullPage(_StrictExtractBase):
-    r"""Options for the returned page content."""
-
-    extraction_formats: Optional[List[ExtractionFormat]] = None
-    r"""Content formats to return, one or both of ``"markdown"`` and ``"html"``. ``["markdown"]`` by default; an empty list is treated the same."""
+    url: str
+    r"""The URL to extract content from."""
+    full_page: NotRequired[ExtractionFullPageTypedDict]
+    r"""Options for the returned page content. Omit to return the page as Markdown."""
+    extraction_source: NotRequired[ExtractionSourceValue]
+    r"""Where content comes from: ``"blend"`` (the default) serves cached content when it is available and crawls the page live when it is not, ``"cache"`` returns cached content only, and ``"fetch"`` always crawls the page live."""
+    timeout: NotRequired[int]
+    r"""Seconds the request may take end to end, including the cache lookup and the crawl. Must be between 2 and 100. Default is 30. Past it the request fails with a ``timeout`` error."""
+    parse_effort: NotRequired[ParseEffortValue]
+    r"""How much effort to spend parsing PDF pages; no effect on web pages. ``"lite"`` extracts the content embedded in each page and suits digitally created PDFs. ``"standard"`` (the default) also sends complex pages, such as charts and images, through an advanced model, and is billed per PDF page."""
 
 
 class ExtractRequest(_StrictExtractBase):
@@ -86,7 +92,7 @@ class ExtractRequest(_StrictExtractBase):
     url: str
     r"""The URL to extract content from."""
 
-    full_page: Optional[ExtractFullPage] = None
+    full_page: Optional[ExtractionFullPage] = None
     r"""Options for the returned page content. Omit to return the page as Markdown."""
 
     extraction_source: Optional[ExtractionSource] = None
