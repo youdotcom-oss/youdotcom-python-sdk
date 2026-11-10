@@ -5,6 +5,46 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.0] - 2026-11-09
+
+Minor release. Adds the Extract API. Purely additive; no breaking changes.
+
+### Added
+
+- **`extract()` and `extract_async()`** on `POST /v1/extract` — one web page or
+  PDF, by URL, as clean Markdown and/or HTML. It replaces `contents()` for new
+  integrations; `contents()` keeps working unchanged. Parameters:
+  - `url` — required, one per call.
+  - `full_page` — `{"extraction_formats": ["markdown", "html"]}` or an
+    `ExtractFullPage`; Markdown only by default.
+  - `extraction_source` — `"blend"` (the default), `"cache"`, or `"fetch"`.
+  - `timeout` — seconds the whole request may take, 2–100 (default 30).
+  - `parse_effort` — PDFs only: `"lite"` or `"standard"` (the default, billed
+    per PDF page).
+- **`ExtractResponse`** (with `ExtractContents`, `ExtractFullPageContents`, and
+  `ExtractMetadata`). When nothing could be extracted the API returns an empty
+  object, and every field is `None`. Unknown response fields are ignored.
+- **`ExtractError`** — every error the Extract API returns (402, 422, 500, 502,
+  503, 504) shares one body and raises this class. Branch on its stable `code`
+  (`invalid_request`, `invalid_url`, `pdf_too_large`, `site_blocked`, `timeout`,
+  ...); `retryable`, `request_id`, and typed `details` come with it. 401, 403,
+  and a 402 answered by the API gateway raise the shared
+  `UnauthorizedResponseError`, `ForbiddenResponseError`, and
+  `PaymentRequiredResponseError`.
+- `ParseEffort` enum and `EXTRACT_OP_SERVERS`. `extraction_source` reuses
+  `ExtractionSource` and `full_page.extraction_formats` reuses
+  `ExtractionFormat`.
+
+### Notes
+
+- The request is strict: unknown keys and a `timeout` outside 2–100 raise
+  `pydantic.ValidationError` locally, mirroring the API's 422.
+- With no `timeout_ms` on the call or the client, `extract()` waits 10 seconds
+  longer than its `timeout` (40 seconds by default) rather than httpx's 5-second
+  default, so the API's own `timeout` error arrives before the client gives up.
+- Retries apply to 429, 500, 503, and 504. A 502 means the page itself cannot
+  be extracted, so it is not retried.
+
 ## [3.6.0] - 2026-10-14
 
 Minor release, three changes. The finance-research drift against that endpoint's

@@ -51,6 +51,7 @@ from youdotcom.research_helpers import (
     stream_research,
 )
 from youdotcom.errors import (
+    ExtractError,
     FinanceResearchUnprocessableEntityError,
     ResearchUnprocessableEntityError,
     YouDefaultError,
@@ -744,6 +745,36 @@ class TestLiveContentsMaxAge:
 
             assert isinstance(res, list)
             assert len(res) > 0
+
+
+@requires_api_key
+class TestLiveExtract:
+    """Live tests for the Extract API."""
+
+    def test_full_page_markdown_and_html(self, you_client):
+        """A live crawl returns both requested formats and the page title."""
+        with you_client as you:
+            res = you.extract(
+                url="https://www.example.com",
+                full_page={"extraction_formats": ["markdown", "html"]},
+                extraction_source="fetch",
+            )
+
+        assert res.extraction_source == "fetch"
+        assert res.title is not None
+        assert res.contents is not None and res.contents.full_page is not None
+        assert res.contents.full_page.markdown is not None
+        assert res.contents.full_page.html is not None
+
+    def test_api_error_raises_extract_error(self, you_client):
+        """A URL that can never be fetched raises ExtractError with a stable code."""
+        with you_client as you:
+            with pytest.raises(ExtractError) as exc:
+                you.extract(url="http://127.0.0.1/")
+
+        assert exc.value.status_code == 422
+        assert exc.value.code == "invalid_url"
+        assert exc.value.request_id is not None
 
 
 @requires_api_key
