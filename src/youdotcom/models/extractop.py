@@ -23,10 +23,11 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal, Optional, Union
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 from typing_extensions import NotRequired, TypedDict
 
 from youdotcom.models.extraction import (
+    _StrictExtractionBase,
     ExtractionFullPage,
     ExtractionFullPageTypedDict,
     ExtractionSource,
@@ -56,21 +57,6 @@ r"""``parse_effort`` as typed for callers: the enum or its plain string."""
 # ---------------------------------------------------------------------------
 
 
-class _StrictExtractBase(BaseModel):
-    """Base for the request models: unknown keys raise locally, as the API 422s.
-
-    Unset fields stay off the wire (the request serializer drops ``None``), so
-    the API applies its own defaults.
-    """
-
-    model_config = ConfigDict(
-        populate_by_name=True,
-        arbitrary_types_allowed=True,
-        protected_namespaces=(),
-        extra="forbid",
-    )
-
-
 class ExtractRequestTypedDict(TypedDict):
     r"""The ``POST /v1/extract`` request body."""
 
@@ -86,8 +72,12 @@ class ExtractRequestTypedDict(TypedDict):
     r"""How much effort to spend parsing PDF pages; no effect on web pages. ``"lite"`` extracts the content embedded in each page and suits digitally created PDFs. ``"standard"`` (the default) also sends complex pages, such as charts and images, through an advanced model, and is billed per PDF page."""
 
 
-class ExtractRequest(_StrictExtractBase):
-    r"""The ``POST /v1/extract`` request body."""
+class ExtractRequest(_StrictExtractionBase):
+    r"""The ``POST /v1/extract`` request body.
+
+    Unknown keys raise locally, as the API 422s. Unset fields stay off the wire
+    (the request serializer drops ``None``), so the API applies its own defaults.
+    """
 
     url: str
     r"""The URL to extract content from."""

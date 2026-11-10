@@ -30,7 +30,10 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
         res = you.extract(url="https://example.com/large-report.pdf", timeout=30)
     except errors.ExtractError as e:
         if e.code == "pdf_too_large":
-            res = you.extract(url="https://example.com/large-report.pdf", timeout=100)
+            # Raise the HTTP timeout too, or the client gives up before the API does
+            res = you.extract(
+                url="https://example.com/large-report.pdf", timeout=100, timeout_ms=110_000
+            )
         else:
             print(e.code, e.retryable, e.request_id)
             raise
