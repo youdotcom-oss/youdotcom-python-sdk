@@ -206,7 +206,7 @@ _EXTRACT_RETRY_CODES = ["429", "500", "503", "504"]
 def _build_extract_request(
     *,
     url: str,
-    full_page: Optional[Union[models.ExtractFullPage, Mapping[str, Any]]],
+    full_page: Optional[Union[models.ExtractionFullPage, Mapping[str, Any]]],
     extraction_source: Optional[str],
     timeout: Optional[int],
     parse_effort: Optional[str],
@@ -215,7 +215,9 @@ def _build_extract_request(
     return models.ExtractRequest(
         url=url,
         full_page=(
-            None if full_page is None else models.ExtractFullPage.model_validate(full_page)
+            None
+            if full_page is None
+            else models.ExtractionFullPage.model_validate(full_page)
         ),
         extraction_source=_lower(extraction_source),
         timeout=timeout,
@@ -1086,7 +1088,7 @@ class You(BaseSDK):
         *,
         url: str,
         full_page: Optional[
-            Union[models.ExtractFullPage, models.ExtractFullPageTypedDict]
+            Union[models.ExtractionFullPage, models.ExtractionFullPageTypedDict]
         ] = None,
         extraction_source: Optional[Union[str, models.ExtractionSource]] = None,
         timeout: Optional[int] = None,
@@ -1204,7 +1206,7 @@ class You(BaseSDK):
         *,
         url: str,
         full_page: Optional[
-            Union[models.ExtractFullPage, models.ExtractFullPageTypedDict]
+            Union[models.ExtractionFullPage, models.ExtractionFullPageTypedDict]
         ] = None,
         extraction_source: Optional[Union[str, models.ExtractionSource]] = None,
         timeout: Optional[int] = None,

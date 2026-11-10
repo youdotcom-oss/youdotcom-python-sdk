@@ -10,7 +10,7 @@ Unknown fields are ignored, so fields the API adds later never break parsing.
 import os
 from youdotcom import You
 
-with You(api_key_auth=os.getenv("YDC_API_KEY")) as you:
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     res = you.extract(url="https://example.com")
 
     if res.contents and res.contents.full_page:

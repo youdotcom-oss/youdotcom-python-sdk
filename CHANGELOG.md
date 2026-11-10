@@ -16,7 +16,8 @@ Minor release. Adds the Extract API. Purely additive; no breaking changes.
   integrations; `contents()` keeps working unchanged. Parameters:
   - `url` — required, one per call.
   - `full_page` — `{"extraction_formats": ["markdown", "html"]}` or an
-    `ExtractFullPage`; Markdown only by default.
+    `ExtractionFullPage` (the same options object as search's
+    `extraction.full_page`); Markdown only by default.
   - `extraction_source` — `"blend"` (the default), `"cache"`, or `"fetch"`.
   - `timeout` — seconds the whole request may take, 2–100 (default 30).
   - `parse_effort` — PDFs only: `"lite"` or `"standard"` (the default, billed
@@ -31,9 +32,9 @@ Minor release. Adds the Extract API. Purely additive; no breaking changes.
   and a 402 answered by the API gateway raise the shared
   `UnauthorizedResponseError`, `ForbiddenResponseError`, and
   `PaymentRequiredResponseError`.
-- `ParseEffort` enum and `EXTRACT_OP_SERVERS`. `extraction_source` reuses
-  `ExtractionSource` and `full_page.extraction_formats` reuses
-  `ExtractionFormat`.
+- `ParseEffort` enum, `ExtractRequestTypedDict`, and `EXTRACT_OP_SERVERS`.
+  `extraction_source` reuses `ExtractionSource`, and `full_page` reuses
+  `ExtractionFullPage`.
 
 ### Notes
 

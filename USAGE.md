@@ -195,6 +195,7 @@ from youdotcom import You, errors
 
 with You(
     api_key_auth=os.getenv("YDC_API_KEY"),
+    timeout_ms=60_000,
 ) as you:
 
     try:

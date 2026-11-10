@@ -194,14 +194,18 @@ Clean Markdown or HTML for one web page or PDF, by URL. Use it when you already
 have the URL; it replaces `contents` for new integrations.
 
 ```python
-page = you.extract(
-    url="https://arxiv.org/pdf/1706.03762",
-    full_page={"extraction_formats": ["markdown"]},
-    parse_effort="lite",  # PDFs only: skip the per-page charge for text-based PDFs
-)
+import os
+from youdotcom import You
 
-if page.contents and page.contents.full_page:
-    print(page.contents.full_page.markdown[:500])
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
+    page = you.extract(
+        url="https://arxiv.org/pdf/1706.03762",
+        full_page={"extraction_formats": ["markdown"]},
+        parse_effort="lite",  # PDFs only: skip the per-page charge for text-based PDFs
+    )
+
+    if page.contents and page.contents.full_page:
+        print(page.contents.full_page.markdown[:500])
 ```
 
 `extraction_source` picks where content comes from: `"blend"` (the default)
@@ -398,12 +402,15 @@ returns (`402`, `422`, `500`, `502`, `503`, `504`). Branch on its stable `code`
 `PaymentRequiredResponseError`.
 
 ```python
+import os
+from youdotcom import You
 from youdotcom.errors import ExtractError
 
-try:
-    page = you.extract(url="https://example.com/report.pdf")
-except ExtractError as e:
-    print(e.code, e.retryable, e.request_id)
+with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
+    try:
+        page = you.extract(url="https://example.com/report.pdf")
+    except ExtractError as e:
+        print(e.code, e.retryable, e.request_id)
 ```
 
 | Status | Answer / Search | Contents | Research | Finance Research | Task get / stream |
