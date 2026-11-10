@@ -14,6 +14,13 @@ if TYPE_CHECKING:
         ContentsUnauthorizedError,
         ContentsUnauthorizedErrorData,
     )
+    from .extractop import (
+        ExtractError,
+        ExtractErrorData,
+        ExtractErrorDetail,
+        ExtractErrorDetails,
+        ExtractErrorField,
+    )
     from .finance_researchop import (
         FinanceResearchForbiddenError,
         FinanceResearchForbiddenErrorData,
@@ -85,6 +92,11 @@ __all__ = [
     "ContentsInternalServerErrorData",
     "ContentsUnauthorizedError",
     "ContentsUnauthorizedErrorData",
+    "ExtractError",
+    "ExtractErrorData",
+    "ExtractErrorDetail",
+    "ExtractErrorDetails",
+    "ExtractErrorField",
     "FinanceResearchForbiddenError",
     "FinanceResearchForbiddenErrorData",
     "FinanceResearchInternalServerError",
@@ -140,6 +152,11 @@ _dynamic_imports: dict[str, str] = {
     "ContentsInternalServerErrorData": ".contentsop",
     "ContentsUnauthorizedError": ".contentsop",
     "ContentsUnauthorizedErrorData": ".contentsop",
+    "ExtractError": ".extractop",
+    "ExtractErrorData": ".extractop",
+    "ExtractErrorDetail": ".extractop",
+    "ExtractErrorDetails": ".extractop",
+    "ExtractErrorField": ".extractop",
     "FinanceResearchForbiddenError": ".finance_researchop",
     "FinanceResearchForbiddenErrorData": ".finance_researchop",
     "FinanceResearchInternalServerError": ".finance_researchop",

@@ -3,7 +3,7 @@
 </div>
 
 <div align="center">
-  <strong>The official Python SDK for the You.com API</strong>: web search, citation-backed answers, page contents, and multi-step research.
+  <strong>The official Python SDK for the You.com API</strong>: web search, citation-backed answers, page and PDF extraction, and multi-step research.
 </div>
 
 <div align="center">
@@ -188,9 +188,33 @@ are credits rather than citations: each names a provider and carries no URL.
 `as_of`, when present, is the `YYYY-MM-DD` date the card's underlying data
 covers.
 
+### Extract
+
+Clean Markdown or HTML for one web page or PDF, by URL. Use it when you already
+have the URL; it replaces `contents` for new integrations.
+
+```python
+page = you.extract(
+    url="https://arxiv.org/pdf/1706.03762",
+    full_page={"extraction_formats": ["markdown"]},
+    parse_effort="lite",  # PDFs only: skip the per-page charge for text-based PDFs
+)
+
+if page.contents and page.contents.full_page:
+    print(page.contents.full_page.markdown[:500])
+```
+
+`extraction_source` picks where content comes from: `"blend"` (the default)
+serves the cache and crawls on a miss, `"cache"` never crawls, and `"fetch"`
+always crawls. `timeout` (2–100 seconds, default 30) bounds the whole request;
+the SDK waits 10 seconds longer than it unless you set `timeout_ms`. When nothing
+could be extracted, every field on the response is `None`. Errors raise
+`ExtractError`; see [Errors](#errors).
+
 ### Contents
 
-Clean HTML or Markdown for a list of URLs.
+Clean HTML or Markdown for a list of URLs. For new integrations, prefer
+[Extract](#extract).
 
 ```python
 pages = you.contents(
@@ -365,6 +389,23 @@ Answer and search share one set of error classes; research, finance research,
 contents, and the task endpoints each raise their own, so you can catch a `422`
 from research without catching one from search.
 
+Extract raises one class, `ExtractError`, for every error the Extract API
+returns (`402`, `422`, `500`, `502`, `503`, `504`). Branch on its stable `code`
+(`invalid_url`, `pdf_too_large`, `site_blocked`, `timeout`, ...), and check
+`retryable`; see [ExtractError](docs/errors/extracterror.md) for the codes.
+`401`, `403`, and a `402` answered by the API gateway raise the shared
+`UnauthorizedResponseError`, `ForbiddenResponseError`, and
+`PaymentRequiredResponseError`.
+
+```python
+from youdotcom.errors import ExtractError
+
+try:
+    page = you.extract(url="https://example.com/report.pdf")
+except ExtractError as e:
+    print(e.code, e.retryable, e.request_id)
+```
+
 | Status | Answer / Search | Contents | Research | Finance Research | Task get / stream |
 | --- | --- | --- | --- | --- | --- |
 | 401 | `UnauthorizedResponseError` | `ContentsUnauthorizedError` | `ResearchUnauthorizedError` | `FinanceResearchUnauthorizedError` | `GetResearchTask…` / `StreamResearchTask…UnauthorizedError` |
@@ -400,7 +441,8 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), retry_config=retries, timeout_ms
     res = you.search(query="...", retries=retries)                           # or one call
 ```
 
-Retries apply to `429`, `500`, `502`, `503`, and `504`.
+Retries apply to `429`, `500`, `502`, `503`, and `504`, except on `extract`, which
+doesn't retry `502`: that status means the page itself can't be extracted.
 
 ### Timeouts
 
@@ -421,7 +463,9 @@ with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     results = you.search(query="...", timeout_ms=10_000)  # this call only
 ```
 
-Search and contents are fast enough for the default. Research in background mode
+Search and contents are fast enough for the default. Extract sets its own: with
+no `timeout_ms`, it waits 10 seconds longer than its `timeout` parameter
+(default 30), so the API's own timeout error arrives first. Research in background mode
 is the exception: the helpers under
 [Long-running research](#long-running-research) manage their own deadlines, so
 `timeout_s` there bounds the wait rather than `timeout_ms`.
@@ -474,7 +518,7 @@ assembled on the MCP server, which is the only layer that can populate its
 
 ### Servers
 
-`search` and `contents` go to `https://ydc-index.io`. Everything else goes to
+`search`, `contents`, and `extract` go to `https://ydc-index.io`. Everything else goes to
 `https://api.you.com`: `answer`, `research`, `finance_research`, and the research
 task endpoints. The SDK routes each call for you. To point one call
 elsewhere, at a proxy or a test server, pass `server_url` to the method:
@@ -484,7 +528,7 @@ res = you.search(query="...", server_url="http://localhost:18080")
 ```
 
 The constructor's `server_url` sets the default host, which affects the
-`api.you.com` endpoints. Because `search` and `contents` have their own
+`api.you.com` endpoints. Because `search`, `contents`, and `extract` have their own
 per-operation default, they are unaffected by it; override those per call.
 
 ### Custom HTTP client

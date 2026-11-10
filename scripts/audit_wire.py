@@ -167,6 +167,9 @@ def _calls(fast: bool) -> list:
         ("answer", lambda y: y.answer(query="What caused the 2008 financial crisis?"), None),
         ("contents", lambda y: y.contents(
             urls=["https://example.com"], formats=["html", "markdown"]), None),
+        ("extract", lambda y: y.extract(
+            url="https://example.com", full_page={"extraction_formats": ["markdown", "html"]},
+            extraction_source="fetch"), None),
     ]
     if not fast:
         # research endpoints take tens of seconds to minutes each

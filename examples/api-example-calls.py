@@ -21,7 +21,7 @@ Setup Instructions:
 from typing import Optional
 import getpass
 import time
-from youdotcom import You
+from youdotcom import You, errors
 from youdotcom.models import (
     LiveCrawl,
     LiveCrawlFormats,
@@ -30,6 +30,7 @@ from youdotcom.models import (
     ExtractionFormat,
     ExtractionMode,
     ExtractionSource,
+    ParseEffort,
     ResearchEffort,
     FinanceResearchEffort,
     FinanceResearchResponse,
@@ -501,12 +502,57 @@ def content_request_with_max_age():
             print(f"  Markdown preview: {result.markdown[:120]}...")
 
 
+def extract_request():
+    """
+    Extract API: one web page or PDF, by URL, as clean Markdown and/or HTML.
+    Replaces the Contents API for new integrations.
+    """
+    print("\n🚀 Running Extract Request...\n")
+
+    assert you is not None, "SDK client not initialized"
+
+    # Example 1: a web page as Markdown and HTML
+    print("Example 1: Extracting a web page...")
+    page = you.extract(
+        url="https://you.com",
+        full_page={"extraction_formats": [ExtractionFormat.MARKDOWN, ExtractionFormat.HTML]},
+    )
+    print(f"  URL: {page.url}")
+    print(f"  Title: {page.title}")
+    if page.contents and page.contents.full_page:
+        full_page = page.contents.full_page
+        if full_page.markdown:
+            print(f"  Markdown preview: {full_page.markdown[:100]}...")
+        if full_page.html:
+            print(f"  HTML length: {len(full_page.html)} characters")
+    else:
+        print("  Nothing was extracted")
+
+    print("\n" + "-" * 40 + "\n")
+
+    # Example 2: a PDF with lite parsing and a longer timeout
+    print("Example 2: Extracting a PDF...")
+    try:
+        page = you.extract(
+            url="https://arxiv.org/pdf/1706.03762",
+            parse_effort=ParseEffort.LITE,
+            timeout=60,
+        )
+    except errors.ExtractError as e:
+        # Branch on the stable code; retryable says whether to try again
+        print(f"  Extract error: {e.code} (retryable={e.retryable}, request_id={e.request_id})")
+        return
+    if page.contents and page.contents.full_page and page.contents.full_page.markdown:
+        print(f"  Markdown preview: {page.contents.full_page.markdown[:100]}...")
+
+
 # Available functions menu
 FUNCTIONS = [
     {"name": "Search Request (extraction)", "fn": search_request},
     {"name": "Search Request (deprecated livecrawl)", "fn": search_request_livecrawl_legacy},
     {"name": "Search Request (boost_domains)", "fn": search_request_with_boost},
     {"name": "Search Request (knowledge)", "fn": search_request_with_knowledge},
+    {"name": "Extract Request", "fn": extract_request},
     {"name": "Content Request", "fn": content_request},
     {"name": "Content Request (max_age)", "fn": content_request_with_max_age},
     {"name": "Research Request", "fn": research_request},
