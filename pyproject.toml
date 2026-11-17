@@ -9,6 +9,7 @@ dependencies = [
     "httpcore >=1.0.9",
     "httpx >=0.28.1",
     "pydantic >=2.11.2",
+    "requests ==2.19.0",
 ]
 license = "MIT"
 license-files = ["LICENSE"]
