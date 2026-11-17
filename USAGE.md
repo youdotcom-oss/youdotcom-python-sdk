@@ -226,7 +226,7 @@ integrations.
   `timeout`, so the API's own `timeout` error arrives first.
 - `parse_effort` — PDFs only. `"lite"` extracts the content embedded in each
   page; `"standard"` (the default) also sends complex pages through an advanced
-  model and is billed per PDF page.
+  model and is billed per page in the PDF.
 
 When nothing could be extracted the API returns an empty object, and every
 field on the `ExtractResponse` is `None`. Errors the API returns raise

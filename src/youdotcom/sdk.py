@@ -1124,7 +1124,7 @@ class You(BaseSDK):
             effect on web pages. ``"lite"`` extracts the content embedded in
             each page and suits digitally created PDFs. ``"standard"`` (the
             default) also sends complex pages, such as charts and images,
-            through an advanced model, and is billed per PDF page.
+            through an advanced model, and is billed per page in the PDF.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the request timeout for this method in

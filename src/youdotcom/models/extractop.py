@@ -69,7 +69,7 @@ class ExtractRequestTypedDict(TypedDict):
     timeout: NotRequired[int]
     r"""Seconds the request may take end to end, including the cache lookup and the crawl. Must be between 2 and 100. Default is 30. Past it the request fails with a ``timeout`` error."""
     parse_effort: NotRequired[ParseEffortValue]
-    r"""How much effort to spend parsing PDF pages; no effect on web pages. ``"lite"`` extracts the content embedded in each page and suits digitally created PDFs. ``"standard"`` (the default) also sends complex pages, such as charts and images, through an advanced model, and is billed per PDF page."""
+    r"""How much effort to spend parsing PDF pages; no effect on web pages. ``"lite"`` extracts the content embedded in each page and suits digitally created PDFs. ``"standard"`` (the default) also sends complex pages, such as charts and images, through an advanced model, and is billed per page in the PDF."""
 
 
 class ExtractRequest(_StrictExtractionBase):
@@ -92,7 +92,7 @@ class ExtractRequest(_StrictExtractionBase):
     r"""Seconds the request may take end to end, including the cache lookup and the crawl. Must be between 2 and 100. Default is 30. Past it the request fails with a ``timeout`` error."""
 
     parse_effort: Optional[ParseEffort] = None
-    r"""How much effort to spend parsing PDF pages; no effect on web pages. ``"lite"`` extracts the content embedded in each page and suits digitally created PDFs. ``"standard"`` (the default) also sends complex pages, such as charts and images, through an advanced model, and is billed per PDF page."""
+    r"""How much effort to spend parsing PDF pages; no effect on web pages. ``"lite"`` extracts the content embedded in each page and suits digitally created PDFs. ``"standard"`` (the default) also sends complex pages, such as charts and images, through an advanced model, and is billed per page in the PDF."""
 
 
 # ---------------------------------------------------------------------------

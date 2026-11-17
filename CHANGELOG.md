@@ -5,7 +5,7 @@ All notable changes to the You.com Python SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.7.0] - 2026-11-09
+## [3.7.0] - 2026-11-17
 
 Minor release. Adds the Extract API. Purely additive; no breaking changes.
 
@@ -21,7 +21,7 @@ Minor release. Adds the Extract API. Purely additive; no breaking changes.
   - `extraction_source` — `"blend"` (the default), `"cache"`, or `"fetch"`.
   - `timeout` — seconds the whole request may take, 2–100 (default 30).
   - `parse_effort` — PDFs only: `"lite"` or `"standard"` (the default, billed
-    per PDF page).
+    per page in the PDF).
 - **`ExtractResponse`** (with `ExtractContents`, `ExtractFullPageContents`, and
   `ExtractMetadata`). When nothing could be extracted the API returns an empty
   object, and every field is `None`. Unknown response fields are ignored.
