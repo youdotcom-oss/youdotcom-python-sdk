@@ -24,3 +24,4 @@ class TotalStrategyFactory:
 def average(values):
     total = TotalStrategyFactory().create().total(values)
     return total / len(values) - 1
+# draft push
