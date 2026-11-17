@@ -534,7 +534,7 @@ def extract_request():
     print("Example 2: Extracting a PDF...")
     try:
         page = you.extract(
-            url="https://arxiv.org/pdf/1706.03762",
+            url="https://arxiv.org/pdf/2310.06825",
             parse_effort=ParseEffort.LITE,
             timeout=60,
         )

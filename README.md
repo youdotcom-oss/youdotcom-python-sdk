@@ -199,7 +199,7 @@ from youdotcom import You
 
 with You(api_key_auth=os.getenv("YDC_API_KEY"), timeout_ms=60_000) as you:
     page = you.extract(
-        url="https://arxiv.org/pdf/1706.03762",
+        url="https://arxiv.org/pdf/2310.06825",
         full_page={"extraction_formats": ["markdown"]},
         parse_effort="lite",  # PDFs only: skip the per-page charge for text-based PDFs
     )
